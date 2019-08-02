@@ -1,0 +1,30 @@
+{
+  "name": "localtvads-api",
+  "version": "1.0.0",
+  "description": "API project for localtvads.com",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git@git.e9ine.com:sharvilak/localtvads-api.git"
+  },
+  "author": "sharvilak@e9ine.com",
+  "license": "ISC",
+  "dependencies": {
+    "@sentry/node": "^5.5.0",
+    "body-parser": "^1.19.0",
+    "cors": "^2.8.5",
+    "dotenv": "^8.0.0",
+    "express": "^4.17.1",
+    "jsonwebtoken": "^8.5.1",
+    "method-override": "^3.0.0",
+    "mongoose": "^5.6.7",
+    "mongoose-deep-populate": "^3.1.1",
+    "winston": "^3.2.1"
+  },
+  "devDependencies": {
+    "eslint": "^6.1.0"
+  }
+}
