@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
+const commonSchema = require.main.require('./models/CommonSchema');
 
-var schema = new mongoose.Schema({
+const name = "Client";
+
+const schema = new mongoose.Schema({
     Name: {
         type: String,
         required: true
@@ -10,11 +13,22 @@ var schema = new mongoose.Schema({
         required: true
     },
     Phone: {
-        type: String,
-        required: true
+        type: String
+    },
+    ImageUrl: {
+        type: String
     },
     IsActive: {
         type: Boolean,
         default: true
-    }
+    },
+    Address: commonSchema.addressSchema
 });
+
+let model = mongoose.model(name, schema);
+
+module.exports = {
+    name: name,
+    model: model,
+    schema: schema
+};

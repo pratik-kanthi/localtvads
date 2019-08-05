@@ -82,10 +82,6 @@ const ownerSchema = new mongoose.Schema({
     _id: {
         type: String,
     },
-    Entity: {
-        type: String,
-        enum: ['Client']
-    },
     Title: {
         type: String
     },

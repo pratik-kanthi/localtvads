@@ -9,6 +9,12 @@ var schema = new mongoose.Schema({
     Owner: {},
     iat: {
         type: Number
+    },
+    AuthorisationScheme: {
+        type: String
+    },
+    Claims: {
+        type: String
     }
 });
 
