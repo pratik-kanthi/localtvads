@@ -2,7 +2,7 @@ var imagemin = require('imagemin');
 var imageminPngquant = require('imagemin-pngquant');
 var imageminMozjpeg = require('imagemin-mozjpeg');
 
-var googleBucket = require.main.require('../google-bucket');
+var googleBucket = require.main.require('./google-bucket');
 
 /**
  * upload image to google bucket as buffer

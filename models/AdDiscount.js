@@ -39,5 +39,9 @@ var schema = new mongoose.Schema({
     PermittedUsageCount: {
         type: Number,
         default: 1
+    },
+    UsageCount: {
+        type: Number,
+        default: 0
     }
 });
