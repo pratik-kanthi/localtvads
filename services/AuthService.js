@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const request = require('request');
 const config = require.main.require('./config');
 
 const AccessToken = require.main.require('./models/AccessToken').model;
@@ -6,6 +7,8 @@ const Client = require.main.require('./models/Client').model;
 const User = require.main.require('./models/User').model;
 const UserClaim = require.main.require('./models/UserClaim').model;
 const UserLogin = require.main.require('./models/UserLogin').model;
+
+const {uploadImage} = require.main.require('./services/FileService');
 
 const socialRegister = (profile) => {
     return new Promise(async (resolve, reject) => {
@@ -40,6 +43,16 @@ const socialRegister = (profile) => {
                 Phone: profile.Phone,
                 IsActive: true
             });
+            if (profile.ImageUrl) {
+                try {
+                    client.ImageUrl = await _fetchProfileImage(client, profile);
+                } catch (ex) {
+                    return reject({
+                        code: ex.code || 500,
+                        error: ex.error || ex
+                    });
+                }
+            }
             client.save((err) => {
                 if (err) {
                     return reject({
@@ -58,7 +71,8 @@ const socialRegister = (profile) => {
                             Type: 'Client',
                             _id: client._id.toString(),
                             Title: profile.Name,
-                            Email: profile.Email
+                            Email: profile.Email,
+                            ImageUrl: client.ImageUrl
                         }
                     });
                     user.save((err) => {
@@ -214,8 +228,7 @@ const socialLogin = (profile, req) => {
             });
         } else {
             let query = {
-                UserName: profile.Email,
-                AuthorisationScheme: profile.AuthorisationScheme
+                UserName: profile.Email
             };
             User.findOne(query, async (err, user) => {
                 if (err) {
@@ -223,7 +236,7 @@ const socialLogin = (profile, req) => {
                     return reject({
                         code: 500,
                         error: err
-                    })
+                    });
                 } else if (!user) {
                     _logLogin(profile.Email, req, "FAILED_LOGIN");
                     return reject({
@@ -231,7 +244,7 @@ const socialLogin = (profile, req) => {
                         error: {
                             message: utilities.ErrorMessages.USERNAME_NOT_FOUND
                         }
-                    })
+                    });
                 } else if (user && user.IsLockoutEnabled) {
                     _logLogin(profile.Email, req, "FAILED_LOGIN");
                     return reject({
@@ -239,13 +252,21 @@ const socialLogin = (profile, req) => {
                         error: {
                             message: utilities.ErrorMessages.USER_LOCKED_OUT
                         }
-                    })
+                    });
+                } else if (user && user.PasswordHash) {
+                    _logLogin(profile.Email, req, "FAILED_LOGIN");
+                    return reject({
+                        code: 409,
+                        error: {
+                            message: utilities.ErrorMessages.INVALID_AUTHORISATION_TYPE
+                        }
+                    });
                 }
                 let claims;
                 try {
                     claims = await _fetchClaim(user._id);
                 } catch (ex) {
-                    _logLogin(email, req, "FAILED_LOGIN");
+                    _logLogin(profile.Email, req, "FAILED_LOGIN");
                     return reject({
                         code: ex.code || 500,
                         error: ex.error
@@ -419,6 +440,34 @@ const _fetchClaim = (userId) => {
                 });
             }
             resolve(claims);
+        });
+    });
+};
+
+const _fetchProfileImage = (client, profile) => {
+    return new Promise(async (resolve, reject) => {
+        let extension = profile.AuthorisationScheme === 'Google' ? profile.ImageUrl.substr(profile.ImageUrl.lastIndexOf('.')) : '.jpg';
+        let dst = 'uploads/Client/' + client._id.toString() + '/' + Date.now() + extension;
+        let options = {
+            url: profile.ImageUrl,
+            method: 'GET',
+            encoding: null
+        };
+        request(options, (err, res, body) => {
+            if (err || res.statusCode !== 200) {
+                return reject({
+                    code: res.statusCode,
+                    error: err
+                });
+            }
+            uploadImage({buffer: body}, dst).then(() => {
+                resolve(dst);
+            }, (err) => {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            });
         });
     });
 };
