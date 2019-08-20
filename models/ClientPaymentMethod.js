@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 const {billingSchema} = require.main.require('./models/CommonSchema');
 
+const name='ClientPaymentMethod';
+
 const paymentCardSchema = new mongoose.Schema({
     CardToken: {
         type: String,
@@ -40,3 +42,11 @@ const schema = new mongoose.Schema({
     BankInformation: billingSchema,
     Wallets: []
 });
+
+const model = mongoose.model(name, schema);
+
+module.exports = {
+    name: name,
+    model: model,
+    schema: schema
+};

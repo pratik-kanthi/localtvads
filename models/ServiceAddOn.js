@@ -1,7 +1,8 @@
 const mongoose = require('mongoose');
-const moment = require('moment');
 
-var schema = new mongoose.Schema({
+const name='ServiceAddOn';
+
+const schema = new mongoose.Schema({
     Title: {
         type: String,
         required: true
@@ -27,3 +28,11 @@ var schema = new mongoose.Schema({
         default: true
     }
 });
+
+const model = mongoose.model(name, schema);
+
+module.exports = {
+    name: name,
+    model: model,
+    schema: schema
+};

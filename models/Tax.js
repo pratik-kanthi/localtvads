@@ -1,8 +1,8 @@
-var mongoose = require('mongoose');
+const mongoose = require('mongoose');
 
-var name = 'Tax';
+const name = 'Tax';
 
-var schema = new mongoose.Schema({
+const schema = new mongoose.Schema({
     Name: {
         type: String,
         required: true
@@ -25,7 +25,8 @@ var schema = new mongoose.Schema({
     }
 });
 
-var model = mongoose.model(name, schema);
+const model = mongoose.model(name, schema);
+
 module.exports = {
     name: name,
     model: model,

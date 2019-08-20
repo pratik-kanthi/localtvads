@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 
-var schema = new mongoose.Schema({
+const name='AdPlanRateMultiplier';
+
+const schema = new mongoose.Schema({
     Name: {
         type: String,
         required: true
@@ -8,9 +10,9 @@ var schema = new mongoose.Schema({
     Description: {
         type: String
     },
-    AdSlot: {
+    AdSchedule: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'AdSlot',
+        ref: 'AdSchedule',
         required: true
     },
     Channel: {
@@ -31,3 +33,11 @@ var schema = new mongoose.Schema({
         required: true
     }
 });
+
+const model = mongoose.model(name, schema);
+
+module.exports = {
+    name: name,
+    model: model,
+    schema: schema
+};

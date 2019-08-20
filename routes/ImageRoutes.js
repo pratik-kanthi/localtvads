@@ -45,7 +45,7 @@ module.exports = (app) => {
      *
      * @apiSuccess {String} Deleted Acknowledgement of image deleted.
      */
-    app.delete('/api/bucketfile', type, async (req, res) => {
+    app.delete('/api/image/bucketfile', type, async (req, res) => {
         if (!req.query.location)
             return res.status(400).json({
                 error: {

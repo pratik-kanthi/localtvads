@@ -10,6 +10,10 @@ const UserLogin = require.main.require('./models/UserLogin').model;
 
 const {uploadImage} = require.main.require('./services/FileService');
 
+/**
+ * Social Registration through Facebook and Google+
+ * @param {Object} profile - Profile object returned by respective OAuth 2.0 social login
+ */
 const socialRegister = (profile) => {
     return new Promise(async (resolve, reject) => {
         if (!profile || !profile.token || !profile.Email || !profile.Name) {
@@ -124,6 +128,10 @@ const socialRegister = (profile) => {
     });
 };
 
+/**
+ * Standard Registration through Email and Password
+ * @param {Object} profile - Profile object for standard registration
+ */
 const standardRegister = (profile) => {
     return new Promise(async (resolve, reject) => {
         if (!profile || !profile.Name || !profile.Password || !profile.Email) {
@@ -217,6 +225,11 @@ const standardRegister = (profile) => {
     });
 };
 
+/**
+ * Social Login
+ * @param {Object} profile - Profile object returned by respective OAuth 2.0 social login
+ * @param {Object} req - request of the API
+ */
 const socialLogin = (profile, req) => {
     return new Promise(async (resolve, reject) => {
         if (!profile || !profile.token) {
@@ -304,6 +317,12 @@ const socialLogin = (profile, req) => {
     });
 };
 
+/**
+ * Standard Login
+ * @param {String} email - Email ID of the user
+ * @param {String} password - Password of the user
+ * @param {Object} req - request of the API
+ */
 const standardLogin = (email, password, req) => {
     return new Promise(async (resolve, reject) => {
         if (!email || !password) {

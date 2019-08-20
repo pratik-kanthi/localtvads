@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
-const adChannelPlan = require.main.require('./AdChannelPlan').schema;
-const clientAdSchema = require.main.require('./ClientAd').schema;
-const {auditSchema} = require.main.require('./CommonSchema');
+const adChannelPlanSchema = require.main.require('./models/AdChannelPlan').schema;
+const {auditSchema} = require.main.require('./models/CommonSchema');
+const clientAdSchema = require.main.require('./models/ClientAd').schema;
 
-var schema = new mongoose.Schema({
+const name='ClientAdPlan';
+
+const schema = new mongoose.Schema({
     Name: {
         type: String,
         required: true
@@ -18,7 +20,7 @@ var schema = new mongoose.Schema({
     },
     ClientAd: clientAdSchema,
     AdChannelPlan: {
-        ...adChannelPlan,
+        Plan: adChannelPlanSchema,
         Surge: {
             type: Number
         },
@@ -57,3 +59,11 @@ var schema = new mongoose.Schema({
     },
     AuditInfo: auditSchema
 });
+
+const model = mongoose.model(name, schema);
+
+module.exports = {
+    name: name,
+    model: model,
+    schema: schema
+};

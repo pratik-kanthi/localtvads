@@ -1,6 +1,8 @@
 const mongoose = require('mongoose');
 
-var schema = new mongoose.Schema({
+const name='AdDiscount';
+
+const schema = new mongoose.Schema({
     Name: {
         type: String,
         required: true
@@ -10,7 +12,7 @@ var schema = new mongoose.Schema({
     },
     AdPlans: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'AdSlot'
+        ref: 'AdSchedule'
     }],
     Channels: [{
         type: mongoose.Schema.Types.ObjectId,
@@ -45,3 +47,11 @@ var schema = new mongoose.Schema({
         default: 0
     }
 });
+
+const model = mongoose.model(name, schema);
+
+module.exports = {
+    name: name,
+    model: model,
+    schema: schema
+};

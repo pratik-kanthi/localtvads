@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
 const {addressSchema, contactSchema} = require.main.require('./models/CommonSchema');
 
-var schema = new mongoose.Schema({
+const name='Channel';
+
+const schema = new mongoose.Schema({
     Name: {
         type: String,
         required: true
@@ -18,3 +20,11 @@ var schema = new mongoose.Schema({
     PrimaryContact: contactSchema,
     AlternativeContact: contactSchema
 });
+
+const model = mongoose.model(name, schema);
+
+module.exports = {
+    name: name,
+    model: model,
+    schema: schema
+};
