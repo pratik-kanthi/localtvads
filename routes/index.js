@@ -1,5 +1,5 @@
-module.exports = (app,models) => {
+module.exports = (app) => {
     require('./AuthRoutes')(app);
-    require('./FFMPEGRoutes')(app);
-    require('./ClientResourceRoutes')(app);
+    require('./ChannelRoutes')(app);
+    require('./ResourceRoutes')(app);
 };

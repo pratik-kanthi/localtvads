@@ -4,9 +4,7 @@ const path = require('path');
 const config = require.main.require('./config');
 
 const ClientAd = require.main.require('./models/ClientAd').model;
-const Transaction = require.main.require('./models/Transaction').model;
 
-const {getClientAdPlan} = require.main.require('./services/AdService');
 const {uploadFile, downloadFile} = require.main.require('./services/FileService');
 const {makeVideo, getFFMPEGImageObject, getFFMPEGMetaData} = require.main.require('./ffmpeg');
 
@@ -14,7 +12,7 @@ const {makeVideo, getFFMPEGImageObject, getFFMPEGMetaData} = require.main.requir
  * Save a custom video already uploaded in the public folder
  * @param {Object} clientAd (optional) - document of clientAd
  */
-const saveCustomVideo = (clientAd) => {
+const saveCustomAd = (clientAd) => {
     return new Promise(async (resolve, reject) => {
         if (!clientAd) {
             return reject({
@@ -97,7 +95,7 @@ const saveCustomVideo = (clientAd) => {
  * @param {Object} audio (optional) - Audio object
  * @param {string} clientAd (optional) - _id of clientAd document
  */
-const previewCustomVideo = (pictures, audio, clientAd) => {
+const previewCustomAd = (pictures, audio, clientAd) => {
     return new Promise(async (resolve, reject) => {
         if (!pictures || !pictures.length) {
             return reject({
@@ -266,6 +264,6 @@ const generateFilters = (filters, imagePaths) => {
 
 
 module.exports = {
-    saveCustomVideo,
-    previewCustomVideo
+    saveCustomAd,
+    previewCustomAd
 };

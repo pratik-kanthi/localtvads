@@ -1,7 +1,6 @@
 const mongoose = require('mongoose');
-const adChannelPlanSchema = require.main.require('./models/AdChannelPlan').schema;
+const channelPlanSchema = require.main.require('./models/ChannelPlan').schema;
 const {auditSchema} = require.main.require('./models/CommonSchema');
-const clientAdSchema = require.main.require('./models/ClientAd').schema;
 
 const name='ClientAdPlan';
 
@@ -18,24 +17,24 @@ const schema = new mongoose.Schema({
         ref: 'Client',
         required: true
     },
-    ClientAd: clientAdSchema,
-    AdChannelPlan: {
-        Plan: adChannelPlanSchema,
+    ClientAd: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClientAd'
+    },
+    ChannelPlan: {
+        Plan: channelPlanSchema,
         Surge: {
             type: Number
         },
         Extras: [],
         SubTotal: {
-            type: Number,
-            required: true
+            type: Number
         },
         TaxAmount: {
-            type: Number,
-            required: true
+            type: Number
         },
         TotalAmount: {
-            type: Number,
-            required: true
+            type: Number
         },
     },
     StartDate: {
@@ -54,8 +53,7 @@ const schema = new mongoose.Schema({
     },
     Status: {
         type: String,
-        enum: ['ACTIVE','INACTIVE','EXPIRED'],
-        default: 'ACTIVE'
+        enum: ['ACTIVE','INACTIVE','EXPIRED']
     },
     AuditInfo: auditSchema
 });

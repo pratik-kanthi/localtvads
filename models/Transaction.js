@@ -1,13 +1,10 @@
 const mongoose = require('mongoose');
-
-const taxSchema = require('../models/Tax').schema;
-const discountSchema = require('../models/AdDiscount').schema;
-const adPlanSchema = require('./AdChannelPlan').schema;
+const adPlanSchema = require.main.require('./ChannelPlan').schema;
 
 const name = 'Transaction';
 
 const schema = new mongoose.Schema({
-    AdPlan: {
+    ChannelPlan: {
         adPlanSchema
     },
     Client: {
@@ -15,24 +12,10 @@ const schema = new mongoose.Schema({
         ref: 'Client',
         required: true
     },
-    ClientAd: {
+    ClientAdPlan: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ClientAd',
+        ref: 'ClientAdPlan',
         required: true
-    },
-    Amount: {
-        type: Number,
-        required: true
-    },
-    TaxBreakdown: [
-        taxSchema
-    ],
-    TaxAmount: {
-        type: Number,
-        required: true
-    },
-    Discount: {
-        discountSchema
     },
     TotalAmount: {
         type: Number,
@@ -49,7 +32,10 @@ const schema = new mongoose.Schema({
     },
     DateTime: {
         type: Date,
-        required: true
+        required: true,
+        default: () => {
+            return new Date()
+        }
     },
     StripeResponse: {}
 });

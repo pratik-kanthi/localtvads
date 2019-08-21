@@ -3,7 +3,7 @@ const passport = require('passport');
 
 const config = require.main.require('./config');
 
-const {addImageResource, updateImageResource, deleteImageResource, addMediaResource, updateMediaResource, deleteMediaResource} = require.main.require('./services/ClientResourceService');
+const {addImageResource, updateImageResource, deleteImageResource, addMediaResource, updateMediaResource, deleteMediaResource} = require.main.require('./services/ResourceService');
 
 let imageUpload = multer({
     storage: multer.memoryStorage(),

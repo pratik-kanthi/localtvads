@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='AdChannelPlan';
+const name = 'ChannelPlan';
 
 const schema = new mongoose.Schema({
     Name: {
@@ -25,7 +25,7 @@ const schema = new mongoose.Schema({
         required: true
     },
     Duration: {
-        type: Number, // must be in the number of days
+        type: Number,
         required: true
     },
     BaseAmount: {

@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='AdSchedule';
+const name = 'AdSchedule';
 
 const schema = new mongoose.Schema({
     Name: {
