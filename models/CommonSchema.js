@@ -43,12 +43,11 @@ const addressSchema = new mongoose.Schema({
         default: "United Kingdom"
     },
     Location: {
-        Latitude: {
-            type: Number
+        type: {
+            type: String,
+            default: 'Point'
         },
-        Longitude: {
-            type: Number
-        }
+        coordinates: []
     }
 });
 const contactSchema = new mongoose.Schema({
