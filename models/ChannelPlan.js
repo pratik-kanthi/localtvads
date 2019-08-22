@@ -4,8 +4,7 @@ const name = 'ChannelPlan';
 
 const schema = new mongoose.Schema({
     Name: {
-        type: String,
-        required: true
+        type: String
     },
     Description: {
         type: String
@@ -24,7 +23,7 @@ const schema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    Duration: {
+    DurationMonths: {
         type: Number,
         required: true
     },

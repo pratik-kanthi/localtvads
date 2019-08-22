@@ -7,9 +7,12 @@ const schema = new mongoose.Schema({
         type: String,
         required: true
     },
-    Description: [{
+    Description: {
         type: String
-    }],
+    },
+    ExpectedAdViews: {
+        type: Number
+    },
     StartTime: {
         type: Date
     },

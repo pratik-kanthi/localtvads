@@ -42,11 +42,13 @@ const addressSchema = new mongoose.Schema({
         type: String,
         default: "United Kingdom"
     },
-    Latitude: {
-        type: Number
-    },
-    Longitude: {
-        type: Number
+    Location: {
+        Latitude: {
+            type: Number
+        },
+        Longitude: {
+            type: Number
+        }
     }
 });
 const contactSchema = new mongoose.Schema({

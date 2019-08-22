@@ -1,5 +1,5 @@
-const ChannelPlan = require.main.require('./models/ChannelPlan');
-const Channel = require.main.require('./models/Channel');
+const ChannelPlan = require.main.require('./models/ChannelPlan').model;
+const Channel = require.main.require('./models/Channel').model;
 
 /**
  * get Channels
@@ -8,8 +8,15 @@ const Channel = require.main.require('./models/Channel');
 // TODO - GeoQuery $near
 const getChannels = (location) => {
     return new Promise(async (resolve, reject) => {
-        let query = {};
-        Channel.find(query, (err, channels) => {
+        let query = {
+            Status: "LIVE"
+        };
+        let project = {
+            "Name": 1,
+            "Description": 1,
+            "Address.Location": 1
+        };
+        Channel.find(query,project, (err, channels) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -27,21 +34,22 @@ const getChannels = (location) => {
 /**
  * get active plans of the channel
  * @param {String} channel - _id of the channel
- * @param {Number} seconds - Total seconds of the plan
  */
-const getChannelPlans = (channel, seconds) => {
+const getChannelPlans = (channel) => {
     return new Promise(async (resolve, reject) => {
         let query = {
-            _id: channel,
-            Seconds: seconds,
+            Channel: channel,
             IsActive: true
         };
         let project = {
             _id: 1,
             AdSchedule: 1,
+            Seconds: 1,
+            DurationMonths:1,
             IsActive: true,
+            BaseAmount: 1
         };
-        ChannelPlan.find(query, project).populate('AdSchedule').exec((err, channelPlans) => {
+        ChannelPlan.find(query, project).populate('AdSchedule','Name ExpectedAdViews').exec((err, channelPlans) => {
             if (err) {
                 return reject({
                     code: 500,
