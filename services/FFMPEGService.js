@@ -7,6 +7,7 @@ const ClientAd = require.main.require('./models/ClientAd').model;
 
 const {uploadFile, downloadFile} = require.main.require('./services/FileService');
 const {makeVideo, getFFMPEGImageObject, getFFMPEGMetaData} = require.main.require('./ffmpeg');
+const {resizeImage} = require.main.require('./services/ImageService');
 
 /**
  * Save a custom video already uploaded in the public folder
@@ -151,22 +152,35 @@ const previewCustomAd = (pictures, audio, clientAd) => {
             });
         }
 
-        let video;
+        let resizePicturesQueue =  ffmpegPictures.map(pic => resizeImage(pic.path, 1980, 1080, 100));
+
         try {
-            video = await makeVideo(ffmpegPictures, audio, {
-                loop: 5,
-                transition: true,
-                transitionDuration: 1,
-                captionDelay: 1000,
-                useSubRipSubtitles: false,
-                subtitleStyle: null,
-                videoBitrate: 1024,
-                videoCodec: 'libx264',
-                size: '640x?',
-                audioBitrate: '128k',
-                audioChannels: 2,
-                format: 'mp4'
-            }, pictures[0].Client);
+            let result = await Promise.all(resizePicturesQueue);
+        } catch (ex) {
+            logger.logError(ex.error || ex);
+            return reject({
+                code: ex.code || 500,
+                error: ex.error || ex
+            });
+        }
+
+        let video, videoOptions= {
+            loop: 5,
+            transition: true,
+            transitionDuration: 1,
+            captionDelay: 1000,
+            useSubRipSubtitles: false,
+            subtitleStyle: null,
+            videoBitrate: 1024,
+            videoCodec: 'libx264',
+            size: '1080x?',
+            audioBitrate: '128k',
+            audioChannels: 2,
+            format: 'mp4'
+        };
+
+        try {
+            video = await makeVideo(ffmpegPictures, audio, videoOptions , pictures[0].Client);
         } catch (ex) {
             return reject({
                 code: ex.code || 500,
@@ -217,6 +231,11 @@ const previewCustomAd = (pictures, audio, clientAd) => {
                         }
                     }
                     cAd.PreviewUrl = video;
+                    cAd.Options = {
+                        ImagesOptions: ffmpegPictures,
+                            AudioOptions: audio,
+                            VideoOptions: videoOptions
+                    };
                     cAd.save(err => {
                         if (err) {
                             return reject({
@@ -237,7 +256,12 @@ const previewCustomAd = (pictures, audio, clientAd) => {
                 Client: pictures[0].Client,
                 Status: 'DRAFT',
                 PreviewUrl: video,
-                PreviewDate: new Date()
+                PreviewDate: new Date(),
+                Options: {
+                    ImagesOptions: ffmpegPictures,
+                    AudioOptions: audio,
+                    VideoOptions: videoOptions
+                }
             });
             cAd.save(err => {
                 if (err) {

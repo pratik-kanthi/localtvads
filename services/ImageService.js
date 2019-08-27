@@ -15,7 +15,7 @@ const cropImage = (query, file) => {
                 return reject(err);
             }
             try {
-                image.crop(parseInt(query.cropx), parseInt(query.cropy), parseInt(query.cropx2) - parseInt(query.cropx), parseInt(query.cropy2) - parseInt(query.cropy), (err, cImage) => {
+                image.crop(parseInt(query.cropx), parseInt(query.cropy), parseInt(query.cropw), parseInt(query.croph), (err, cImage) => {
                     try {
                         cImage.getBuffer(file.mimetype, async (err, buffer) => {
                             if (err) {
@@ -32,6 +32,31 @@ const cropImage = (query, file) => {
                 return reject(err);
             }
         });
+    });
+};
+
+const resizeImage = (source, width, height, quality) => {
+    return new Promise(async (resolve, reject) => {
+        let pic;
+        try {
+            pic = await jimp.read(source);
+        } catch (ex) {
+            logger.logError(ex);
+            return reject({
+                code: 500,
+                error: ex
+            });
+        }
+        try {
+            let result = await pic.resize(width, height).quality(quality).write(source);
+            resolve();
+        } catch (ex) {
+            logger.logError(ex);
+            return reject({
+                code: 500,
+                error: ex
+            });
+        }
     });
 };
 
@@ -190,6 +215,7 @@ module.exports = {
     uploadImage,
     removeImage,
     removeBucketImage,
-    cropImage
+    cropImage,
+    resizeImage
 };
 

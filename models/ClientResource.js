@@ -17,7 +17,7 @@ const schema = new mongoose.Schema({
     },
     Type: {
         type: String,
-        enum: ['IMAGE','VIDEO', 'AUDIO']
+        enum: ['IMAGE','VIDEO','AUDIO']
     }
 });
 

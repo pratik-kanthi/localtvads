@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const adPlanSchema = require.main.require('./ChannelPlan').schema;
+const adPlanSchema = require.main.require('./models/ChannelPlan').schema;
 
 const name = 'Transaction';
 

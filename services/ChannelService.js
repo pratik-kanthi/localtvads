@@ -39,6 +39,14 @@ const getChannels = () => {
  */
 const getPlansByChannel = (channel, seconds) => {
     return new Promise(async (resolve, reject) => {
+        if (!channel || !seconds) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
         let query = {
             Channel: channel,
             Seconds: seconds,
@@ -69,6 +77,14 @@ const getPlansByChannel = (channel, seconds) => {
 
 const getNearByChannelPlans = (channel, seconds) => {
     return new Promise(async (resolve, reject) => {
+        if (!channel || !seconds) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
         let query = {
             _id: channel,
             Status: "LIVE"

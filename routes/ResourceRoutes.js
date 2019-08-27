@@ -3,7 +3,7 @@ const passport = require('passport');
 
 const config = require.main.require('./config');
 
-const {addImageResource, updateImageResource, deleteImageResource, addMediaResource, updateMediaResource, deleteMediaResource} = require.main.require('./services/ResourceService');
+const {addImageResource, updateImageResource, deleteImageResource, addMediaResource, updateMediaResource, deleteMediaResource, getAllMediaResources} = require.main.require('./services/ResourceService');
 
 let imageUpload = multer({
     storage: multer.memoryStorage(),
@@ -59,7 +59,7 @@ module.exports = (app) => {
                 return res.status(500).send(err);
             }
             try {
-                let result = await addImageResource(req.body, req.file);
+                let result = await addImageResource(req.body.document, req.file);
                 return res.status(result.code).send(result.data);
             } catch (ex) {
                 return res.status(ex.code || 500).send(ex.error);
@@ -121,6 +121,15 @@ module.exports = (app) => {
     app.delete('/api/clientresource/media', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
             let result = await deleteMediaResource(req.query.id);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code).send(ex.error);
+        }
+    });
+
+    app.get('/api/clientresource/all', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            let result = await getAllMediaResources(req.query.id);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code).send(ex.error);

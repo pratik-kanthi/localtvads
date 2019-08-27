@@ -24,6 +24,8 @@ const addImageResource = (image, file) => {
             });
         }
 
+        image = JSON.parse(image);
+
         let query = {
             _id: image.ownerid
         };
@@ -56,39 +58,30 @@ const addImageResource = (image, file) => {
                 let dst = 'uploads/Client/' + client._id.toString() + '/Resources/Images/' + time + extension;
                 try {
                     let result = await uploadFileBuffer(file, dst);
-
-                    let clientResource = new ClientResource({
-                        Name: image.name,
-                        Client: client._id,
-                        Type: 'IMAGE',
-                        ResourceUrl: dst
-                    });
-                    clientResource.save(err => {
-                        if (err) {
-                            return reject({
-                                code: 500,
-                                error: err
-                            });
-                        }
-                        try {
-                            fs.removeSync(file.path);
-                        } catch (ex) {
-                            return reject({
-                                code: 500,
-                                error: ex
-                            });
-                        }
-                        resolve({
-                            code: 200,
-                            data: client
-                        });
-                    });
                 } catch (ex) {
                     return reject({
                         code: 500,
                         error: ex
                     });
                 }
+                let clientResource = new ClientResource({
+                    Name: image.name,
+                    Client: client._id,
+                    Type: 'IMAGE',
+                    ResourceUrl: dst
+                });
+                clientResource.save(err => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err
+                        });
+                    }
+                    resolve({
+                        code: 200,
+                        data: client
+                    });
+                });
             }
         });
     });
@@ -436,11 +429,37 @@ const deleteMediaResource = (id) => {
     });
 };
 
+/**
+ * Get all media
+ * @param {String} id - _id of the client
+ */
+const getAllMediaResources = (id) => {
+    return new Promise(async (resolve, reject) => {
+        let query = {
+            Client: id
+        };
+
+        ClientResource.find(query, (err, clientResources) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({
+                code: 200,
+                data: clientResources
+            });
+        });
+    });
+};
+
 module.exports = {
     addImageResource,
     updateImageResource,
     deleteImageResource,
     addMediaResource,
     updateMediaResource,
-    deleteMediaResource
+    deleteMediaResource,
+    getAllMediaResources
 };
