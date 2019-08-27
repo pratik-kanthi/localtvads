@@ -12,7 +12,7 @@ let imageUpload = multer({
             return callback(null, true);
         }
         let ext = file.originalname.substr(file.originalname.lastIndexOf('.') + 1);
-        if (config.media.image.allowedExtensions.indexOf(ext) !== -1) {
+        if (config.media.image.allowedExtensions.indexOf(ext.toLowerCase()) !== -1) {
             file.fileType = 'IMAGE';
         } else {
             return callback({
