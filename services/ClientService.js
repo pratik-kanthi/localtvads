@@ -1,3 +1,4 @@
+const ClientAd = require.main.require('./models/ClientAd').model;
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const ChannelPlan = require.main.require('./models/ChannelPlan').model;
@@ -219,6 +220,70 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId) => {
     });
 };
 
+const getClientAd = (id) => {
+    return new Promise(async (resolve, reject) => {
+        if (!id) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        else {
+            let query = {
+                _id: id
+            };
+            ClientAd.findOne(query, (err, clientAd) => {
+               if (err) {
+                   return reject({
+                       code: 500,
+                       error: err
+                   });
+               }
+               else if (!clientAd) {
+                   return reject({
+                       code: 400,
+                       error: {
+                           message: 'Ad Video' + utilities.ErrorMessages.NOT_FOUND
+                       }
+                   })
+               }
+               else {
+                   let clientAdObj = clientAd.toObject();
+                   if (clientAdObj.Options) {
+                       clientAdObj.Options.ImagesOptions = clientAdObj.Options.ImagesOptions.map(img => {
+                           return {
+                               ResourceUrl : img.path,
+                               Time: img.loop,
+                               Caption: img.caption,
+                               CaptionColor: img.transitionColor,
+                               CaptionDelay: img.captionDelay,
+                               TransitionDuration: img.transitionDuration,
+                               Client: clientAd.Client
+                           }
+                       });
+                       clientAdObj.Options.AudioOptions = {
+                           ResourceUrl: clientAdObj.Options.AudioOptions,
+                           Client: clientAd.Client
+                       };
+                       clientAdObj.Options.VideoOptions = {
+                           Transition: clientAdObj.Options.VideoOptions.transition,
+                           TransitionDuration: clientAdObj.Options.VideoOptions.transitionDuration,
+                           Time: clientAdObj.Options.VideoOptions.loop,
+                           CaptionDelay: clientAdObj.Options.VideoOptions.captionDelay
+                       }
+                   }
+                   resolve({
+                       code: 200,
+                       data: clientAdObj
+                   });
+               }
+            });
+        }
+    });
+};
+
 const _getPreferredCard = (client, cardId) => {
     return new Promise(async (resolve, reject) => {
         let query = {
@@ -248,7 +313,8 @@ const _getPreferredCard = (client, cardId) => {
 
 module.exports = {
     saveClientAdPlan,
-    renewClientAdPlan
+    renewClientAdPlan,
+    getClientAd
 };
 
 
