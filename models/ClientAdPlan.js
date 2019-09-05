@@ -47,6 +47,10 @@ const schema = new mongoose.Schema({
         type: Date,
         required: true
     },
+    DayOfPlay: {
+        type: Number,
+        required: true
+    },
     IsRenewal: {
         type: Boolean,
         default: true

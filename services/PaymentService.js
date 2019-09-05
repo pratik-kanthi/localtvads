@@ -4,7 +4,7 @@ var stripe = require("stripe")(
     config.stripe.secret
 );
 
-const chargeByExistingCard = (amount, cardToken, cusToken) => {
+const chargeByExistingCard = (amount, cusToken, cardToken) => {
     return new Promise(async (resolve, reject) => {
         try {
             let charge = await stripe.charges.create({
@@ -18,14 +18,14 @@ const chargeByExistingCard = (amount, cardToken, cusToken) => {
             resolve(charge);
         } catch (err) {
             return reject({
-                code: 500,
+                code: err.statusCode,
                 error: _throwError(err)
             });
         }
     });
 };
 
-const saveCustomer = (stripeToken, amount, email) => {
+const saveCustomer = (stripeToken, email) => {
     return new Promise(async (resolve, reject) => {
         let customer;
         try {
@@ -36,7 +36,7 @@ const saveCustomer = (stripeToken, amount, email) => {
             resolve(customer);
         } catch (err) {
             return reject({
-                code: 500,
+                code: err.statusCode,
                 error: _throwError(err)
             });
         }
@@ -52,7 +52,7 @@ const saveNewCardToCustomer = (stripeToken, cusToken) => {
             resolve(card);
         } catch (err) {
             return reject({
-                code: err.code,
+                code: err.statusCode,
                 error: _throwError(err)
             });
         }

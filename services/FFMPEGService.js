@@ -170,6 +170,7 @@ const previewCustomAd = (pictures, audio, clientAd) => {
 
 		let video,
 			videoOptions = {
+				fps: 25,
 				loop: 5,
 				transition: true,
 				transitionDuration: 1,

@@ -23,9 +23,11 @@ const schema = new mongoose.Schema({
         type: Number,
         required: true
     },
-    DurationMonths: {
-        type: Number,
-        required: true
+    TotalAvailableSeconds: {
+        type: Number
+    },
+    ExpectedAdViews: {
+        type: Number
     },
     BaseAmount: {
         type: Number,

@@ -27,8 +27,7 @@ const schema = new mongoose.Schema({
         required: true
     },
     ReferenceId: {
-        type: String,
-        required: true
+        type: String
     },
     DateTime: {
         type: Date,
@@ -37,6 +36,7 @@ const schema = new mongoose.Schema({
             return new Date()
         }
     },
+    TaxBreakdown: [],
     StripeResponse: {}
 });
 

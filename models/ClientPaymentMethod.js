@@ -9,11 +9,7 @@ const paymentCardSchema = new mongoose.Schema({
         enum: ['CARD'],
         default: 'CARD'
     },
-    CustomerToken: {
-        type: String,
-        required: true
-    },
-    CardToken: {
+    StripeCardToken: {
         type: String,
         required: true
     },
@@ -35,9 +31,6 @@ const paymentCardSchema = new mongoose.Schema({
     LastFour: {
         type: String,
         required: true
-    },
-    IsPreferred: {
-        type: Boolean
     }
 });
 
@@ -47,7 +40,13 @@ const schema = new mongoose.Schema({
         ref: 'Client',
         required: true
     },
-    Cards: [paymentCardSchema],
+    StripeCusToken: {
+        type: String
+    },
+    IsPreferred: {
+        type: Boolean
+    },
+    Card: paymentCardSchema,
     BankInformation: billingSchema
 });
 

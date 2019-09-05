@@ -33,6 +33,45 @@ const getChannels = () => {
 };
 
 /**
+ * get Seconds by Channel
+ * @param {String} channel - _id of the channel
+ */
+const getSecondsByChannel = (channel) => {
+    return new Promise(async (resolve, reject) => {
+        if (!channel) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        let query = {
+            Channel: channel
+        };
+
+        let project = {
+            _id: 0,
+            Seconds: 1
+        };
+        ChannelPlan.find(query,project).distinct('Seconds').exec((err, channels) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                })
+            }
+            else {
+                resolve({
+                    code: 200,
+                    data: channels
+                });
+            }
+        })
+    });
+};
+
+/**
  * get active plans of the channel
  * @param {String} channel - _id of the channel
  * @param {Number} seconds - _id of the channel
@@ -75,6 +114,11 @@ const getPlansByChannel = (channel, seconds) => {
     });
 };
 
+/**
+ * get active plans of the nearby channel
+ * @param {String} channel - _id of the channel
+ * @param {Number} seconds - number of seconds available in plans
+ */
 const getNearByChannelPlans = (channel, seconds) => {
     return new Promise(async (resolve, reject) => {
         if (!channel || !seconds) {
@@ -122,7 +166,7 @@ const getNearByChannelPlans = (channel, seconds) => {
                     _id: 1,
                     Name: 1
                 };
-                Channel.find(query,project, async (err, channels) => {
+                Channel.find(query, project, async (err, channels) => {
                     if (err) {
                         return reject({
                             code: 500,
@@ -160,6 +204,7 @@ const getNearByChannelPlans = (channel, seconds) => {
 
 module.exports = {
     getChannels,
+    getSecondsByChannel,
     getPlansByChannel,
-    getNearByChannelPlans
+    getNearByChannelPlans,
 };

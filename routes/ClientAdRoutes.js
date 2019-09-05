@@ -1,7 +1,7 @@
 const multer = require('multer');
 const passport = require('passport');
 
-const {saveClientAdPlan, renewClientAdPlan, getClientAd} = require.main.require('./services/ClientService');
+const {saveClientAdPlan, renewClientAdPlan, getClientAd} = require.main.require('./services/ClientAdService');
 const {saveCustomAd, previewCustomAd} = require.main.require('./services/FFMPEGService');
 
 
@@ -15,7 +15,7 @@ module.exports = (app) => {
 
     app.post('/api/clientad/new', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            let result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, req.body.card);
+            let result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, req);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

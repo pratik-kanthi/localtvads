@@ -10,17 +10,11 @@ const schema = new mongoose.Schema({
     Description: {
         type: String
     },
-    ExpectedAdViews: {
-        type: Number
-    },
     StartTime: {
         type: Date
     },
     EndTime: {
         type: Date
-    },
-    TotalRequiredSeconds: {
-        type: Number
     },
     IsActive: {
         type: Boolean,
