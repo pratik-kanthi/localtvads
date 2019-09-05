@@ -3,9 +3,14 @@ const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod')
 
 const {saveCustomer, saveNewCardToCustomer} = require.main.require('./services/PaymentService');
 
-const addCard = (clientid, stripeToken) => {
+/*
+ * Add card to a client
+ * @param {String} clientId - _id of the client
+ * @param {String} stripeToken - token of stripe
+ */
+const addCard = (clientId, stripeToken) => {
     return new Promise(async (resolve, reject) => {
-        if (!clientid) {
+        if (!clientId) {
             return reject({
                 code: 500,
                 error: {
@@ -14,7 +19,7 @@ const addCard = (clientid, stripeToken) => {
             });
         }
         let query = {
-            _id: clientid
+            _id: clientId
         };
 
         let isNew = false;
@@ -65,7 +70,7 @@ const addCard = (clientid, stripeToken) => {
                 ExpiryYear: cardToken.exp_year,
                 LastFour: cardToken.last4
             };
-            newClientPaymentMethod.Client = clientid;
+            newClientPaymentMethod.Client = clientId;
             newClientPaymentMethod.save(err => {
                 if (err) {
                     return reject({
@@ -79,6 +84,38 @@ const addCard = (clientid, stripeToken) => {
                 });
             });
         });
+    });
+};
+
+/*
+ * Get preferred card by client
+ * @param {String} clientId - _id of the client
+ * @param {String} cardId - stripe's card token
+ */
+const getPreferredCard = (client, cardId) => {
+    return new Promise(async (resolve, reject) => {
+        let query = {
+            Client: client,
+            _id: cardId,
+            IsPreferred: true
+        };
+        try {
+            let card = await ClientPaymentMethod.findOne(query, {CardToken: 1, CustomerToken: 1});
+            if (!card) {
+                return reject({
+                    code: 404,
+                    error: {
+                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND
+                    }
+                });
+            }
+            resolve(card);
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
     });
 };
 
@@ -98,5 +135,6 @@ const _getClient = (client) => {
 };
 
 module.exports = {
-    addCard
+    addCard,
+    getPreferredCard
 };

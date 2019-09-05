@@ -16,6 +16,9 @@ const schema = new mongoose.Schema({
         required: true,
         enum: ['PROSPECTS', 'LIVE','DORMANT', 'INACTIVE']
     },
+    ExpectedAdViews: {
+        type: Number
+    },
     Address: addressSchema,
     PrimaryContact: contactSchema,
     AlternativeContact: contactSchema

@@ -7,8 +7,52 @@ const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod')
 const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const Transaction = require.main.require('./models/Transaction').model;
 
+const {updateChannelAdLengthCounter} = require.main.require('./services/ChannelService');
 const {chargeByExistingCard} = require.main.require('./services/PaymentService');
 const {getTaxes} = require.main.require('./services/TaxService');
+const {getPreferredCard} = require.main.require('./services/TaxService');
+
+/**
+ * Get ClientAd by its _id
+ * @param {Object} id - _id of ClientAdP
+ */
+const getClientAd = (id) => {
+    return new Promise(async (resolve, reject) => {
+        if (!id) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        } else {
+            let query = {
+                _id: id
+            };
+            ClientAd.findOne(query, (err, clientAd) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                } else if (!clientAd) {
+                    return reject({
+                        code: 400,
+                        error: {
+                            message: 'Ad Video' + utilities.ErrorMessages.NOT_FOUND
+                        }
+                    });
+                } else {
+                    let clientAdObj = clientAd.toObject();
+                    resolve({
+                        code: 200,
+                        data: clientAdObj
+                    });
+                }
+            });
+        }
+    });
+};
 
 /**
  * Renew ClientAdPlan manually
@@ -48,7 +92,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
             let card;
             if (cardId) {
                 try {
-                    card = await _getPreferredCard(clientAdPlan.Client, cardId);
+                    card = await getPreferredCard(clientAdPlan.Client, cardId);
                 } catch (err) {
                     return reject({
                         code: err.code,
@@ -135,7 +179,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, req) => {
                 isNewUser = true;
             }
 
-            clientAdPlan.EndDate = moment().add('days', config.channels.plans.duration);
+            clientAdPlan.EndDate = moment().add(config.channels.plans.duration, 'days');
 
             let query = {
                 _id: channelPlan
@@ -205,6 +249,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, req) => {
                         EndDate: clientAdPlan.EndDate,
                         IsRenewal: clientAdPlan.IsRenewal,
                         Status: 'ACTIVE',
+                        DayOfWeek: moment(clientAdPlan.StartDate).isoWeekday(),
                         ChannelPlan: {
                             Plan: chAdPlan,
                             Extras: extras || [],
@@ -253,6 +298,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, req) => {
                                 code: 200,
                                 data: cAdPlan
                             });
+                            updateChannelAdLengthCounter(cAdPlan);
                         });
                     });
                 }
@@ -260,76 +306,6 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, req) => {
         });
     });
 };
-
-/**
- * Get ClientAd by its _id
- * @param {Object} id - _id of ClientAdP
- */
-const getClientAd = (id) => {
-    return new Promise(async (resolve, reject) => {
-        if (!id) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        } else {
-            let query = {
-                _id: id
-            };
-            ClientAd.findOne(query, (err, clientAd) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err
-                    });
-                } else if (!clientAd) {
-                    return reject({
-                        code: 400,
-                        error: {
-                            message: 'Ad Video' + utilities.ErrorMessages.NOT_FOUND
-                        }
-                    });
-                } else {
-                    let clientAdObj = clientAd.toObject();
-                    resolve({
-                        code: 200,
-                        data: clientAdObj
-                    });
-                }
-            });
-        }
-    });
-};
-
-const _getPreferredCard = (client, cardId) => {
-    return new Promise(async (resolve, reject) => {
-        let query = {
-            Client: client,
-            _id: cardId,
-            IsPreferred: true
-        };
-        try {
-            let card = await ClientPaymentMethod.findOne(query, {CardToken: 1, CustomerToken: 1});
-            if (!card) {
-                return reject({
-                    code: 404,
-                    error: {
-                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND
-                    }
-                });
-            }
-            resolve(card);
-        } catch (err) {
-            return reject({
-                code: 500,
-                error: err
-            });
-        }
-    });
-};
-
 
 module.exports = {
     saveClientAdPlan,

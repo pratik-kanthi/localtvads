@@ -1,7 +1,9 @@
+const moment = require('moment');
 const config = require.main.require('./config');
 
-const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const Channel = require.main.require('./models/Channel').model;
+const ChannelPlan = require.main.require('./models/ChannelPlan').model;
+const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
 
 /**
  * get Channels
@@ -47,21 +49,21 @@ const getSecondsByChannel = (channel) => {
             });
         }
         let query = {
-            Channel: channel
+            Channel: channel,
+            ExpectedAdViews: 1
         };
 
         let project = {
             _id: 0,
             Seconds: 1
         };
-        ChannelPlan.find(query,project).distinct('Seconds').exec((err, channels) => {
+        ChannelPlan.find(query, project).distinct('Seconds').exec((err, channels) => {
             if (err) {
                 return reject({
                     code: 500,
                     error: err
                 })
-            }
-            else {
+            } else {
                 resolve({
                     code: 200,
                     data: channels
@@ -202,9 +204,60 @@ const getNearByChannelPlans = (channel, seconds) => {
     });
 };
 
+/**
+ * get active plans of the nearby channel
+ * @param {String} clientAdPlan - object of the ClientAdPlan model
+ */
+const updateChannelAdLengthCounter = (clientAdPlan) => {
+    return new Promise(async (resolve, reject) => {
+        let dates = [];
+        for (let i = clientAdPlan.StartDate; i <= clientAdPlan.EndDate; i = moment(i).add(7, 'days').toDate()) {
+            dates.push(i);
+        }
+        let queue = dates.map(d => _updateChannelAdLengthByDate(clientAdPlan, d));
+        try {
+            let result = await Promise.all(queue);
+            resolve();
+        } catch (err) {
+            return reject({
+                code: err.code,
+                error: err.error
+            });
+        }
+    });
+};
+
+const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
+    return new Promise(async (resolve, reject) => {
+        let query = {
+            Channel: clientAdPlan.ChannelPlan.Plan.Channel,
+            AdSchedule: clientAdPlan.ChannelPlan.Plan.AdSchedule,
+            DateTime: dateTime
+        };
+        let value = {
+            Channel: clientAdPlan.ChannelPlan.Plan.Channel,
+            AdSchedule: clientAdPlan.ChannelPlan.Plan.AdSchedule,
+            DateTime: dateTime,
+            $inc: {
+                TotalSeconds: clientAdPlan.ChannelPlan.Plan.Seconds
+            }
+        };
+        ChannelAdLengthCounter.findOneAndUpdate(query, value, {upsert: true}, (err) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve();
+        });
+    });
+};
+
 module.exports = {
     getChannels,
     getSecondsByChannel,
     getPlansByChannel,
     getNearByChannelPlans,
+    updateChannelAdLengthCounter
 };

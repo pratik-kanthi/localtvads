@@ -47,7 +47,7 @@ const schema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    DayOfPlay: {
+    DayOfWeek: {
         type: Number,
         required: true
     },

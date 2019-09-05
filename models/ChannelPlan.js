@@ -26,9 +26,6 @@ const schema = new mongoose.Schema({
     TotalAvailableSeconds: {
         type: Number
     },
-    ExpectedAdViews: {
-        type: Number
-    },
     BaseAmount: {
         type: Number,
         required: true

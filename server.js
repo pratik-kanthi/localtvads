@@ -29,7 +29,8 @@ app.use(cors());
 
 mongoose.connect(process.env.DATABASE,{
     useNewUrlParser: true,
-    useCreateIndex: true
+    useCreateIndex: true,
+    useFindAndModify: false
 }, (err)=> {
     if(err)
         console.log(err);

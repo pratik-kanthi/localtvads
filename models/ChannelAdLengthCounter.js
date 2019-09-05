@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='Channel';
+const name='ChannelAdLengthCounter';
 
 const schema = new mongoose.Schema({
     Channel: {
