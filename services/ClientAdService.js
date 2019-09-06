@@ -187,7 +187,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, req) => {
 
             let project = {
                 _id: 1,
-                AdSchedule: 1,
+                ChannelAdSchedule: 1,
                 Channel: 1,
                 Seconds: 1,
                 BaseAmount: 1

@@ -3,4 +3,5 @@ module.exports = (app)=>{
     require('./Channel');
     require('./ChannelPlan');
     require('./ClientResource');
+    require('./ChannelAdSchedule');
 };
