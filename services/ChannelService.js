@@ -49,13 +49,13 @@ const getSecondsByChannel = (channel) => {
             });
         }
         let query = {
-            Channel: channel,
-            ExpectedAdViews: 1
+            Channel: channel
         };
 
         let project = {
             _id: 0,
-            Seconds: 1
+            Seconds: 1,
+            ExpectedAdViews: 1
         };
         ChannelPlan.find(query, project).distinct('Seconds').exec((err, channels) => {
             if (err) {
@@ -69,7 +69,7 @@ const getSecondsByChannel = (channel) => {
                     data: channels
                 });
             }
-        })
+        });
     });
 };
 
@@ -227,6 +227,12 @@ const updateChannelAdLengthCounter = (clientAdPlan) => {
     });
 };
 
+const getChannelScheduleAvailability = (channel, second) => {
+    return new Promise(async (resolve, reject) => {
+        resolve();
+    });
+};
+
 const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
     return new Promise(async (resolve, reject) => {
         let query = {
@@ -259,5 +265,6 @@ module.exports = {
     getSecondsByChannel,
     getPlansByChannel,
     getNearByChannelPlans,
-    updateChannelAdLengthCounter
+    updateChannelAdLengthCounter,
+    getChannelScheduleAvailability
 };
