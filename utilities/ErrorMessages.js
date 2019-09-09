@@ -2,6 +2,7 @@ module.exports = {
     BAD_REQUEST: 'Invalid Request, Please check input parameters',
     EMAIL_NOT_CONFIRMED: 'Email is not confirmed. Please verify your Email ID',
     FILE_SIZE_EXCEEDED: 'File size has exceeded. Please limit the file size as mentioned in description',
+    INACTIVE_PLAN: 'Inactive plan selected. Please choose an active plan',
     INVALID_AUTHORISATION_TYPE: 'This user does not possess social login for this Email ID. Kindly use username and password fields to login',
     LOGIN_ERROR: 'Something went wrong while logging in',
     NO_RECORDS_FOUND: 'There were no records found for selected criteria. Please check your filters and try again',

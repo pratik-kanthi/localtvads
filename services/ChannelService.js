@@ -77,10 +77,12 @@ const getSecondsByChannel = (channel) => {
  * get active plans of the channel
  * @param {String} channel - _id of the channel
  * @param {Number} seconds - _id of the channel
+ * @param {String} startDateString - start date
+ * @param {String} endDateString - end date
  */
-const getPlansByChannel = (channel, seconds) => {
+const getPlansByChannel = (channel, seconds, startDateString, endDateString) => {
     return new Promise(async (resolve, reject) => {
-        if (!channel || !seconds) {
+        if (!channel || !seconds || !startDateString) {
             return reject({
                 code: 400,
                 error: {
@@ -88,6 +90,14 @@ const getPlansByChannel = (channel, seconds) => {
                 }
             });
         }
+        seconds = parseInt(seconds);
+        let splitStartDate = startDateString.split('-');
+        let startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
+        let splitEndDate = endDateString.split('-');
+        let endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
+
+        let adScheduleMapping = {};
+
         let query = {
             Channel: channel,
             Seconds: seconds,
@@ -97,108 +107,102 @@ const getPlansByChannel = (channel, seconds) => {
             _id: 1,
             ChannelAdSchedule: 1,
             Seconds: 1,
-            DurationMonths: 1,
             BaseAmount: 1
         };
-
-        ChannelPlan.find(query, project).deepPopulate('ChannelAdSchedule.AdSchedule').sort('Seconds').exec((err, channelPlans) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else {
-                resolve({
-                    code: 200,
-                    data: channelPlans
-                });
-            }
-        });
-    });
-};
-
-/**
- * get active plans of the nearby channel
- * @param {String} channel - _id of the channel
- * @param {Number} seconds - number of seconds available in plans
- */
-const getNearByChannelPlans = (channel, seconds) => {
-    return new Promise(async (resolve, reject) => {
-        if (!channel || !seconds) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
+        let populateOptions = {
+            path: 'ChannelAdSchedule',
+            select: {
+                TotalAvailableSeconds: 1
+            },
+            populate: [
+                {
+                    path: 'AdSchedule'
                 }
-            });
-        }
-        let query = {
-            _id: channel,
-            Status: "LIVE"
+            ]
         };
-        let project = {
-            "Address.Location.coordinates": 1
-        };
-        Channel.findOne(query, project, (err, channel) => {
+        ChannelPlan.find(query, project).populate(populateOptions).sort({'BaseAmount': 1}).exec((err, channelPlans) => {
             if (err) {
                 return reject({
                     code: 500,
                     error: err
-                })
-            } else if (!channel) {
-                return reject({
-                    code: 404,
-                    error: {
-                        message: 'Channel' + utilities.ErrorMessages.NOT_FOUND
-                    }
                 });
             } else {
+                let channelAdScheduleIds = channelPlans.map(c => {
+                    adScheduleMapping[c.ChannelAdSchedule._id.toString()] = {
+                        AdSchedule: c.ChannelAdSchedule.AdSchedule,
+                        ChannelAdSchedule: c.ChannelAdSchedule
+                    };
+                    return c.ChannelAdSchedule._id
+                });
                 query = {
-                    "Address.Location": {
-                        $near: {
-                            $geometry: {
-                                type: "Point",
-                                coordinates: channel.Address.Location.coordinates
-                            },
-                            $maxDistance: config.channels.nearby
+                    $and: [
+                        {
+                            DateTime: {
+                                $gte: startDate
+                            }
+                        },
+                        {
+                            DateTime: {
+                                $lte: endDate
+                            }
                         }
-                    },
-                    "Status": "LIVE"
+                    ],
+                    ChannelAdSchedule: {
+                        $in: channelAdScheduleIds
+                    }
                 };
-                project = {
-                    _id: 1,
-                    Name: 1
+                let project = {
+                    DateTime: 1,
+                    TotalSeconds: 1,
+                    ChannelAdSchedule: 1
                 };
-                Channel.find(query, project, async (err, channels) => {
+                ChannelAdLengthCounter.find(query, project).sort({DateTime: 1}).exec((err, countsByDate) => {
                     if (err) {
                         return reject({
                             code: 500,
                             error: err
                         });
-                    } else if (!channels) {
-                        return reject({
-                            code: 200,
-                            data: []
+                    }
+                    let result = {};
+
+                    for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
+                        let key = _formatDate(i);
+                        result[key] = {};
+                        channelPlans.map((p) => {
+                            if (p.ChannelAdSchedule && adScheduleMapping[p.ChannelAdSchedule._id.toString()]) {
+                                // Dynamic price calculation
+                                result[key][adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule.Name] = {
+                                    Plan: p._id,
+                                    Name: p.Name,
+                                    Description: p.Description,
+                                    AdSchedule: p.ChannelAdSchedule.AdSchedule,
+                                    Seconds: p.Seconds,
+                                    BaseAmount: p.BaseAmount,
+                                };
+                            }
                         });
-                    } else {
-                        for (let i = 0; i < channels.length; i++) {
-                            channels[i] = channels[i].toObject();
-                            try {
-                                channels[i].Plans = (await getPlansByChannel(channels[i]._id, seconds)).data;
-                            } catch (err) {
-                                return reject({
-                                    code: err.code,
-                                    error: err.error
-                                });
+                    }
+
+                    for (let i = 0; i < countsByDate.length; i++) {
+                        let key = _formatDate(countsByDate[i].DateTime);
+                        if (adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()] && adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule) {
+                            let totalAvailableSeconds = adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule.TotalAvailableSeconds;
+                            if ((totalAvailableSeconds < seconds + countsByDate[i].TotalSeconds)) {
+                                result[key][adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].AdSchedule.Name] = undefined;
                             }
-                            if (i === channels.length - 1) {
-                                resolve({
-                                    code: 200,
-                                    data: channels
-                                });
-                            }
+                        } else {
+                            return reject({
+                                code: 500,
+                                error: {
+                                    message: utilities.ErrorMessages.INACTIVE_PLAN
+                                }
+                            });
                         }
                     }
+                    resolve({
+                        code: 200,
+                        data: result
+                    });
                 });
             }
         });
@@ -248,8 +252,8 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
         seconds = parseInt(seconds);
         let splitStartDate = startDateString.split('-');
         let splitEndDate = endDateString.split('-');
-        let startDate = new Date(parseInt(splitStartDate[0]),parseInt(splitStartDate[1]) - 1,parseInt(splitStartDate[2]),0,0,0);
-        let endDate = new Date(parseInt(splitEndDate[0]),parseInt(splitEndDate[1]) - 1,parseInt(splitEndDate[2]),0,0,0);
+        let startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
+        let endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
         let query = {
             Channel: channel,
             IsActive: true
@@ -264,6 +268,7 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
                     error: err
                 });
             }
+            let channelAdScheduleIds = channelPlans.map(cp => cp);
             query = {
                 $and: [
                     {
@@ -278,7 +283,7 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
                     }
                 ],
                 ChannelAdSchedule: {
-                    $in: channelPlans.map(cp => cp)
+                    $in: channelAdScheduleIds
                 }
             };
             let project = {
@@ -293,17 +298,22 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
                     });
                 }
                 let result = {};
+
                 for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
-                    result[_formatDate(i)] = true;
+                    result[_formatDate(i)] = [];
                 }
                 for (let i = 0; i < countsByDate.length; i++) {
-                    if (countsByDate[i].ChannelAdSchedule && (countsByDate[i].ChannelAdSchedule.TotalAvailableSeconds < seconds + countsByDate[i].TotalSeconds) && result[_formatDate(countsByDate[i].DateTime)]) {
-                        result[_formatDate(countsByDate[i].DateTime)] = false;
+                    let key = _formatDate(countsByDate[i].DateTime);
+                    if (countsByDate[i].ChannelAdSchedule && (countsByDate[i].ChannelAdSchedule.TotalAvailableSeconds < seconds + countsByDate[i].TotalSeconds)) {
+                        result[key].push(false);
                     }
                 }
                 resolve({
                     code: 200,
-                    data: result
+                    data: {
+                        dates: result,
+                        totalActiveSchedules: channelAdScheduleIds.length
+                    }
                 });
             });
         });
@@ -347,7 +357,6 @@ module.exports = {
     getChannels,
     getSecondsByChannel,
     getPlansByChannel,
-    getNearByChannelPlans,
     updateChannelAdLengthCounter,
     getChannelScheduleAvailability
 };
