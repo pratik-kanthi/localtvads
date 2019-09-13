@@ -1,3 +1,4 @@
+const fs = require('fs-extra');
 const moment = require('moment');
 const config = require.main.require('./config');
 
@@ -8,6 +9,7 @@ const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const Transaction = require.main.require('./models/Transaction').model;
 
 const {updateChannelAdLengthCounter} = require.main.require('./services/ChannelService');
+const {uploadFile} = require.main.require('./services/FileService');
 const {chargeByExistingCard} = require.main.require('./services/PaymentService');
 const {getTaxes} = require.main.require('./services/TaxService');
 const {getPreferredCard} = require.main.require('./services/TaxService');
@@ -47,6 +49,43 @@ const getClientAd = (id) => {
                     resolve({
                         code: 200,
                         data: clientAdObj
+                    });
+                }
+            });
+        }
+    });
+};
+
+const getClientAdPlan = (id) => {
+    return new Promise(async (resolve, reject) => {
+        if (!id) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        } else {
+            let query = {
+                _id: id
+            };
+            ClientAdPlan.findOne(query).populate('ClientAd').exec((err, clientAdPlan) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                } else if (!clientAdPlan) {
+                    return reject({
+                        code: 400,
+                        error: {
+                            message: 'Ad Video' + utilities.ErrorMessages.NOT_FOUND
+                        }
+                    });
+                } else {
+                    resolve({
+                        code: 200,
+                        data: clientAdPlan
                     });
                 }
             });
@@ -307,8 +346,93 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, req) => {
     });
 };
 
+/**
+ * Upload ClientAd video
+ * @param {String} clientAdPlan - _id of ClientAdPlan
+ * @param {String} previewPath - Path where intermediate video is stored
+ * @param {String} extension - Extension of the video
+ * @param {Object} socket - socket connection through which event will be sent
+ */
+const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
+    return new Promise(async (resolve, reject) => {
+        let query = {
+            _id: clientAdPlan
+        };
+        ClientAdPlan.findOne(query, async (err, clientAdPlan) => {
+            if (err) {
+                deletePreviewFile();
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            else if (!clientAdPlan) {
+                deletePreviewFile();
+                return reject({
+                    code: 404,
+                    error: {
+                        message: 'Ad ' + utilities.ErrorMessages.NOT_FOUND
+                    }
+                });
+            }
+            // uploadVideo
+            let dst = 'uploads/Client' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
+            try {
+                let result = await uploadFile(previewPath, dst);
+            } catch (ex) {
+                deletePreviewFile();
+                return reject({
+                    code: 500,
+                    error: ex
+                });
+            }
+
+            let clientAd = new ClientAd({
+                Client: clientAdPlan.Client,
+                VideoUrl: dst,
+                Status: 'UNDERREVIEW'
+            });
+            clientAd.save(err => {
+                if (err) {
+                    deletePreviewFile();
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+                clientAdPlan.ClientAd = clientAd._id;
+                clientAdPlan.save(err => {
+                    if (err) {
+                        deletePreviewFile();
+                        return reject({
+                            code: 500,
+                            error: err
+                        });
+                    }
+                    deletePreviewFile();
+                    socket.emit('PROCESS_FINISHED');
+                    resolve(clientAd);
+                });
+            });
+        });
+
+        const deletePreviewFile = () => {
+            try {
+                fs.removeSync(previewPath);
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+        }
+    });
+};
+
 module.exports = {
     saveClientAdPlan,
     renewClientAdPlan,
-    getClientAd
+    getClientAd,
+    getClientAdPlan,
+    updateClientAd
 };

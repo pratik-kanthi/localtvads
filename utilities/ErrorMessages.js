@@ -9,6 +9,7 @@ module.exports = {
     NOT_FOUND: ' not found or might have been deleted. Please refresh and check',
     PASSWORD_INCORRECT: 'Provided username and password do not match. Please try again',
     UNAUTHORISED: 'Unauthorised Access. You do not have rights to perform this action',
+    UNAUTHORISED_SOCKET: 'Authentication Error while connecting to sockets',
     UNSUPPORTED_MEDIA_TYPE: 'System does not support this extension of the media. Please upload media from mentioned permissible extensions',
     USER_ALREADY_EXISTS: 'User already exists with this username',
     USER_LOCKED_OUT: 'User has been locked out. Please get in touch with admin team',

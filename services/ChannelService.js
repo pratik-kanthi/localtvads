@@ -95,7 +95,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
         let startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
         let splitEndDate = endDateString.split('-');
         let endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
-
+        // memoization - reduce space complexity and additional function calls. Store all possible key value pairs of adSchedule for later use
         let adScheduleMapping = {};
 
         let query = {

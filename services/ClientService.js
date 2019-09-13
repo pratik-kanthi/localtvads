@@ -34,7 +34,7 @@ const addCard = (clientId, stripeToken) => {
                 });
             } else if (!clientPaymentMethod) {
                 try {
-                    let client = await _getClient(clientid);
+                    let client = await _getClient(clientId);
                     let csToken = await saveCustomer(stripeToken, client.Email);
                     newClientPaymentMethod = new ClientPaymentMethod({
                         StripeCusToken: csToken.id
