@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='ChannelAdLengthCounter';
+const name = 'ChannelAdSchedule';
 
 const schema = new mongoose.Schema({
     Channel: {
@@ -8,17 +8,14 @@ const schema = new mongoose.Schema({
         ref: 'Channel',
         required: true
     },
-    ChannelAdSchedule: {
+    AdSchedule: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ChannelAdSchedule',
+        ref: 'AdSchedule',
         required: true
     },
-    DateTime: {
-        type: Date,
+    TotalAvailableSeconds: {
+        type: Number,
         required: true
-    },
-    TotalSeconds: {
-        type: Number
     }
 });
 

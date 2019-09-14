@@ -27,11 +27,12 @@ app.use(methodOverride('X-HTTP-Method-Override'));
 
 app.use(cors());
 
-mongoose.connect(process.env.DATABASE,{
+mongoose.connect(process.env.DATABASE, {
     useNewUrlParser: true,
-    useCreateIndex: true
-}, (err)=> {
-    if(err)
+    useCreateIndex: true,
+    useFindAndModify: false
+}, (err) => {
+    if (err)
         console.log(err);
 });
 mongoose.Promise = global.Promise;
@@ -45,11 +46,12 @@ global.utilities = utilities;
 mongoose.Promise = global.Promise;
 
 let models = require('./models')(mongoose);
-require('./routes')(app,models);
 
 app.listen(port, () => {
     console.log('Application started at PORT ' + port);
 });
+const io = require('./sockets')();
+require('./routes')(app, models, io);
 
 // require('./startup');
 // require('./prototypes');

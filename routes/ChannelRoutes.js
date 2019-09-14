@@ -1,4 +1,4 @@
-const {getChannels, getPlansByChannel, getNearByChannelPlans, getSecondsByChannel} = require.main.require('./services/ChannelService');
+const {getChannels, getPlansByChannel, getNearByChannelPlans, getSecondsByChannel, getChannelScheduleAvailability} = require.main.require('./services/ChannelService');
 
 module.exports = (app) => {
 
@@ -22,16 +22,16 @@ module.exports = (app) => {
 
     app.get('/api/channel/plans', async (req, res) => {
         try {
-            let result = await getPlansByChannel(req.query.channel, req.query.seconds);
+            let result = await getPlansByChannel(req.query.channel, req.query.seconds, req.query.startdate, req.query.enddate);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
     });
 
-    app.get('/api/channel/nearbychannelplans', async (req, res) => {
+    app.get('/api/channel/availability', async (req, res) => {
         try {
-            let result = await getNearByChannelPlans(req.query.channel, req.query.seconds);
+            let result = await getChannelScheduleAvailability(req.query.channel, req.query.seconds, req.query.startdate, req.query.enddate);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
