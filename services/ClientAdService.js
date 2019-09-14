@@ -1,18 +1,19 @@
 const fs = require('fs-extra');
 const moment = require('moment');
+
 const config = require.main.require('./config');
 
+const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const ClientAd = require.main.require('./models/ClientAd').model;
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
-const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const Transaction = require.main.require('./models/Transaction').model;
 
 const {updateChannelAdLengthCounter} = require.main.require('./services/ChannelService');
+const {getPreferredCard} = require.main.require('./services/ClientAdService');
 const {uploadFile} = require.main.require('./services/FileService');
 const {chargeByExistingCard} = require.main.require('./services/PaymentService');
 const {getTaxes} = require.main.require('./services/TaxService');
-const {getPreferredCard} = require.main.require('./services/TaxService');
 
 /**
  * Get ClientAd by its _id

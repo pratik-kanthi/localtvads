@@ -1,5 +1,4 @@
 const moment = require('moment');
-const config = require.main.require('./config');
 
 const Channel = require.main.require('./models/Channel').model;
 const ChannelPlan = require.main.require('./models/ChannelPlan').model;
