@@ -19,6 +19,14 @@ passport.use(new JwtStrategy(opts, (token, done) => {
     let project = {
         _id: 1
     };
+    if (token.iat*1000 < Date.now()) {
+        return done(null, false, {
+            status: 401,
+            error: {
+                message: utilities.ErrorMessages.TOKEN_EXPIRED
+            }
+        });
+    }
     User.findOne(query, project, (err, user) => {
         if (err) {
             return done(err, false);

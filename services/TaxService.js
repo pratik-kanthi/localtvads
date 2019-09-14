@@ -21,13 +21,15 @@ const getTaxes = (amount) => {
                 });
             }
             let taxAmount = 0;
-            taxes.map(tax => {
-                if (tax.Type === 'FIXED') {
-                    taxAmount += tax.Value;
-                } else {
-                    taxAmount += tax.Value * 0.01 * amount;
-                }
-            });
+            if (amount) {
+                taxes.map(tax => {
+                    if (tax.Type === 'FIXED') {
+                        taxAmount += tax.Value;
+                    } else {
+                        taxAmount += tax.Value * 0.01 * amount;
+                    }
+                });
+            }
             resolve({
                 totalTax: taxAmount,
                 taxes: taxes

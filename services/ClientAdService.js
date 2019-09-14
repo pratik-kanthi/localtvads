@@ -194,9 +194,10 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
  * @param {Object} clientAdPlan - object of ClientAdPlan
  * @param {Object} channelPlan - object of ChannelPlan
  * @param {Object} extras - addons selected by the client on top of the cost of ad
+ * @param {String} cardId - _id of the ClientPaymentMethod
  * @param {Object} req - original object of request of API
  */
-const saveClientAdPlan = (clientAdPlan, channelPlan, extras, req) => {
+const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, req) => {
     return new Promise(async (resolve, reject) => {
         if (!channelPlan || !clientAdPlan || !clientAdPlan.Client || !clientAdPlan.Name || !clientAdPlan.StartDate || req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== clientAdPlan.Client) {
             return reject({
@@ -250,7 +251,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, req) => {
                     let card;
                     let query = {
                         Client: clientAdPlan.Client,
-                        IsPreferred: true
+                        _id: cardId
                     };
                     try {
                         card = await ClientPaymentMethod.findOne(query, {"Card.StripeCardToken": 1, StripeCusToken: 1});

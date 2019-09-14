@@ -33,15 +33,16 @@ let mediaType = mediaUpload.single('file');
 module.exports = (app, io) => {
 
     app.post('/api/clientad/new', passport.authenticate('jwt', {session: false}), async (req, res) => {
-        if (req.body.save) {
+        let card;
+        if (req.body.save && !req.body.cardid) {
             try {
-                let result = await addCard(req.body.client, req.body.token);
+                card = await addCard(req.body.client, req.body.token);
             } catch (err) {
                 return res.status(err.code).send(err.error);
             }
         }
         try {
-            let result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, req);
+            let result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, card._id,  req);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

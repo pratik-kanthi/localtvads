@@ -11,10 +11,10 @@ const schema = new mongoose.Schema({
         type: String
     },
     StartTime: {
-        type: Date
+        type: String
     },
     EndTime: {
-        type: Date
+        type: String
     },
     IsActive: {
         type: Boolean,

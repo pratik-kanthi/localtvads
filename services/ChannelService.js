@@ -4,6 +4,8 @@ const Channel = require.main.require('./models/Channel').model;
 const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
 
+const {getTaxes} = require.main.require('./services/TaxService');
+
 /**
  * get Channels
  */
@@ -111,11 +113,20 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
         let populateOptions = {
             path: 'ChannelAdSchedule',
             select: {
-                TotalAvailableSeconds: 1
+                TotalAvailableSeconds: 1,
+                AdSchedule: 1
             },
             populate: [
                 {
-                    path: 'AdSchedule'
+                    path: 'AdSchedule',
+                    model: 'AdSchedule',
+                    select: {
+                        _id: 1,
+                        Name: 1,
+                        Description: 1,
+                        StartTime: 1,
+                        EndTime: 1
+                    }
                 }
             ]
         };
@@ -155,7 +166,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                     TotalSeconds: 1,
                     ChannelAdSchedule: 1
                 };
-                ChannelAdLengthCounter.find(query, project).sort({DateTime: 1}).exec((err, countsByDate) => {
+                ChannelAdLengthCounter.find(query, project).sort({DateTime: 1}).exec(async(err, countsByDate) => {
                     if (err) {
                         return reject({
                             code: 500,
@@ -163,6 +174,16 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                         });
                     }
                     let result = {};
+                    let taxes;
+                    try {
+                        let taxResult = await getTaxes();
+                        taxes = taxResult.taxes;
+                    } catch (ex) {
+                        return reject({
+                            code: ex.code || 500,
+                            error: ex.error
+                        });
+                    }
 
                     for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
                         let key = _formatDate(i);
@@ -176,7 +197,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                                     Description: p.Description,
                                     AdSchedule: p.ChannelAdSchedule.AdSchedule,
                                     Seconds: p.Seconds,
-                                    BaseAmount: p.BaseAmount,
+                                    TotalAmount: p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + (tax.Value * p.BaseAmount * 0.01) : (accumulator + tax.Value), 0),
                                 };
                             }
                         });

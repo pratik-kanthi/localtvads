@@ -41,6 +41,7 @@ const addCard = (clientId, stripeToken) => {
                     });
                     cardToken = csToken.sources.data[0];
                     isNew = true;
+                    newClientPaymentMethod.IsPreferred = true;
                 } catch (err) {
                     return reject({
                         code: err.code,
@@ -51,8 +52,7 @@ const addCard = (clientId, stripeToken) => {
                 try {
                     cardToken = await saveNewCardToCustomer(isNew ? newClientPaymentMethod.StripeCusToken : clientPaymentMethod.StripeCusToken);
                     newClientPaymentMethod = new ClientPaymentMethod({
-                        StripeCusToken: clientPaymentMethod.id,
-                        IsPreferred: true
+                        StripeCusToken: clientPaymentMethod.StripeCusToken
                     });
                 } catch (ex) {
                     return reject({
@@ -83,6 +83,35 @@ const addCard = (clientId, stripeToken) => {
                     data: newClientPaymentMethod
                 });
             });
+        });
+    });
+};
+
+const getSavedCards = (clientId) => {
+    return new Promise(async (resolve, reject) => {
+        let query = {
+            Client: clientId
+        };
+        let project = {
+            _id: 1,
+            IsPreferred: 1,
+            "Card.Vendor": 1,
+            "Card.Name": 1,
+            "Card.ExpiryMonth": 1,
+            "Card.ExpiryYear": 1,
+            "Card.LastFour": 1
+        };
+        ClientPaymentMethod.find(query, project).sort({IsPreferred: -1}).exec((err, cards) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                })
+            }
+            resolve({
+                code: 200,
+                data: cards
+            })
         });
     });
 };
@@ -136,5 +165,6 @@ const _getClient = (client) => {
 
 module.exports = {
     addCard,
-    getPreferredCard
+    getPreferredCard,
+    getSavedCards
 };
