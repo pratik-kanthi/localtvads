@@ -14,6 +14,7 @@ module.exports = {
     USERNAME_NOT_FOUND: 'Username provided is not found',
     VIDEO_CONVERSION_ERROR: 'Video could not be processed. Please check the guidelines before choosing pictures',
     WEAK_PASSWORD: 'Provided Password is weak',
+    PASSWORD_LINK_EXPIRED: 'The link to reset your password has expired. Please request again',
     StripeCardError: 'Your card details are invalid. Please enter correct card details',
     RateLimitError: 'Something went wrong. oo many requests made to the API too quickly',
     StripeInvalidRequestError: 'Bad Request',
