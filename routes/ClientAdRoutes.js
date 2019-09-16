@@ -42,7 +42,7 @@ module.exports = (app, io) => {
             }
         }
         try {
-            let result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, req.body.cardid || card.data._id,  req);
+            let result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, req.body.cardid ? req.body.cardid : (card ? card.data._id : undefined), req.body.token,  req);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

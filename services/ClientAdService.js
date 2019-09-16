@@ -12,7 +12,7 @@ const Transaction = require.main.require('./models/Transaction').model;
 const {updateChannelAdLengthCounter} = require.main.require('./services/ChannelService');
 const {getPreferredCard} = require.main.require('./services/ClientAdService');
 const {uploadFile} = require.main.require('./services/FileService');
-const {chargeByExistingCard} = require.main.require('./services/PaymentService');
+const {chargeByExistingCard, chargeByCard} = require.main.require('./services/PaymentService');
 const {getTaxes} = require.main.require('./services/TaxService');
 
 /**
@@ -197,7 +197,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
  * @param {String} cardId - _id of the ClientPaymentMethod
  * @param {Object} req - original object of request of API
  */
-const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, req) => {
+const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, req) => {
     return new Promise(async (resolve, reject) => {
         if (!channelPlan || !clientAdPlan || !clientAdPlan.Client || !clientAdPlan.Name || !clientAdPlan.StartDate || req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== clientAdPlan.Client) {
             return reject({
@@ -249,25 +249,24 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, req) => {
                     });
                 } else {
                     let card;
-                    let query = {
-                        Client: clientAdPlan.Client,
-                        _id: cardId
-                    };
-                    try {
-                        card = await ClientPaymentMethod.findOne(query, {"Card.StripeCardToken": 1, StripeCusToken: 1});
-                        if (!card) {
-                            return reject({
-                                code: 404,
-                                error: {
-                                    message: 'Card' + utilities.ErrorMessages.NOT_FOUND
-                                }
-                            });
+                    if (cardId) {
+                        let query = {
+                            Client: clientAdPlan.Client,
+                            _id: cardId
+                        };
+                        try {
+                            card = await ClientPaymentMethod.findOne(query, {"Card.StripeCardToken": 1, StripeCusToken: 1});
+                            if (!card) {
+                                return reject({
+                                    code: 404,
+                                    error: {
+                                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND
+                                    }
+                                });
+                            }
+                        } catch (err) {
+
                         }
-                    } catch (err) {
-                        return reject({
-                            code: 500,
-                            error: err
-                        });
                     }
 
                     let taxAmount,taxes;
@@ -302,9 +301,13 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, req) => {
                         }
                     });
 
-                    let charge;
+                    let charge, func;
+                    if (card) {
+                        func = chargeByExistingCard(cAdPlan.ChannelPlan.TotalAmount, card.StripeCusToken, card.Card.StripeCardToken);
+                    } else
+                        func = chargeByCard(cAdPlan.ChannelPlan.TotalAmount, token);
                     try {
-                        charge = await chargeByExistingCard(cAdPlan.ChannelPlan.TotalAmount, card.StripeCusToken, card.Card.StripeCardToken);
+                        charge = await func;
                     } catch (err) {
                         return reject({
                             code: err.code,

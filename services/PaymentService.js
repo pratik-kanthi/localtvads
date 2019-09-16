@@ -59,11 +59,32 @@ const saveNewCardToCustomer = (stripeToken, cusToken) => {
     });
 };
 
+const chargeByCard = async (amount, stripeToken) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let charge = await stripe.charges.create({
+                amount: amount * 100,
+                currency: "gbp",
+                description: "",
+                source: stripeToken,
+                expand: ["balance_transaction"]
+            });
+            resolve(charge);
+        } catch (err) {
+            return reject({
+                code: err.statusCode,
+                error: _throwError(err)
+            });
+        }
+    });
+};
+
 const _throwError = (err) => {
     return utilities.ErrorMessages[err.type] ? utilities.ErrorMessages[err.type] : utilities.GeneralMessages.PAYMENT_ERROR
 };
 
 module.exports = {
+    chargeByCard,
     chargeByExistingCard,
     saveCustomer,
     saveNewCardToCustomer

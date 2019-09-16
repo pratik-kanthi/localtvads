@@ -103,7 +103,8 @@ const socialRegister = (profile) => {
                                 UserId: user._id,
                                 AuthorisationScheme: user.AuthorisationScheme,
                                 Owner: user.Owner,
-                                iat: Math.floor(Date.now() / 1000) + config.token.ttl
+                                iat: Math.floor(Date.now() / 1000) + config.token.ttl,
+                                Claims: claim.ClaimType + ':' + claim.ClaimValue
                             }).toObject();
 
                             jwt.sign(accessToken, config.token.secret, {algorithm: 'HS256'}, (err, token) => {
