@@ -30,7 +30,7 @@ module.exports = (app) => {
                 next();
             });
 
-            app.use(function onError(err, req, res, next) {
+            app.use((err, req, res, next) => {
                 // The error id is attached to `res.sentry` to be returned
                 // and optionally displayed to the user for support.
                 res.statusCode = 500;
@@ -47,14 +47,14 @@ module.exports = (app) => {
                 Sentry.captureException(exc);
             else {
                 if (typeof exc == "object")
-                    exc = JSON.stringify(exc)
+                    exc = JSON.stringify(exc);
                 exc = new Error(exc);
                 Sentry.captureException(exc);
             }
         },
         logWarning: (log) => {
             if (typeof log == "object")
-                log = JSON.stringify(log)
+                log = JSON.stringify(log);
             Sentry.captureMessage(log, "warning");
         },
         logDebug: (message, item) => {
@@ -68,8 +68,8 @@ module.exports = (app) => {
         },
         logInfo: (log) => {
             if (typeof log == "object")
-                log = JSON.stringify(log)
+                log = JSON.stringify(log);
             Sentry.captureMessage(log, "info");
         }
     }
-}
+};

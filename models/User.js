@@ -36,13 +36,13 @@ const schema = new mongoose.Schema({
     IsLockoutEnabled: Boolean
 });
 
-schema.methods.toJSON = function() {
+schema.methods.toJSON = () => {
     let obj = this.toObject();
     delete obj.PasswordHash;
     delete obj.IsEmailConfirmed;
     delete obj.IsPhoneConfirmed;
     delete obj.IsLockoutEnabled;
-    return obj
+    return obj;
 };
 
 schema.methods.EncryptPassword = (password, callback) => {
@@ -157,7 +157,7 @@ schema.methods.ValidatePassword = (password, hashedPassword, callback) => {
 
         result = true;
 
-        for (i = 0; i < 32; i++) {
+        for (let i = 0; i < 32; i++) {
             if (bytes[i] !== hashBytes[i]) {
                 result = false;
                 break;

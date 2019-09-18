@@ -7,7 +7,7 @@ const schema = new mongoose.Schema({
     LoginDate: {
         type: Date,
         required: true,
-        default: function () {
+        default: () => {
             return new Date();
         }
     },

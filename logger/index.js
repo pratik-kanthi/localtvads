@@ -1,7 +1,7 @@
 const log = require('../log');
 
 module.exports = (app) => {
-    var _sentry = require("./sentry")(app);
+    const _sentry = require("./sentry")(app);
 
     //SETUP LOGGER
     switch (process.env.CURRENT_LOGGER) {

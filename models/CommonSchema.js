@@ -7,7 +7,7 @@ const auditSchema = new mongoose.Schema({
     CreationDate: {
         type: Date,
         required: true,
-        default: function() {
+        default: () => {
             return new Date();
         }
     },
@@ -89,7 +89,7 @@ const ownerSchema = new mongoose.Schema({
     Deleted: {
         type: Boolean,
         required: true,
-        default: function() {
+        default: () => {
             return false;
         }
     },
@@ -107,7 +107,7 @@ const logSchema = new mongoose.Schema({
     DateTime: {
         type: Date,
         required: true,
-        default: function() {
+        default: () => {
             return new Date();
         }
     },

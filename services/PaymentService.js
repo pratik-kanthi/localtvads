@@ -1,6 +1,6 @@
-var config = require.main.require('./config');
+const config = require.main.require('./config');
 
-var stripe = require("stripe")(
+const stripe = require("stripe")(
     config.stripe.secret
 );
 

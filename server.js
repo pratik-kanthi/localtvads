@@ -52,8 +52,6 @@ app.listen(port, () => {
 });
 const io = require('./sockets')();
 require('./routes')(app, models, io);
-
-// require('./startup');
-// require('./prototypes');
+require('./prototypes');
 
 exports = module.exports = app;

@@ -1,10 +1,7 @@
-var imagemin = require('imagemin');
-var imageminPngquant = require('imagemin-pngquant');
-var imageminMozjpeg = require('imagemin-mozjpeg');
-var request = require('request');
+const request = require('request');
 
-var googleBucket = require.main.require('./google-bucket');
-var fs = require('fs');
+const googleBucket = require.main.require('./google-bucket');
+const fs = require('fs');
 
 /**
  * upload image to google bucket as buffer
@@ -14,21 +11,14 @@ var fs = require('fs');
  */
 const uploadImage = (file, destination, deleteFileLocation) => {
     return new Promise((resolve, reject) => {
-        imagemin.buffer(file.buffer, {
-            use: [imageminPngquant(), imageminMozjpeg()]
-        }).then((buffer) => {
-            if (deleteFileLocation)
-                googleBucket.deleteFile(deleteFileLocation);
-            googleBucket.uploadFileBuffer(buffer, destination, file.mimetype).then(() => {
-                resolve('Uploaded')
-            }, (err) => {
-                reject(err);
-            });
+        if (deleteFileLocation)
+            googleBucket.deleteFile(deleteFileLocation);
+        googleBucket.uploadFileBuffer(file.buffer, destination, file.mimetype).then(() => {
+            resolve('Uploaded')
         }, (err) => {
-            console.log(err);
             reject(err);
-        })
-    })
+        });
+    });
 };
 
 /**
@@ -46,7 +36,7 @@ const deleteBucketFile = (fileLocation) => {
         } else {
             reject('Invalid Location');
         }
-    })
+    });
 };
 
 /**
@@ -64,7 +54,7 @@ const uploadFileBuffer = (file, destination, deleteFileLocation) => {
         }, (err) => {
             reject(err);
         });
-    })
+    });
 };
 
 /**
@@ -85,6 +75,11 @@ const uploadFile = (source, destination, deleteFileLocation) => {
     });
 };
 
+/**
+ * upload image to google bucket as buffer
+ * @param {string} source - file to be downloaded from
+ * @param {string} destination - file to be downloaded to
+ */
 const downloadFile = (source, destination) => {
     return new Promise(async (resolve, reject) => {
         request({
@@ -102,9 +97,9 @@ const downloadFile = (source, destination) => {
 };
 
 module.exports = {
-    uploadImage: uploadImage,
-    uploadFile: uploadFile,
-    uploadFileBuffer:uploadFileBuffer,
-    deleteBucketFile: deleteBucketFile,
-    downloadFile: downloadFile
+    uploadImage,
+    uploadFile,
+    uploadFileBuffer,
+    deleteBucketFile,
+    downloadFile
 };

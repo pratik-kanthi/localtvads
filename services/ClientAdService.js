@@ -195,6 +195,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
  * @param {Object} channelPlan - object of ChannelPlan
  * @param {Object} extras - addons selected by the client on top of the cost of ad
  * @param {String} cardId - _id of the ClientPaymentMethod
+ * @param token
  * @param {Object} req - original object of request of API
  */
 const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, req) => {

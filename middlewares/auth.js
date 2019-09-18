@@ -32,7 +32,7 @@ passport.use(new JwtStrategy(opts, (token, done) => {
             return done(err, false);
         } else if (user) {
             let customUser = JSON.parse(JSON.stringify(user));
-            customUser.Claims = token.Claims.split('|').map(function (c) {
+            customUser.Claims = token.Claims.split('|').map((c) => {
                 let s = c.split(':');
                 return {
                     Name: s[0],

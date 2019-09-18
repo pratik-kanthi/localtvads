@@ -26,7 +26,6 @@ module.exports = () => {
         authenticateSocket(socket, next);
     }).on('connection', (socket) => {
         socket.on('UPLOAD_CHUNK', async (data) => {
-            console.log('sent');
             let tempDir = './public/uploads/' + data.client + '/Temp';
             let extension = data.name.substr(data.name.lastIndexOf('.'));
             if (!fs.existsSync(tempDir)) {
@@ -35,7 +34,7 @@ module.exports = () => {
 
             let fd;
             try {
-                fd = await fs.open(tempDir + '/' + Date.now() + extension, 'a', 0755);
+                fd = await fs.open(tempDir + '/' + Date.now() + extension, 'a', 0o755);
             } catch (err) {
                 logger.logError(err);
                 socket.emit('UPLOAD_ERROR');
@@ -96,7 +95,7 @@ module.exports = () => {
 
     const authenticateSocket = (socket, next) => {
         if (socket.handshake.query && socket.handshake.query.token) {
-            jwt.verify(socket.handshake.query.token, config.token.secret, function (err, decoded) {
+            jwt.verify(socket.handshake.query.token, config.token.secret, (err, decoded) => {
                 if (err)
                     return next(new Error('Authentication error'));
                 socket.decoded = decoded;

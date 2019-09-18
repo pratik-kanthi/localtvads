@@ -286,9 +286,7 @@ const socialLogin = (profile, req) => {
                         error: ex.error
                     });
                 }
-                let claimsValue = claims.map(function (i) {
-                    return i.ClaimType + ':' + i.ClaimValue;
-                }).join("|");
+                let claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join("|");
 
                 let accessToken = new AccessToken({
                     UserName: user.Email,
@@ -381,9 +379,7 @@ const standardLogin = (email, password, req) => {
                                 error: ex.error
                             });
                         }
-                        let claimsValue = claims.map(function (i) {
-                            return i.ClaimType + ':' + i.ClaimValue;
-                        }).join("|");
+                        let claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join("|");
 
                         let accessToken = new AccessToken({
                             UserName: user.Email,
