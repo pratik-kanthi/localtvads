@@ -19,7 +19,7 @@ const addCard = (clientId, stripeToken) => {
             });
         }
         let query = {
-            _id: clientId
+            Client: clientId
         };
 
         let isNew = false;
@@ -34,7 +34,7 @@ const addCard = (clientId, stripeToken) => {
                 });
             } else if (!clientPaymentMethod) {
                 try {
-                    let client = await _getClient(clientId);
+                    let client = await _getClient(clientId, {Email: 1});
                     let csToken = await saveCustomer(stripeToken, client.Email);
                     newClientPaymentMethod = new ClientPaymentMethod({
                         StripeCusToken: csToken.id
@@ -48,18 +48,17 @@ const addCard = (clientId, stripeToken) => {
                         error: err.error
                     });
                 }
-            } else {
-                try {
-                    cardToken = await saveNewCardToCustomer(isNew ? newClientPaymentMethod.StripeCusToken : clientPaymentMethod.StripeCusToken);
-                    newClientPaymentMethod = new ClientPaymentMethod({
-                        StripeCusToken: clientPaymentMethod.StripeCusToken
-                    });
-                } catch (ex) {
-                    return reject({
-                        code: ex.code,
-                        error: ex.error
-                    });
-                }
+            }
+            try {
+                cardToken = await saveNewCardToCustomer(isNew ? newClientPaymentMethod.StripeCusToken : clientPaymentMethod.StripeCusToken);
+                newClientPaymentMethod = new ClientPaymentMethod({
+                    StripeCusToken: clientPaymentMethod.StripeCusToken
+                });
+            } catch (ex) {
+                return reject({
+                    code: ex.code,
+                    error: ex.error
+                });
             }
             newClientPaymentMethod.Card = {
                 PaymentMethodType: 'CARD',
@@ -152,9 +151,9 @@ const getPreferredCard = (client, cardId) => {
     });
 };
 
-const _getClient = (client) => {
+const _getClient = (client, projection) => {
     return new Promise(async (resolve, reject) => {
-        Client.findOne({_id: client}, (err, client) => {
+        Client.findOne({_id: client}, projection || {}, (err, client) => {
             if (err) {
                 return reject({
                     code: 500,
