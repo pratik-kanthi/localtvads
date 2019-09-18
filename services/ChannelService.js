@@ -36,6 +36,94 @@ const getChannels = () => {
 };
 
 /**
+ * Get availability of ad to be broadcast on a channel on a particular duration
+ * @param {String} channel - _id of the channel
+ * @param {Number} seconds - number of seconds of video
+ * @param {String} startDateString - start Date of duration
+ * @param {String} endDateString - end Date of duration
+ */
+const getChannelScheduleAvailability = (channel, seconds, startDateString, endDateString) => {
+    return new Promise(async (resolve, reject) => {
+        if (!channel || !seconds || !startDateString || !endDateString) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        seconds = parseInt(seconds);
+        let splitStartDate = startDateString.split('-');
+        let splitEndDate = endDateString.split('-');
+        let startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
+        let endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
+        let query = {
+            Channel: channel,
+            IsActive: true
+        };
+        let project = {
+            ChannelAdSchedule: 1
+        };
+        ChannelPlan.find(query, project).distinct('ChannelAdSchedule').exec((err, channelPlans) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            let channelAdScheduleIds = channelPlans.map(cp => cp);
+            query = {
+                $and: [
+                    {
+                        DateTime: {
+                            $gte: startDate
+                        }
+                    },
+                    {
+                        DateTime: {
+                            $lte: endDate
+                        }
+                    }
+                ],
+                ChannelAdSchedule: {
+                    $in: channelAdScheduleIds
+                }
+            };
+            let project = {
+                DateTime: 1,
+                TotalSeconds: 1
+            };
+            ChannelAdLengthCounter.find(query, project).populate('ChannelAdSchedule', 'TotalAvailableSeconds').sort({DateTime: 1}).exec((err, countsByDate) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+                let result = {};
+
+                for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
+                    result[_formatDate(i)] = [];
+                }
+                for (let i = 0; i < countsByDate.length; i++) {
+                    let key = _formatDate(countsByDate[i].DateTime);
+                    if (countsByDate[i].ChannelAdSchedule && (countsByDate[i].ChannelAdSchedule.TotalAvailableSeconds < seconds + countsByDate[i].TotalSeconds)) {
+                        result[key].push(false);
+                    }
+                }
+                resolve({
+                    code: 200,
+                    data: {
+                        dates: result,
+                        totalActiveSchedules: channelAdScheduleIds.length
+                    }
+                });
+            });
+        });
+    });
+};
+
+/**
  * get Seconds by Channel
  * @param {String} channel - _id of the channel
  */
@@ -249,94 +337,6 @@ const updateChannelAdLengthCounter = (clientAdPlan) => {
                 error: err.error
             });
         }
-    });
-};
-
-/**
- * Get availability of ad to be broadcast on a channel on a particular duration
- * @param {String} channel - _id of the channel
- * @param {Number} seconds - number of seconds of video
- * @param {String} startDateString - start Date of duration
- * @param {String} endDateString - end Date of duration
- */
-const getChannelScheduleAvailability = (channel, seconds, startDateString, endDateString) => {
-    return new Promise(async (resolve, reject) => {
-        if (!channel || !seconds || !startDateString || !endDateString) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-        seconds = parseInt(seconds);
-        let splitStartDate = startDateString.split('-');
-        let splitEndDate = endDateString.split('-');
-        let startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
-        let endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
-        let query = {
-            Channel: channel,
-            IsActive: true
-        };
-        let project = {
-            ChannelAdSchedule: 1
-        };
-        ChannelPlan.find(query, project).distinct('ChannelAdSchedule').exec((err, channelPlans) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            }
-            let channelAdScheduleIds = channelPlans.map(cp => cp);
-            query = {
-                $and: [
-                    {
-                        DateTime: {
-                            $gte: startDate
-                        }
-                    },
-                    {
-                        DateTime: {
-                            $lte: endDate
-                        }
-                    }
-                ],
-                ChannelAdSchedule: {
-                    $in: channelAdScheduleIds
-                }
-            };
-            let project = {
-                DateTime: 1,
-                TotalSeconds: 1
-            };
-            ChannelAdLengthCounter.find(query, project).populate('ChannelAdSchedule', 'TotalAvailableSeconds').sort({DateTime: 1}).exec((err, countsByDate) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err
-                    });
-                }
-                let result = {};
-
-                for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
-                    result[_formatDate(i)] = [];
-                }
-                for (let i = 0; i < countsByDate.length; i++) {
-                    let key = _formatDate(countsByDate[i].DateTime);
-                    if (countsByDate[i].ChannelAdSchedule && (countsByDate[i].ChannelAdSchedule.TotalAvailableSeconds < seconds + countsByDate[i].TotalSeconds)) {
-                        result[key].push(false);
-                    }
-                }
-                resolve({
-                    code: 200,
-                    data: {
-                        dates: result,
-                        totalActiveSchedules: channelAdScheduleIds.length
-                    }
-                });
-            });
-        });
     });
 };
 

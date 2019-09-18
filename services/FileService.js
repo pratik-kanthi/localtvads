@@ -5,24 +5,6 @@ const fs = require('fs');
 
 /**
  * upload image to google bucket as buffer
- * @param {object} file - uploaded file in buffer
- * @param {string} destination - location of the file to be uploaded at
- * @param {string} deleteFileLocation - location of the file to be deleted from
- */
-const uploadImage = (file, destination, deleteFileLocation) => {
-    return new Promise((resolve, reject) => {
-        if (deleteFileLocation)
-            googleBucket.deleteFile(deleteFileLocation);
-        googleBucket.uploadFileBuffer(file.buffer, destination, file.mimetype).then(() => {
-            resolve('Uploaded')
-        }, (err) => {
-            reject(err);
-        });
-    });
-};
-
-/**
- * upload image to google bucket as buffer
  * @param {string} fileLocation - location of the file to be deleted from
  */
 const deleteBucketFile = (fileLocation) => {
@@ -36,6 +18,27 @@ const deleteBucketFile = (fileLocation) => {
         } else {
             reject('Invalid Location');
         }
+    });
+};
+
+/**
+ * upload image to google bucket as buffer
+ * @param {string} source - file to be downloaded from
+ * @param {string} destination - file to be downloaded to
+ */
+const downloadFile = (source, destination) => {
+    return new Promise(async (resolve, reject) => {
+        request({
+            url: source,
+            method: 'GET',
+            encoding: null
+        }).pipe(fs.createWriteStream(destination))
+            .on('close', ()=> {
+                resolve(destination);
+            })
+            .on('error', (err) => {
+                reject(err);
+            });
     });
 };
 
@@ -77,22 +80,19 @@ const uploadFile = (source, destination, deleteFileLocation) => {
 
 /**
  * upload image to google bucket as buffer
- * @param {string} source - file to be downloaded from
- * @param {string} destination - file to be downloaded to
+ * @param {object} file - uploaded file in buffer
+ * @param {string} destination - location of the file to be uploaded at
+ * @param {string} deleteFileLocation - location of the file to be deleted from
  */
-const downloadFile = (source, destination) => {
-    return new Promise(async (resolve, reject) => {
-        request({
-            url: source,
-            method: 'GET',
-            encoding: null
-        }).pipe(fs.createWriteStream(destination))
-            .on('close', ()=> {
-                resolve(destination);
-            })
-            .on('error', (err) => {
-                reject(err);
-            });
+const uploadImage = (file, destination, deleteFileLocation) => {
+    return new Promise((resolve, reject) => {
+        if (deleteFileLocation)
+            googleBucket.deleteFile(deleteFileLocation);
+        googleBucket.uploadFileBuffer(file.buffer, destination, file.mimetype).then(() => {
+            resolve('Uploaded')
+        }, (err) => {
+            reject(err);
+        });
     });
 };
 

@@ -1,5 +1,9 @@
 const Tax = require.main.require('./models/Tax').model;
 
+/**
+ * Add an Image
+ * @param {Number} amount - amount in pounds
+ */
 const getTaxes = (amount) => {
     return new Promise(async (resolve, reject) => {
         let query = {

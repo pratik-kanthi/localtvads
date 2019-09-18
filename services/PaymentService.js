@@ -4,6 +4,12 @@ const stripe = require("stripe")(
     config.stripe.secret
 );
 
+/**
+ * Charge by existing saved card
+ * @param {Number} amount - amount in pounds
+ * @param {String} cusToken - token of the Stripe customer starting with cus_
+ * @param {String} cardToken - token of the Stripe card starting with card_
+ */
 const chargeByExistingCard = (amount, cusToken, cardToken) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -25,6 +31,11 @@ const chargeByExistingCard = (amount, cusToken, cardToken) => {
     });
 };
 
+/**
+ * Save customer to Stripe
+ * @param {String} stripeToken - token of Stripe starting with tok_
+ * @param {String} email - email of the customer
+ */
 const saveCustomer = (stripeToken, email) => {
     return new Promise(async (resolve, reject) => {
         let customer;
@@ -43,6 +54,11 @@ const saveCustomer = (stripeToken, email) => {
     });
 };
 
+/**
+ * Save new card to the customer
+ * @param {String} stripeToken - token of Stripe starting with tok_
+ * @param {String} cusToken - token of the customer starting with cus_
+ */
 const saveNewCardToCustomer = (stripeToken, cusToken) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -59,6 +75,11 @@ const saveNewCardToCustomer = (stripeToken, cusToken) => {
     });
 };
 
+/**
+ * Charge by a new (unsaved) card
+ * @param {String} amount - amount in pounds
+ * @param {String} stripeToken - token of the customer starting with tok_
+ */
 const chargeByCard = async (amount, stripeToken) => {
     return new Promise(async (resolve, reject) => {
         try {

@@ -87,6 +87,10 @@ const addCard = (clientId, stripeToken) => {
     });
 };
 
+/*
+ * Get saved cards by a client
+ * @param {String} clientId - _id of the client
+ */
 const getSavedCards = (clientId) => {
     return new Promise(async (resolve, reject) => {
         let query = {

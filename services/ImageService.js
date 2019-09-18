@@ -8,6 +8,11 @@ const model = {
     Client: Client
 };
 
+/**
+ * crop image
+ * @param {Object} query - query params of the request - cropx, cropy, cropw, croph
+ * @param {Binary} file - file to be cropped
+ */
 const cropImage = (query, file) => {
     return new Promise(async (resolve, reject) => {
         jimp.read(file.buffer, (err, image) => {
@@ -35,6 +40,13 @@ const cropImage = (query, file) => {
     });
 };
 
+/**
+ * resize image to a particular size
+ * @param {Object} source - source url of file
+ * @param {Number} width - width of the image
+ * @param {Number} height - height of the image
+ * @param {Number} quality - quality
+ */
 const resizeImage = (source, width, height, quality) => {
     return new Promise(async (resolve, reject) => {
         let pic;
@@ -60,6 +72,10 @@ const resizeImage = (source, width, height, quality) => {
     });
 };
 
+/**
+ * Delete image from the bucket
+ * @param {String} location - location of the image from where image needs to be removed
+ */
 const removeBucketImage = (location) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -79,6 +95,12 @@ const removeBucketImage = (location) => {
     })
 };
 
+/**
+ * Delete image from the bucket
+ * @param {String} attribute - Property of the model which contains url of the image
+ * @param {String} owner - Owner of the image
+ * @param {String} ownerid - _id of the Owner
+ */
 const removeImage = (attribute, owner, ownerid) => {
     return new Promise((resolve, reject) => {
         let Owner = model[owner];
@@ -126,6 +148,11 @@ const removeImage = (attribute, owner, ownerid) => {
     })
 };
 
+/**
+ * Delete image from the bucket
+ * @param {Binary} file - Binary image file
+ * @param {Object} query - query params of the request
+ */
 const uploadImage = (file, query) => {
     return new Promise((resolve, reject) => {
 
