@@ -1,4 +1,12 @@
-const {socialLogin, standardLogin, socialRegister, standardRegister} = require.main.require('./services/AuthService');
+const {
+    socialLogin,
+    standardLogin,
+    socialRegister,
+    standardRegister,
+    verifyUserEmail,
+    sendPasswordResetLink,
+    resetPassword
+} = require.main.require('./services/AuthService');
 
 module.exports = (app) => {
 
@@ -36,5 +44,34 @@ module.exports = (app) => {
         } catch (ex) {
             return res.status(ex.code).send(ex.error);
         }
+    });
+
+    app.get('/api/auth/confirmation/:userid', async (req, res) => {
+        try {
+            let result = await verifyUserEmail(req.params.userid);
+            return res.status(result.code).redirect(process.env.WEBAPP + '?emailconfirmed=true');
+        } catch (ex) {
+            return res.status(ex.code).send(ex.error);
+        }
+    });
+
+    app.get('/api/auth/forgotpassword/:email', async (req, res) => {
+        try {
+            let result = await sendPasswordResetLink(req.params.email);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code).send(ex.error);
+        }
+    });
+
+
+    app.post('/api/auth/resetpassword/:hash', async (req, res) => {
+        try {
+            let result = await resetPassword(req.params.hash, req.body.password);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code).send(ex.error);
+        }
+
     });
 };

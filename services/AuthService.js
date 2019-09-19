@@ -1,14 +1,15 @@
 const jwt = require('jsonwebtoken');
+const email = require('../email');
 const request = require('request');
 const config = require.main.require('./config');
-
 const AccessToken = require.main.require('./models/AccessToken').model;
 const Client = require.main.require('./models/Client').model;
 const User = require.main.require('./models/User').model;
 const UserClaim = require.main.require('./models/UserClaim').model;
 const UserLogin = require.main.require('./models/UserLogin').model;
-
-const {uploadImage} = require.main.require('./services/FileService');
+const {
+    uploadImage
+} = require.main.require('./services/FileService');
 
 /**
  * Social Registration through Facebook and Google+
@@ -26,7 +27,9 @@ const socialRegister = (profile) => {
         } else {
             let count;
             try {
-                count = await _isExists(Client, {Email: profile.Email});
+                count = await _isExists(Client, {
+                    Email: profile.Email
+                });
             } catch (ex) {
                 return reject({
                     code: ex.code,
@@ -107,7 +110,11 @@ const socialRegister = (profile) => {
                                 Claims: claim.ClaimType + ':' + claim.ClaimValue
                             }).toObject();
 
-                            jwt.sign(accessToken, config.token.secret, {algorithm: 'HS256'}, (err, token) => {
+                            email.helper.socialRegisterEmail(user.Email, user.AuthorisationScheme);
+
+                            jwt.sign(accessToken, config.token.secret, {
+                                algorithm: 'HS256'
+                            }, (err, token) => {
                                 if (err) {
                                     return reject({
                                         code: 500,
@@ -152,7 +159,9 @@ const standardRegister = (profile) => {
         }
         let result;
         try {
-            result = await _isExists(Client, {Email: profile.Email});
+            result = await _isExists(Client, {
+                Email: profile.Email
+            });
         } catch (ex) {
             return reject({
                 code: ex.code,
@@ -215,10 +224,14 @@ const standardRegister = (profile) => {
                                 error: err
                             });
                         }
+
+                        let verification_link = process.env.APP + 'api/auth/confirmation/' + user._id
+                        email.helper.standardRegisterEmail(user.Email, verification_link);
+
                         resolve({
                             code: 200,
                             data: user
-                        })
+                        });
                     });
                 });
             }
@@ -297,7 +310,9 @@ const socialLogin = (profile, req) => {
                     Claims: claimsValue
                 }).toObject();
 
-                jwt.sign(accessToken, config.token.secret, {algorithm: 'HS256'}, (err, token) => {
+                jwt.sign(accessToken, config.token.secret, {
+                    algorithm: 'HS256'
+                }, (err, token) => {
                     if (err) {
                         return reject({
                             code: 500,
@@ -390,7 +405,9 @@ const standardLogin = (email, password, req) => {
                             Claims: claimsValue
                         }).toObject();
 
-                        jwt.sign(accessToken, config.token.secret, {algorithm: 'HS256'}, (err, token) => {
+                        jwt.sign(accessToken, config.token.secret, {
+                            algorithm: 'HS256'
+                        }, (err, token) => {
                             if (err) {
                                 return reject({
                                     code: 500,
@@ -417,6 +434,153 @@ const standardLogin = (email, password, req) => {
                 }
             }
         });
+    });
+};
+
+
+/**
+ * Set IsEmailConfirmed to true for the user
+ * @param {String} userid  - _id of the User
+ */
+const verifyUserEmail = (userid) => {
+    return new Promise(async (resolve, reject) => {
+        if (!userid) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        } else {
+            let query = {
+                _id: userid
+            };
+
+            User.findOne(query, async (err, user) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                } else {
+                    user.IsEmailConfirmed = true;
+                    user.save((err) => {
+                        if (err) {
+                            return reject({
+                                code: 500,
+                                error: err
+                            })
+                        } else {
+                            resolve({
+                                code: 200,
+                                data: user
+                            })
+                        }
+                    })
+                }
+            });
+        }
+    })
+};
+
+
+
+const sendPasswordResetLink = (userEmail) => {
+    return new Promise(async (resolve, reject) => {
+        if (!userEmail) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        } else {
+            let query = {
+                Email: userEmail
+            };
+
+            User.findOne(query, async (err, user) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                } else if (!user || user.AuthorisationScheme !== 'Standard') {
+                    return reject({
+                        code: 401,
+                        error: {
+                            message: utilities.ErrorMessages.EMAIL_NOT_REGISTERED
+                        }
+                    });
+                } else {
+                    let utcstamp = Date.parse(new Date());
+                    let verification_link = user._id + 'UTC' + utcstamp;
+                    verification_link = process.env.WEBAPP + 'resetpassword?token=' + Buffer.from(verification_link).toString('base64');
+                    email.helper.passwordResetEmail(user.Email, verification_link);
+
+                    resolve({
+                        code: 200,
+                        data: true
+                    })
+                }
+            })
+        }
+    })
+};
+
+
+const resetPassword = (hash, newpassword) => {
+    return new Promise(async (resolve, reject) => {
+        if (!hash) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        } else {
+            let hashstring = Buffer.from(hash, 'base64').toString();
+            hashstring = hashstring.split("UTC");
+            let utcnow = Date.parse(new Date());
+            let userid = hashstring[0];
+            let linktimestamp = hashstring[1];
+
+            if ((utcnow - parseInt(linktimestamp)) > 86400) {
+                return reject({
+                    code: 401,
+                    error: {
+                        message: utilities.ErrorMessages.PASSWORD_LINK_EXPIRED
+                    }
+                })
+            } else {
+                let query = {
+                    _id: userid
+                };
+                User.findOne(query, async (err, user) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err
+                        })
+                    } else if (user) {
+                        user.PasswordHash = user.EncryptPassword(newpassword);
+                        user.save((err) => {
+                            if (err) {
+                                return reject({
+                                    code: 500,
+                                    error: err
+                                })
+                            } else {
+                                resolve({
+                                    code: 200,
+                                    data: true
+                                })
+                            }
+                        })
+                    }
+                })
+            }
+        }
     });
 };
 
@@ -476,7 +640,9 @@ const _fetchProfileImage = (client, profile) => {
                     error: err
                 });
             }
-            uploadImage({buffer: body}, dst).then(() => {
+            uploadImage({
+                buffer: body
+            }, dst).then(() => {
                 resolve(dst);
             }, (err) => {
                 return reject({
@@ -488,9 +654,14 @@ const _fetchProfileImage = (client, profile) => {
     });
 };
 
+
+
 module.exports = {
     socialLogin,
     socialRegister,
     standardLogin,
-    standardRegister
+    standardRegister,
+    verifyUserEmail,
+    sendPasswordResetLink,
+    resetPassword
 };
