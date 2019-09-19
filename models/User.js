@@ -36,7 +36,7 @@ const schema = new mongoose.Schema({
     IsLockoutEnabled: Boolean
 });
 
-schema.methods.toJSON = () => {
+schema.methods.toJSON = function() {
     let obj = this.toObject();
     delete obj.PasswordHash;
     delete obj.IsEmailConfirmed;
