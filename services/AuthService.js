@@ -498,9 +498,9 @@ const sendPasswordResetLink = (userEmail) => {
                 }
             });
         } else {
-            query = {
+            let query = {
                 Email: userEmail
-            }
+            };
 
             User.findOne(query, async (err, user) => {
                 if (err) {
@@ -508,13 +508,13 @@ const sendPasswordResetLink = (userEmail) => {
                         code: 500,
                         error: err
                     });
-                } else if (!user && user.AuthorisationScheme !== 'Standard') {
+                } else if (!user || user.AuthorisationScheme !== 'Standard') {
                     return reject({
                         code: 401,
                         error: {
-                            message: 'We do not have a registered account with that email address'
+                            message: utilities.ErrorMessages.EMAIL_NOT_REGISTERED
                         }
-                    })
+                    });
                 } else {
                     let utcstamp = Date.parse(new Date());
                     let verification_link = user._id + 'UTC' + utcstamp;

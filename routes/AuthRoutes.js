@@ -51,6 +51,7 @@ module.exports = (app) => {
             let result = await verifyUserEmail(req.params.userid);
             return res.status(result.code).redirect(process.env.WEBAPP + '?emailconfirmed=true');
         } catch (ex) {
+            ex
             return res.status(ex.code).send(ex.error);
         }
     })

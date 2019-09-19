@@ -14,6 +14,7 @@ module.exports = {
     USER_ALREADY_EXISTS: 'User already exists with this username',
     USER_LOCKED_OUT: 'User has been locked out. Please get in touch with admin team',
     USERNAME_NOT_FOUND: 'Username provided is not found',
+    EMAIL_NOT_REGISTERED: 'We do not have a registered account with that email address',
     VIDEO_CONVERSION_ERROR: 'Video could not be processed. Please check the guidelines before choosing pictures',
     WEAK_PASSWORD: 'Provided Password is weak',
     PASSWORD_LINK_EXPIRED: 'The link to reset your password has expired. Please request again',
