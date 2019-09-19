@@ -3,14 +3,11 @@ const mailgun = require('./config/mailgun');
 const ejs = require('ejs');
 const fs = require('fs');
 const path = require('path');
-const User = require('../models/User').model;
-const promise = require('bluebird');
-const moment = require('moment');
-
 
 /**
- * Send social-user registration email 
+ * Send social-user registration email
  * @param {String} to - email address of the user fetched from OAuth 2.0
+ * @param {String} socialclient - AuthorisationScheme value from AccessToken model
  */
 const socialRegisterEmail = (to, socialclient) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/socialaccount_createdemail.ejs'), 'utf-8'), {
@@ -22,18 +19,18 @@ const socialRegisterEmail = (to, socialclient) => {
         to: to,
         subject: 'Your Local TV Ads account has been created',
         html: message
-    }
+    };
     mailgun.api.server.send(data, (err, body) => {
         if (err) {
             throw (err);
         }
     });
 
-}
+};
 
 /**
- * 
- * @param {String} to - email address of the registered user 
+ *
+ * @param {String} to - email address of the registered user
  * @param {String} verificationlink - verification link to mailed to the user to verify his/her account
  */
 const standardRegisterEmail = (to, verificationlink) => {
@@ -46,14 +43,14 @@ const standardRegisterEmail = (to, verificationlink) => {
         to: to,
         subject: 'Verify your Local TV Ads account',
         html: message
-    }
+    };
 
     mailgun.api.server.send(data, (err, body) => {
         if (err) {
             throw (err);
         }
     });
-}
+};
 
 
 const passwordResetEmail = (to, verificationlink) => {
@@ -66,18 +63,18 @@ const passwordResetEmail = (to, verificationlink) => {
         to: to,
         subject: 'Password Reset Link',
         html: message
-    }
+    };
 
     mailgun.api.server.send(data, (err, body) => {
         if (err) {
             throw (err);
         }
     });
-}
+};
 
 
 module.exports = {
     socialRegisterEmail: socialRegisterEmail,
     standardRegisterEmail: standardRegisterEmail,
     passwordResetEmail: passwordResetEmail
-}
+};

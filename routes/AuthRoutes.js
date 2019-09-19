@@ -51,17 +51,15 @@ module.exports = (app) => {
             let result = await verifyUserEmail(req.params.userid);
             return res.status(result.code).redirect(process.env.WEBAPP + '?emailconfirmed=true');
         } catch (ex) {
-            ex
             return res.status(ex.code).send(ex.error);
         }
-    })
+    });
 
     app.get('/api/auth/forgotpassword/:email', async (req, res) => {
         try {
             let result = await sendPasswordResetLink(req.params.email);
             return res.status(result.code).send(result.data);
         } catch (ex) {
-            ex;
             return res.status(ex.code).send(ex.error);
         }
     });
@@ -75,5 +73,5 @@ module.exports = (app) => {
             return res.status(ex.code).send(ex.error);
         }
 
-    })
+    });
 };

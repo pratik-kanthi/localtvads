@@ -457,7 +457,7 @@ const verifyUserEmail = (userid) => {
         } else {
             let query = {
                 _id: userid
-            }
+            };
 
             User.findOne(query, async (err, user) => {
                 if (err) {
@@ -484,7 +484,7 @@ const verifyUserEmail = (userid) => {
             });
         }
     })
-}
+};
 
 
 
@@ -529,7 +529,7 @@ const sendPasswordResetLink = (userEmail) => {
             })
         }
     })
-}
+};
 
 
 const resetPassword = (hash, newpassword) => {
@@ -549,7 +549,6 @@ const resetPassword = (hash, newpassword) => {
             let linktimestamp = hashstring[1];
 
             if ((utcnow - parseInt(linktimestamp)) > 86400) {
-                utcnow;
                 return reject({
                     code: 401,
                     error: {
@@ -559,7 +558,7 @@ const resetPassword = (hash, newpassword) => {
             } else {
                 let query = {
                     _id: userid
-                }
+                };
                 User.findOne(query, async (err, user) => {
                     if (err) {
                         return reject({
@@ -586,7 +585,7 @@ const resetPassword = (hash, newpassword) => {
             }
         }
     });
-}
+};
 
 const _isExists = (Model, query) => {
     return new Promise(async (resolve, reject) => {
