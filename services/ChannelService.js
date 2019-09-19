@@ -9,15 +9,16 @@ const {getTaxes} = require.main.require('./services/TaxService');
 /**
  * get Channels
  */
-const getChannels = () => {
+const getChannels = (projection) => {
     return new Promise(async (resolve, reject) => {
         let query = {
             Status: "LIVE"
         };
-        let project = {
+        let project = projection || {
             "Name": 1,
             "Description": 1,
-            "Address.Location": 1
+            "Address.Location": 1,
+            "Viewerships.0": 1
         };
 
         Channel.find(query, project).exec((err, channels) => {
@@ -186,7 +187,22 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
         let endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
         // memoization - reduce space complexity and additional function calls. Store all possible key value pairs of adSchedule for later use
         let adScheduleMapping = {};
-
+        let adScheduleViewershipMapping = {};
+        try {
+            let channelModel = await Channel.findOne({_id: channel}, {Viewerships: 1});
+            if (!channelModel) {
+                return reject({
+                    code: 404,
+                    error: 'Channel' + utilities.ErrorMessages.NOT_FOUND
+                });
+            }
+            channelModel.Viewerships.map(views => adScheduleViewershipMapping[views.AdSchedule.toString()] = views.Count);
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
         let query = {
             Channel: channel,
             Seconds: seconds,
@@ -286,6 +302,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                                     AdSchedule: p.ChannelAdSchedule.AdSchedule,
                                     Seconds: p.Seconds,
                                     TotalAmount: p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + (tax.Value * p.BaseAmount * 0.01) : (accumulator + tax.Value), 0),
+                                    ViewershipCount: adScheduleViewershipMapping[p.ChannelAdSchedule.AdSchedule._id.toString()]
                                 };
                             }
                         });

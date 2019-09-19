@@ -21,7 +21,16 @@ const schema = new mongoose.Schema({
     },
     Address: addressSchema,
     PrimaryContact: contactSchema,
-    AlternativeContact: contactSchema
+    AlternativeContact: contactSchema,
+    Viewerships: [{
+        AdSchedule: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'AdSchedule'
+        },
+        Count: {
+            type: Number
+        }
+    }]
 });
 
 const model = mongoose.model(name, schema);
