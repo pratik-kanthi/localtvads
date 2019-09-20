@@ -18,7 +18,7 @@ const getChannels = (projection) => {
             "Name": 1,
             "Description": 1,
             "Address.Location": 1,
-            "Viewerships.0": 1
+            "Viewerships": 1
         };
 
         Channel.find(query, project).exec((err, channels) => {
