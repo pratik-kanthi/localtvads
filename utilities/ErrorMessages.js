@@ -22,7 +22,7 @@ module.exports = {
     RateLimitError: 'Something went wrong. oo many requests made to the API too quickly',
     StripeInvalidRequestError: 'Bad Request',
     StripeAPIError: 'Something went wrong. An error occurred. Any deductions will be refunded.',
-    StripeConnectionError: 'Something went wrong. Please check your internet connection',
+    StripeConnectionError: 'Something went wrong at the payment provider. Kindly check with administrator.',
     StripeAuthenticationError: 'Payment Gateway Authentication Error',
     TOKEN_EXPIRED: 'Token has expired. Kindly login again to continue'
 };

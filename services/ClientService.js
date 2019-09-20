@@ -48,20 +48,21 @@ const addCard = (clientId, stripeToken) => {
 						error: err.error
 					});
 				}
-			}
-			try {
-				cardToken = await saveNewCardToCustomer(
-					stripeToken,
-					isNew ? newClientPaymentMethod.StripeCusToken : clientPaymentMethod.StripeCusToken
-				);
+			} else {
 				newClientPaymentMethod = new ClientPaymentMethod({
 					StripeCusToken: clientPaymentMethod.StripeCusToken
 				});
-			} catch (ex) {
-				return reject({
-					code: ex.code,
-					error: ex.error
-				});
+				try {
+					cardToken = await saveNewCardToCustomer(
+						stripeToken,
+						isNew ? newClientPaymentMethod.StripeCusToken : clientPaymentMethod.StripeCusToken
+					);
+				} catch (ex) {
+					return reject({
+						code: ex.code,
+						error: ex.error
+					});
+				}
 			}
 			newClientPaymentMethod.Card = {
 				PaymentMethodType: 'CARD',
