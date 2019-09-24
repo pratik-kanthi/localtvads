@@ -1,5 +1,7 @@
 module.exports = {
     BAD_REQUEST: 'Invalid Request, Please check input parameters',
+    COUPON_NOT_APPLICABLE: 'Coupon is not applicable on this subscription',
+    COUPON_ALREADY_USED: 'This coupon code has already been used, please try a different coupon code',
     EMAIL_NOT_CONFIRMED: 'Email is not confirmed. Please verify your Email ID',
     FILE_SIZE_EXCEEDED: 'File size has exceeded. Please limit the file size as mentioned in description',
     INACTIVE_PLAN: 'Inactive plan selected. Please choose an active plan',

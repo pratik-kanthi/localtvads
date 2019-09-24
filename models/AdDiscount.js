@@ -10,7 +10,11 @@ const schema = new mongoose.Schema({
     Description: {
         type: String
     },
-    AdPlans: [{
+    Client: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Client'
+    },
+    ChannelPlans: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'AdSchedule'
     }],
@@ -41,10 +45,6 @@ const schema = new mongoose.Schema({
     PermittedUsageCount: {
         type: Number,
         default: 1
-    },
-    UsageCount: {
-        type: Number,
-        default: 0
     }
 });
 

@@ -3,7 +3,7 @@ const passport = require('passport');
 const config = require.main.require('./config');
 
 const {addCard} = require.main.require('./services/ClientService');
-const {saveClientAdPlan, renewClientAdPlan, getClientAd, uploadClientAd, getClientAdPlan} = require.main.require('./services/ClientAdService');
+const {checkCouponApplicable, getApplicableCoupons, getClientAd, getClientAdPlan, renewClientAdPlan, saveClientAdPlan, uploadClientAd} = require.main.require('./services/ClientAdService');
 const {saveCustomAd, previewCustomAd} = require.main.require('./services/FFMPEGService');
 
 let mediaUpload = multer({
@@ -106,5 +106,23 @@ module.exports = (app, io) => {
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
+    });
+
+    app.get('/api/clientad/couponexists', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            let result = await checkCouponApplicable(req.query.clientid, req.query.channel, req.query.channelplan, req.query.startdate, req.query.couponcode);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.get('/api/clientad/coupons', passport.authenticate('jwt', {session: false}), async (req, res) => {
+       try {
+           let result = await getApplicableCoupons(req.query.clientid, req.query.channel, req.query.channelplan, req.query.startdate);
+           return res.status(result.code).send(result.data);
+       } catch (ex) {
+           return res.status(ex.code || 500).send(ex.error);
+       }
     });
 };
