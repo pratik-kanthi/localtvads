@@ -333,9 +333,10 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
  * @param {Object} extras - addons selected by the client on top of the cost of ad
  * @param {String} cardId - _id of the ClientPaymentMethod
  * @param token - token of Stripe starting with tok_
+ * @param couponCode - discount coupon code
  * @param {Object} req - original object of request of API
  */
-const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, req) => {
+const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, couponCode, req) => {
     return new Promise(async (resolve, reject) => {
         if (!channelPlan || !clientAdPlan || !clientAdPlan.Client || !clientAdPlan.Name || !clientAdPlan.StartDate || req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== clientAdPlan.Client) {
             return reject({
@@ -410,9 +411,22 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, req)
                         }
                     }
 
-                    let taxAmount, taxes;
+                    let taxAmount, taxes, discount, finalAmount = chAdPlan.BaseAmount, discountAmount = 0;
                     try {
-                        let taxResult = await getTaxes(chAdPlan.BaseAmount);
+                        let result = await checkCouponApplicable(clientAdPlan.Client, chAdPlan.Channel, chAdPlan._id, clientAdPlan.StartDate, couponCode);
+                        discount = result.data;
+                    } catch (ex) {
+                        return reject({
+                            code: ex.code || 500,
+                            error: ex.error
+                        });
+                    }
+                    if (discount) {
+                        discountAmount = discount.AmountType === 'Percentage' ? (finalAmount * discount.Amount)/100 : discount.Amount;
+                        finalAmount = finalAmount - discountAmount;
+                    }
+                    try {
+                        let taxResult = await getTaxes(finalAmount);
                         taxes = taxResult.taxes;
                         taxAmount = taxResult.totalTax;
                     } catch (ex) {
@@ -434,11 +448,11 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, req)
                         ChannelPlan: {
                             Plan: chAdPlan,
                             Extras: extras || [],
-                            Discount: 0,
+                            Discount: discountAmount,
                             Surge: 0,
                             SubTotal: chAdPlan.BaseAmount,
                             TaxAmount: taxAmount,
-                            TotalAmount: chAdPlan.BaseAmount + taxAmount
+                            TotalAmount: finalAmount
                         }
                     });
 
@@ -463,7 +477,8 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, req)
                         TotalAmount: cAdPlan.ChannelPlan.TotalAmount,
                         Status: 'succeeded',
                         StripeResponse: charge,
-                        TaxBreakdown: taxes
+                        TaxBreakdown: taxes,
+                        AdDiscount: discount ? discount._id : undefined
                     });
                     transaction.save((err) => {
                         if (err) {
