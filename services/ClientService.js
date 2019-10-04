@@ -96,6 +96,14 @@ const addCard = (clientId, stripeToken) => {
  */
 const getSavedCards = (clientId) => {
     return new Promise(async (resolve, reject) => {
+        if (!clientId) {
+            return reject({
+                code: 500,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
         let query = {
             Client: clientId
         };
@@ -130,6 +138,14 @@ const getSavedCards = (clientId) => {
  */
 const getPreferredCard = (clientId, cardId) => {
     return new Promise(async (resolve, reject) => {
+        if (!clientId || !cardId) {
+            return reject({
+                code: 500,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
         let query = {
             Client: clientId,
             _id: cardId,
@@ -162,6 +178,14 @@ const getPreferredCard = (clientId, cardId) => {
  */
 const setPreferredCard = (clientId, cardId) => {
     return new Promise(async (resolve, reject) => {
+        if (!clientId || !cardId) {
+            return reject({
+                code: 500,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
         let query = {
             Client: clientId,
             IsPreferred: true
@@ -226,6 +250,14 @@ const setPreferredCard = (clientId, cardId) => {
 
 const deleteCard = (clientId, cardId) => {
     return new Promise(async (resolve, reject) => {
+        if (!clientId || !cardId) {
+            return reject({
+                code: 500,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
         let count = 0, query = {
             Client: clientId
         };
