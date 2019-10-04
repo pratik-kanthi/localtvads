@@ -38,7 +38,11 @@ const checkCouponApplicable = (clientId, channel, channelPlan, startDate, coupon
                 CouponCode: couponCode
             });
         }
-        AdDiscount.findOne(query).exec((err, adDiscount) => {
+        let project = {
+            ChannelPlans: 0,
+            Channels: 0,
+        };
+        AdDiscount.findOne(query, project).exec((err, adDiscount) => {
             if (err) {
                 return reject({
                     code: 500,

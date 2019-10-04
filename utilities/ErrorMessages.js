@@ -2,6 +2,7 @@ module.exports = {
     BAD_REQUEST: 'Invalid Request, Please check input parameters',
     COUPON_NOT_APPLICABLE: 'Coupon is not applicable on this subscription',
     COUPON_ALREADY_USED: 'This coupon code has already been used, please try a different coupon code',
+    DELETE_CARD_NOT_ALLOWED: 'Deleting this card is not allowed since it is the preferred card. Please choose a different card as preferred one and try deleting this again',
     EMAIL_NOT_CONFIRMED: 'Email is not confirmed. Please verify your Email ID',
     FILE_SIZE_EXCEEDED: 'File size has exceeded. Please limit the file size as mentioned in description',
     INACTIVE_PLAN: 'Inactive plan selected. Please choose an active plan',
