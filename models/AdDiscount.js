@@ -28,7 +28,7 @@ const schema = new mongoose.Schema({
     },
     AmountType: {
         type: String,
-        enum: ['Fixed','Percentage'],
+        enum: [ 'FIXED', 'PERCENTAGE' ],
         required: true
     },
     StartDate: {

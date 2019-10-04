@@ -426,7 +426,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         });
                     }
                     if (discount) {
-                        discountAmount = discount.AmountType === 'Percentage' ? (finalAmount * discount.Amount)/100 : discount.Amount;
+                        discountAmount = discount.AmountType === 'PERCENTAGE' ? (finalAmount * discount.Amount)/100 : discount.Amount;
                         finalAmount = finalAmount - discountAmount;
                     }
                     try {
