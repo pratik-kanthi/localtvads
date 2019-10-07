@@ -14,10 +14,12 @@ const schema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client'
     },
-    ChannelPlans: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'AdSchedule'
-    }],
+    AdSchedules: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'AdSchedule'
+        }
+    ],
     Channels: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Channel'

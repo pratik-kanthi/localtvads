@@ -100,6 +100,11 @@ const chargeByCard = async (amount, stripeToken) => {
     });
 };
 
+/**
+ * Charge by a new (unsaved) card
+ * @param {String} cusToken - Stripe token for customer
+ * @param {String} cardToken - Stripe token for card
+ */
 const deleteCardFromStripe = async  (cusToken, cardToken) => {
     return new Promise(async (resolve, reject) => {
         try {

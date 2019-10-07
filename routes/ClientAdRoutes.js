@@ -110,7 +110,7 @@ module.exports = (app, io) => {
 
     app.get('/api/clientad/couponexists', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            let result = await checkCouponApplicable(req.query.clientid, req.query.channel, req.query.channelplan, req.query.startdate, req.query.couponcode);
+            let result = await checkCouponApplicable(req.query.clientid, req.query.channel, req.query.adschedule, req.query.startdate, req.query.couponcode);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -119,7 +119,7 @@ module.exports = (app, io) => {
 
     app.get('/api/clientad/coupons', passport.authenticate('jwt', {session: false}), async (req, res) => {
        try {
-           let result = await getApplicableCoupons(req.query.clientid, req.query.channel, req.query.channelplan, req.query.startdate);
+           let result = await getApplicableCoupons(req.query.clientid, req.query.channel, req.query.adschedule, req.query.startdate);
            return res.status(result.code).send(result.data);
        } catch (ex) {
            return res.status(ex.code || 500).send(ex.error);

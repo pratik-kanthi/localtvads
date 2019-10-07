@@ -20,11 +20,11 @@ const {getTaxes} = require.main.require('./services/TaxService');
  * Check for Discount coupon
  * @param {String} clientId - _id of Client
  * @param {String} channel - _id of Channel
- * @param {String} channelPlan - _id of ChannelPlan
+ * @param {String} adSchedule - _id of AdSchedule
  * @param {String} startDate - startDate of the ChannelPlan
  * @param {String} couponCode - coupon code
  */
-const checkCouponApplicable = (clientId, channel, channelPlan, startDate, couponCode) => {
+const checkCouponApplicable = (clientId, channel, adSchedule, startDate, couponCode) => {
     return new Promise(async (resolve, reject) => {
         if (!clientId || !couponCode || !startDate) {
             return reject({
@@ -32,7 +32,7 @@ const checkCouponApplicable = (clientId, channel, channelPlan, startDate, coupon
                 message: utilities.ErrorMessages.BAD_REQUEST
             });
         }
-        let query = _generateDiscountQuery(clientId, channel, channelPlan, startDate);
+        let query = _generateDiscountQuery(clientId, channel, adSchedule, startDate);
         if (couponCode) {
             query.$and.push({
                 CouponCode: couponCode
@@ -336,8 +336,8 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
  * @param {Object} channelPlan - object of ChannelPlan
  * @param {Object} extras - addons selected by the client on top of the cost of ad
  * @param {String} cardId - _id of the ClientPaymentMethod
- * @param token - token of Stripe starting with tok_
- * @param couponCode - discount coupon code
+ * @param {String} token - token of Stripe starting with tok_
+ * @param {String} couponCode - discount coupon code
  * @param {Object} req - original object of request of API
  */
 const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, couponCode, req) => {
@@ -377,13 +377,13 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                 BaseAmount: 1
             };
 
-            ChannelPlan.findOne(query, project, async (err, chAdPlan) => {
+            ChannelPlan.findOne(query, project).populate('ChannelAdSchedule','AdSchedule').exec(async (err, chPlan) => {
                 if (err) {
                     return reject({
                         code: 500,
                         error: err
                     });
-                } else if (!chAdPlan) {
+                } else if (!chPlan) {
                     return reject({
                         code: 404,
                         error: {
@@ -402,32 +402,35 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                                 "Card.StripeCardToken": 1,
                                 StripeCusToken: 1
                             });
-                            if (!card) {
-                                return reject({
-                                    code: 404,
-                                    error: {
-                                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND
-                                    }
-                                });
-                            }
                         } catch (err) {
-
+                            return reject({
+                                code: 500,
+                                error: err
+                            });
+                        }
+                        if (!card) {
+                            return reject({
+                                code: 404,
+                                error: {
+                                    message: 'Card' + utilities.ErrorMessages.NOT_FOUND
+                                }
+                            });
                         }
                     }
 
-                    let taxAmount, taxes, discount, finalAmount = chAdPlan.BaseAmount, discountAmount = 0;
-                    try {
-                        let result = await checkCouponApplicable(clientAdPlan.Client, chAdPlan.Channel, chAdPlan._id, clientAdPlan.StartDate, couponCode);
-                        discount = result.data;
-                    } catch (ex) {
-                        return reject({
-                            code: ex.code || 500,
-                            error: ex.error
-                        });
-                    }
-                    if (discount) {
-                        discountAmount = discount.AmountType === 'PERCENTAGE' ? (finalAmount * discount.Amount)/100 : discount.Amount;
-                        finalAmount = finalAmount - discountAmount;
+                    let taxAmount, taxes, discount, finalAmount = chPlan.BaseAmount, discountAmount = 0;
+                    if (couponCode) {
+                        try {
+                            let result = await checkCouponApplicable(clientAdPlan.Client, chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, couponCode);
+                            discount = result.data;
+                            discountAmount = discount.AmountType === 'PERCENTAGE' ? (finalAmount * discount.Amount)/100 : discount.Amount;
+                            finalAmount = finalAmount - discountAmount;
+                        } catch (ex) {
+                            return reject({
+                                code: ex.code || 500,
+                                error: ex.error
+                            });
+                        }
                     }
                     try {
                         let taxResult = await getTaxes(finalAmount);
@@ -450,11 +453,11 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         Status: 'ACTIVE',
                         DayOfWeek: moment(clientAdPlan.StartDate).isoWeekday(),
                         ChannelPlan: {
-                            Plan: chAdPlan,
+                            Plan: chPlan,
                             Extras: extras || [],
                             Discount: discountAmount,
                             Surge: 0,
-                            SubTotal: chAdPlan.BaseAmount,
+                            SubTotal: chPlan.BaseAmount,
                             TaxAmount: taxAmount,
                             TotalAmount: finalAmount
                         }
@@ -475,7 +478,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                     }
 
                     let transaction = new Transaction({
-                        ChannelPlan: chAdPlan,
+                        ChannelPlan: chPlan,
                         Client: clientAdPlan.Client,
                         ClientAdPlan: cAdPlan._id,
                         TotalAmount: cAdPlan.ChannelPlan.TotalAmount,
@@ -593,7 +596,7 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
     });
 };
 
-const _generateDiscountQuery = (clientId, channel, channelPlan, startDate) => {
+const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
     let query = {
         $and: []
     };
@@ -630,21 +633,21 @@ const _generateDiscountQuery = (clientId, channel, channelPlan, startDate) => {
             ]
         });
     }
-    if (channelPlan) {
+    if (adSchedule) {
         query.$and.push({
             $or: [
                 {
-                    ChannelPlans: {
-                        $in: [channelPlan]
+                    AdSchedules: {
+                        $in: [adSchedule]
                     }
                 },
                 {
-                    ChannelPlans: {
+                    AdSchedules: {
                         $exists: false
                     }
                 },
                 {
-                    ChannelPlans: []
+                    AdSchedules: []
                 }
             ]
         });
