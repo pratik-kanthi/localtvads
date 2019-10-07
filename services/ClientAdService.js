@@ -236,6 +236,79 @@ const getClientAdPlan = (id) => {
 };
 
 /**
+ * Get ClientAdPlan by its _id
+ * @param {String} clientId - _id of Client
+ * @param {String} top - top
+ * @param {String} skip - skip
+ */
+const getClientAdPlans = (clientId, top, skip) => {
+    return new Promise(async (resolve, reject) => {
+        if (!clientId || top === undefined || skip === undefined) {
+            return reject({
+                code: 500,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        let query = {
+            Client: clientId
+        };
+        let project = {
+            "ChannelPlan.Plan.ChannelAdSchedule.AdSchedule": 1,
+            "ChannelPlanPlan.Channel": 1,
+            "Name": 1,
+            "StartDate": 1,
+            "EndDate": 1,
+            "ClientAd": 1
+        };
+        let populateOptions = [{
+            path: 'ClientAd',
+            select: {
+                VideoUrl: 1
+            }
+        }, {
+            path: 'ChannelPlan.Plan.Channel',
+            model: 'Channel',
+            select: {
+                Name: 1,
+                Description: 1
+            }
+        }, {
+            path: 'ChannelPlan.Plan.ChannelAdSchedule',
+            model: 'ChannelAdSchedule',
+            select: {
+                _id: 1
+            },
+            populate: [
+                {
+                    path: 'AdSchedule',
+                    model: 'AdSchedule',
+                    select: {
+                        Name: 1,
+                        Description: 1,
+                        StartTime: 1,
+                        EndTime: 1
+                    }
+                }
+            ]
+        }];
+        ClientAdPlan.find(query, project).skip(parseInt(skip)).limit(parseInt(top)).populate(populateOptions).exec((err, clientAdPlans) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({
+                code: 200,
+                data: clientAdPlans
+            });
+        });
+    });
+};
+
+/**
  * Renew ClientAdPlan manually
  * @param {Object} clientAdPlan - object of ClientAdPlan
  * @param {Object} cardId - Stripe token of the card
@@ -669,11 +742,12 @@ const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
 };
 
 module.exports = {
-    saveClientAdPlan,
-    renewClientAdPlan,
     getClientAd,
     getClientAdPlan,
+    getApplicableCoupons,
+    getClientAdPlans,
+    saveClientAdPlan,
+    renewClientAdPlan,
     updateClientAd,
     checkCouponApplicable,
-    getApplicableCoupons
 };

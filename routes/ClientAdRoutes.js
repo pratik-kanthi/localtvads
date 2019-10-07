@@ -3,8 +3,7 @@ const passport = require('passport');
 const config = require.main.require('./config');
 
 const {addCard} = require.main.require('./services/ClientService');
-const {checkCouponApplicable, getApplicableCoupons, getClientAd, getClientAdPlan, renewClientAdPlan, saveClientAdPlan, uploadClientAd} = require.main.require('./services/ClientAdService');
-const {saveCustomAd, previewCustomAd} = require.main.require('./services/FFMPEGService');
+const {checkCouponApplicable, getApplicableCoupons, getClientAd, getClientAdPlan, getClientAdPlans, renewClientAdPlan, saveClientAdPlan, uploadClientAd} = require.main.require('./services/ClientAdService');
 
 let mediaUpload = multer({
     storage: multer.memoryStorage(),
@@ -72,18 +71,9 @@ module.exports = (app, io) => {
         });
     });
 
-    app.post('/api/clientad/ffmpeg/save', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.get('/api/clientad/getall', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            let result = await saveCustomAd(req.body.clientAd);
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
-        }
-    });
-
-    app.post('/api/clientad/ffmpeg/preview', passport.authenticate('jwt', {session: false}), async (req, res) => {
-        try {
-            let result = await previewCustomAd(req.body.pictures, req.body.audio, req.body.clientAd);
+            let result = await getClientAdPlans(req.query.clientid, req.query.top, req.query.skip);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
