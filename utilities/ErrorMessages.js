@@ -1,4 +1,5 @@
 module.exports = {
+    ALREADY_SUBSCRIBED: 'You are already subscribed',
     BAD_REQUEST: 'Invalid Request, Please check input parameters',
     COUPON_NOT_APPLICABLE: 'Coupon is not applicable on this subscription',
     COUPON_ALREADY_USED: 'This coupon code has already been used, please try a different coupon code',
