@@ -256,6 +256,7 @@ const getClientAdPlans = (clientId, top, skip) => {
         };
         let project = {
             "ChannelPlan.Plan.ChannelAdSchedule.AdSchedule": 1,
+            "ChannelPlan.Plan.Seconds": 1,
             "ChannelPlanPlan.Channel": 1,
             "Name": 1,
             "StartDate": 1,
