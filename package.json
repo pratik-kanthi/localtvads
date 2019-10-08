@@ -23,7 +23,6 @@
     "dotenv": "^8.0.0",
     "ejs": "^2.7.1",
     "express": "^4.17.1",
-    "fluent-ffmpeg": "^2.1.2",
     "fs-extra": "^8.1.0",
     "jimp": "^0.6.4",
     "jsonwebtoken": "^8.5.1",
