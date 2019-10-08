@@ -26,6 +26,9 @@ const schema = new mongoose.Schema({
         Surge: {
             type: Number
         },
+        Discount: {
+            type: Number
+        },
         Extras: [],
         SubTotal: {
             type: Number

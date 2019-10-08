@@ -100,6 +100,25 @@ const chargeByCard = async (amount, stripeToken) => {
     });
 };
 
+/**
+ * Charge by a new (unsaved) card
+ * @param {String} cusToken - Stripe token for customer
+ * @param {String} cardToken - Stripe token for card
+ */
+const deleteCardFromStripe = async  (cusToken, cardToken) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let result = await stripe.customers.deleteSource(cusToken, cardToken);
+            resolve(result);
+        } catch (err) {
+            return reject({
+                code: err.code,
+                error: err.error
+            });
+        }
+    });
+};
+
 const _throwError = (err) => {
     return utilities.ErrorMessages[err.type] ? utilities.ErrorMessages[err.type] : utilities.GeneralMessages.PAYMENT_ERROR
 };
@@ -107,6 +126,7 @@ const _throwError = (err) => {
 module.exports = {
     chargeByCard,
     chargeByExistingCard,
+    deleteCardFromStripe,
     saveCustomer,
     saveNewCardToCustomer
 };

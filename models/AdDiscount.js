@@ -10,10 +10,16 @@ const schema = new mongoose.Schema({
     Description: {
         type: String
     },
-    AdPlans: [{
+    Client: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'AdSchedule'
-    }],
+        ref: 'Client'
+    },
+    AdSchedules: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'AdSchedule'
+        }
+    ],
     Channels: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Channel'
@@ -24,7 +30,7 @@ const schema = new mongoose.Schema({
     },
     AmountType: {
         type: String,
-        enum: ['Fixed','Percentage'],
+        enum: [ 'FIXED', 'PERCENTAGE' ],
         required: true
     },
     StartDate: {
@@ -41,10 +47,6 @@ const schema = new mongoose.Schema({
     PermittedUsageCount: {
         type: Number,
         default: 1
-    },
-    UsageCount: {
-        type: Number,
-        default: 0
     }
 });
 

@@ -36,6 +36,10 @@ const schema = new mongoose.Schema({
             return new Date()
         }
     },
+    AdDiscount: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'AdDiscount'
+    },
     TaxBreakdown: [],
     StripeResponse: {}
 });

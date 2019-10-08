@@ -3,8 +3,7 @@ const passport = require('passport');
 const config = require.main.require('./config');
 
 const {addCard} = require.main.require('./services/ClientService');
-const {saveClientAdPlan, renewClientAdPlan, getClientAd, uploadClientAd, getClientAdPlan} = require.main.require('./services/ClientAdService');
-const {saveCustomAd, previewCustomAd} = require.main.require('./services/FFMPEGService');
+const {checkCouponApplicable, getApplicableCoupons, getClientAd, getClientAdPlan, getClientAdPlans, renewClientAdPlan, saveClientAdPlan, uploadClientAd} = require.main.require('./services/ClientAdService');
 
 let mediaUpload = multer({
     storage: multer.memoryStorage(),
@@ -42,7 +41,7 @@ module.exports = (app, io) => {
             }
         }
         try {
-            let result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, req.body.cardid ? req.body.cardid : (card ? card.data._id : undefined), req.body.token,  req);
+            let result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, req.body.cardid ? req.body.cardid : (card ? card.data._id : undefined), req.body.token, req.body.coupon, req);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -72,18 +71,9 @@ module.exports = (app, io) => {
         });
     });
 
-    app.post('/api/clientad/ffmpeg/save', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.get('/api/clientad/getall', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            let result = await saveCustomAd(req.body.clientAd);
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
-        }
-    });
-
-    app.post('/api/clientad/ffmpeg/preview', passport.authenticate('jwt', {session: false}), async (req, res) => {
-        try {
-            let result = await previewCustomAd(req.body.pictures, req.body.audio, req.body.clientAd);
+            let result = await getClientAdPlans(req.query.clientid, req.query.top, req.query.skip);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -106,5 +96,23 @@ module.exports = (app, io) => {
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
+    });
+
+    app.get('/api/clientad/couponexists', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            let result = await checkCouponApplicable(req.query.clientid, req.query.channel, req.query.adschedule, req.query.startdate, req.query.couponcode);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.get('/api/clientad/coupons', passport.authenticate('jwt', {session: false}), async (req, res) => {
+       try {
+           let result = await getApplicableCoupons(req.query.clientid, req.query.channel, req.query.adschedule, req.query.startdate);
+           return res.status(result.code).send(result.data);
+       } catch (ex) {
+           return res.status(ex.code || 500).send(ex.error);
+       }
     });
 };

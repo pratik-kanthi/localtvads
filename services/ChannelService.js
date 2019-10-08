@@ -302,6 +302,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                                     AdSchedule: p.ChannelAdSchedule.AdSchedule,
                                     Seconds: p.Seconds,
                                     TotalAmount: p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + (tax.Value * p.BaseAmount * 0.01) : (accumulator + tax.Value), 0),
+                                    BaseAmount: p.BaseAmount,
                                     ViewershipCount: adScheduleViewershipMapping[p.ChannelAdSchedule.AdSchedule._id.toString()]
                                 };
                             }
@@ -326,7 +327,10 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                     }
                     resolve({
                         code: 200,
-                        data: result
+                        data: {
+                            plans: result,
+                            taxes: taxes
+                        }
                     });
                 });
             }
