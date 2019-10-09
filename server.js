@@ -1,3 +1,4 @@
+/* eslint no-console: 0 */
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
@@ -32,8 +33,9 @@ mongoose.connect(process.env.DATABASE, {
     useCreateIndex: true,
     useFindAndModify: false
 }, (err) => {
-    if (err)
+    if (err) {
         console.log(err);
+    }
 });
 mongoose.Promise = global.Promise;
 
@@ -45,7 +47,7 @@ global.utilities = utilities;
 
 mongoose.Promise = global.Promise;
 
-let models = require('./models')(mongoose);
+const models = require('./models')(mongoose);
 
 app.listen(port, () => {
     console.log('Application started at PORT ' + port);

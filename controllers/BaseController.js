@@ -3,13 +3,13 @@ const deepPopulate = require('mongoose-deep-populate')(mongoose);
 const odata = require('../odata');
 
 module.exports = (def) => {
-    let Model = def.model;
+    const Model = def.model;
     Model.schema.plugin(deepPopulate);
 
     const getAll = (req, res) => {
-        let Channels = req.user.Channels;
+        const Channels = req.user.Channels;
         //query string that filters just the records with the selected Brands or no brand all together
-        let querystring = [{
+        const querystring = [{
             Channel: {
                 $in: Channels
             }
@@ -24,36 +24,41 @@ module.exports = (def) => {
         }];
         let query = Model.find();
 
-        if (req.query.$select || req.query.$expand)
+        if (req.query.$select || req.query.$expand) {
             query = odata.selectExpandParser(query, req.query.$select, req.query.$expand);
+        }
 
-        if (req.query.$filter)
+        if (req.query.$filter) {
             query = odata.filterParser(query, req.query.$filter);
+        }
 
-        if (req.query.$top)
+        if (req.query.$top) {
             query = odata.topParser(query, req.query.$top);
+        }
 
-        if (req.query.$skip)
+        if (req.query.$skip) {
             query = odata.skipParser(query, req.query.$skip);
+        }
 
-        if (req.query.$orderBy)
+        if (req.query.$orderBy) {
             query = odata.orderByParser(query, req.query.$orderBy);
+        }
         query = query.or(querystring);
 
 
         query.exec((err, models) => {
-            if (err)
+            if (err) {
                 res.status(500).send(err);
-            else {
+            } else {
                 res.status(200).json(models);
             }
         });
     };
 
     const count = (req, res) => {
-        let Channels = req.user.Channels;
+        const Channels = req.user.Channels;
         //query string that filters just the records with the selected Brands or no brand all together
-        let querystring = [{
+        const querystring = [{
             Channel: {
                 $in: Channels
             }
@@ -68,14 +73,16 @@ module.exports = (def) => {
         }];
         let query = Model.count();
 
-        query = odata.selectExpandParser(query, "_id", null);
-        if (req.query.$filter)
+        query = odata.selectExpandParser(query, '_id', null);
+        if (req.query.$filter) {
             query = odata.filterParser(query, req.query.$filter);
+        }
 
         query = query.or(querystring);
         query.exec((err, count) => {
-            if (err)
+            if (err) {
                 return res.status(500).send(err);
+            }
             res.status(200).json({
                 Count: count
             });
@@ -83,11 +90,11 @@ module.exports = (def) => {
     };
 
     const getOne = (req, res) => {
-        let Channels = req.user.Channels;
+        const Channels = req.user.Channels;
 
         //query string that filters just the records with the requested Id, selected brands or no brand all together
 
-        let querystring = {
+        const querystring = {
             $and: [{
                 _id: req.params._id
             }, {
@@ -108,15 +115,16 @@ module.exports = (def) => {
         };
 
         Model.findOne(querystring, (err, model) => {
-            if (err)
+            if (err) {
                 res.send(err);
-            else {
-                if (model)
+            } else {
+                if (model) {
                     res.json(model);
-                else
+                } else {
                     res.status(404).json({
                         error: 'Not Found'
                     });
+                }
             }
         });
     };

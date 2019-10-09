@@ -1,3 +1,4 @@
+/* eslint no-console: 0 */
 const socketIO = require('socket.io');
 const http = require('http');
 const config = require.main.require('./config');
@@ -10,8 +11,8 @@ const socketPort = process.env.SOCKETPORT;
 const {updateClientAd} = require.main.require('./services/ClientAdService');
 
 module.exports = () => {
-    let app = http.createServer();
-    let io = socketIO(app, {
+    const app = http.createServer();
+    const io = socketIO(app, {
         origins: '*:*',
         wsEngine: 'ws',
         pingInterval: 10000,
@@ -26,8 +27,8 @@ module.exports = () => {
         authenticateSocket(socket, next);
     }).on('connection', (socket) => {
         socket.on('UPLOAD_CHUNK', async (data) => {
-            let tempDir = './public/uploads/' + data.client + '/Temp';
-            let extension = data.name.substr(data.name.lastIndexOf('.'));
+            const tempDir = './public/uploads/' + data.client + '/Temp';
+            const extension = data.name.substr(data.name.lastIndexOf('.'));
             if (!fs.existsSync(tempDir)) {
                 fs.mkdirSync(tempDir, {recursive: true});
             }
@@ -40,7 +41,7 @@ module.exports = () => {
                 socket.emit('UPLOAD_ERROR');
             }
             try {
-                let result = await fs.write(fd, data.data, null, 'Binary');
+                await fs.write(fd, data.data, null, 'Binary');
                 fs.close(fd);
             } catch (err) {
                 logger.logError(err);
@@ -48,11 +49,11 @@ module.exports = () => {
                 return;
             }
             if (data.isLast) {
-                let uploadDir = './public/uploads/' + data.client + '/Video/';
+                const uploadDir = './public/uploads/' + data.client + '/Video/';
                 if (!fs.existsSync(uploadDir)) {
                     fs.mkdirSync(uploadDir, {recursive: true});
                 }
-                let outputFile = fs.createWriteStream(path.join(uploadDir, Date.now() + extension));
+                const outputFile = fs.createWriteStream(path.join(uploadDir, Date.now() + extension));
                 let filenames;
                 try {
                     filenames = await fs.readdir(tempDir);
@@ -65,7 +66,7 @@ module.exports = () => {
                     const data = fs.readFileSync(`${tempDir}/${tempName}`);
 
                     try {
-                        let result = await outputFile.write(data);
+                        await outputFile.write(data);
                     } catch (err) {
                         logger.logError(err);
                         socket.emit('UPLOAD_ERROR');
@@ -96,8 +97,9 @@ module.exports = () => {
     const authenticateSocket = (socket, next) => {
         if (socket.handshake.query && socket.handshake.query.token) {
             jwt.verify(socket.handshake.query.token, config.token.secret, (err, decoded) => {
-                if (err)
+                if (err) {
                     return next(new Error('Authentication error'));
+                }
                 socket.decoded = decoded;
                 next();
             });
@@ -108,5 +110,5 @@ module.exports = () => {
     };
     return {
         io
-    }
+    };
 };

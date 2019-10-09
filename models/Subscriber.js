@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const name = "Subscriber";
+const name = 'Subscriber';
 
 const schema = new mongoose.Schema({
     DateSubscribed: {

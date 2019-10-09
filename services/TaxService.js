@@ -6,10 +6,10 @@ const Tax = require.main.require('./models/Tax').model;
  */
 const getTaxes = (amount) => {
     return new Promise(async (resolve, reject) => {
-        let query = {
+        const query = {
             Active: true
         };
-        let project = {
+        const project = {
             _id: 0,
             Name: 1,
             Description: 1,
@@ -26,7 +26,7 @@ const getTaxes = (amount) => {
             }
             let taxAmount = 0;
             if (amount) {
-                taxes.map(tax => {
+                taxes.forEach(tax => {
                     if (tax.Type === 'FIXED') {
                         taxAmount += tax.Value;
                     } else {

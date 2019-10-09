@@ -18,7 +18,7 @@ const addCard = (clientId, stripeToken) => {
                 }
             });
         }
-        let query = {
+        const query = {
             Client: clientId
         };
 
@@ -34,8 +34,8 @@ const addCard = (clientId, stripeToken) => {
                 });
             } else if (!clientPaymentMethod) {
                 try {
-                    let client = await _getClient(clientId, {Email: 1});
-                    let csToken = await saveCustomer(stripeToken, client.Email);
+                    const client = await _getClient(clientId, {Email: 1});
+                    const csToken = await saveCustomer(stripeToken, client.Email);
                     newClientPaymentMethod = new ClientPaymentMethod({
                         StripeCusToken: csToken.id
                     });
@@ -104,10 +104,10 @@ const getSavedCards = (clientId) => {
                 }
             });
         }
-        let query = {
+        const query = {
             Client: clientId
         };
-        let project = {
+        const project = {
             _id: 1,
             IsPreferred: 1,
             'Card.Vendor': 1,
@@ -146,13 +146,13 @@ const getPreferredCard = (clientId, cardId) => {
                 }
             });
         }
-        let query = {
+        const query = {
             Client: clientId,
             _id: cardId,
             IsPreferred: true
         };
         try {
-            let card = await ClientPaymentMethod.findOne(query, {CardToken: 1, CustomerToken: 1});
+            const card = await ClientPaymentMethod.findOne(query, {CardToken: 1, CustomerToken: 1});
             if (!card) {
                 return reject({
                     code: 404,
@@ -187,9 +187,9 @@ const setPreferredCard = (clientId, cardId) => {
             });
         }
         let query = {
-            Client: clientId,
-            IsPreferred: true
-        }, card;
+                Client: clientId,
+                IsPreferred: true
+            }, card;
         try {
             card = await ClientPaymentMethod.findOne(query);
         } catch (err) {
@@ -201,7 +201,7 @@ const setPreferredCard = (clientId, cardId) => {
         if (card) {
             card.IsPreferred = false;
             try {
-                let result = await card.save();
+                await card.save();
             } catch (err) {
                 return reject({
                     code: 500,
@@ -226,7 +226,7 @@ const setPreferredCard = (clientId, cardId) => {
         if (card) {
             card.IsPreferred = true;
             try {
-                let result = await card.save();
+                await card.save();
                 resolve({
                     code: 200,
                     data: undefined
@@ -279,41 +279,40 @@ const deleteCard = (clientId, cardId) => {
             });
         }
         try {
-        	query = {
-        		Client: clientId,
-				_id: cardId
-			};
-            let card = await ClientPaymentMethod.findOne(query);
+            query = {
+                Client: clientId,
+                _id: cardId
+            };
+            const card = await ClientPaymentMethod.findOne(query);
             if (!card) {
                 return reject({
                     code: 404,
-					error: {
-						message: 'Card' + utilities.ErrorMessages.NOT_FOUND
-					}
+                    error: {
+                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND
+                    }
+                });
+            } else if (card && card.IsPreferred) {
+                return reject({
+                    code: 404,
+                    error: {
+                        message: 'Card' + utilities.ErrorMessages.DELETE_CARD_NOT_ALLOWED
+                    }
+                });
+            } else {
+                try {
+                    await ClientPaymentMethod.findOneAndRemove(query);
+                } catch (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+                await deleteCardFromStripe(card.StripeCusToken, card.Card.StripeCardToken);
+                resolve({
+                    code: 200,
+                    data: undefined
                 });
             }
-            else if (card && card.IsPreferred) {
-				return reject({
-					code: 404,
-					error: {
-						message: 'Card' + utilities.ErrorMessages.DELETE_CARD_NOT_ALLOWED
-					}
-				});
-			} else {
-            	try {
-					let result = await ClientPaymentMethod.findOneAndRemove(query);
-				} catch (err) {
-					return reject({
-						code: 500,
-						error: err
-					});
-				}
-				await deleteCardFromStripe(card.StripeCusToken, card.Card.StripeCardToken);
-				resolve({
-					code: 200,
-					data: undefined
-				});
-			}
         } catch (err) {
             return reject({
                 code: 500,
@@ -340,7 +339,7 @@ const _getClient = (client, projection) => {
 
 module.exports = {
     addCard,
-	deleteCard,
+    deleteCard,
     getPreferredCard,
     getSavedCards,
     setPreferredCard

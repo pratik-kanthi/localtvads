@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name = "UserClaim";
+const name = 'UserClaim';
 
 const schema = new mongoose.Schema({
     UserId: String,
@@ -8,7 +8,7 @@ const schema = new mongoose.Schema({
     ClaimValue: String
 });
 
-let model = mongoose.model(name, schema);
+const model = mongoose.model(name, schema);
 
 module.exports = {
     name: name,

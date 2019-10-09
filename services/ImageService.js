@@ -32,7 +32,7 @@ const cropImage = (query, file) => {
                     } catch (err) {
                         return reject(err);
                     }
-                })
+                });
             } catch (err) {
                 return reject(err);
             }
@@ -60,7 +60,7 @@ const resizeImage = (source, width, height, quality) => {
             });
         }
         try {
-            let result = await pic.resize(width, height).quality(quality).write(source);
+            await pic.resize(width, height).quality(quality).write(source);
             resolve();
         } catch (ex) {
             logger.logError(ex);
@@ -79,7 +79,7 @@ const resizeImage = (source, width, height, quality) => {
 const removeBucketImage = (location) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let result = await deleteBucketFile(location);
+            await deleteBucketFile(location);
             resolve({
                 code: 200,
                 data: {
@@ -90,9 +90,9 @@ const removeBucketImage = (location) => {
             return reject({
                 code: 500,
                 error: err
-            })
+            });
         }
-    })
+    });
 };
 
 /**
@@ -103,7 +103,7 @@ const removeBucketImage = (location) => {
  */
 const removeImage = (attribute, owner, ownerid) => {
     return new Promise((resolve, reject) => {
-        let Owner = model[owner];
+        const Owner = model[owner];
 
         if (!Owner) {
             return reject({
@@ -119,33 +119,34 @@ const removeImage = (attribute, owner, ownerid) => {
                 return reject({
                     code: 500,
                     error: err
-                })
+                });
             }
             if (data) {
                 deleteBucketFile(data[attribute]);
                 data[attribute] = null;
                 data.save((err) => {
-                    if (err)
+                    if (err) {
                         return reject({
                             code: 500,
                             error: err
                         });
-                    else {
+                    } else {
                         return resolve({
                             code: 200,
                             data: data
-                        })
+                        });
                     }
-                })
-            } else
+                });
+            } else {
                 return reject({
                     code: 404,
                     error: {
                         err: 'Owner not found'
                     }
                 });
+            }
         });
-    })
+    });
 };
 
 /**
@@ -156,11 +157,11 @@ const removeImage = (attribute, owner, ownerid) => {
 const uploadImage = (file, query) => {
     return new Promise((resolve, reject) => {
 
-        let time = Date.now();
+        const time = Date.now();
 
-        let extension = file.originalname.substr(file.originalname.lastIndexOf('.'));
+        const extension = file.originalname.substr(file.originalname.lastIndexOf('.'));
 
-        let Owner = model[query.owner];
+        const Owner = model[query.owner];
 
         if (!Owner) {
             return reject({
@@ -168,21 +169,21 @@ const uploadImage = (file, query) => {
                 error: {
                     message: utilities.ErrorMessages.BAD_REQUEST
                 }
-            })
+            });
         }
-        let dst = 'uploads/' + Owner.modelName + '/' + query.ownerid + '/Profile/' + time + extension;
+        const dst = 'uploads/' + Owner.modelName + '/' + query.ownerid + '/Profile/' + time + extension;
 
         let deleteFilelocation = null;
 
         Owner.findOne({
             _id: query.ownerid
         }, async (err, data) => {
-            if (err)
+            if (err) {
                 return reject({
                     code: 500,
                     error: err
                 });
-            else if (!data) {
+            } else if (!data) {
                 return reject({
                     code: 404,
                     error: {
@@ -190,8 +191,9 @@ const uploadImage = (file, query) => {
                     }
                 });
             } else {
-                if (data[query.attribute] && data[query.attribute].trim() !== "")
+                if (data[query.attribute] && data[query.attribute].trim() !== '') {
                     deleteFilelocation = data[query.attribute];
+                }
                 data[query.attribute] = dst;
 
                 if (query.cropx) {
@@ -206,7 +208,7 @@ const uploadImage = (file, query) => {
                 }
 
                 try {
-                    let result = await _uploadFileToBucket(file, dst, deleteFilelocation, query.owner, data);
+                    await _uploadFileToBucket(file, dst, deleteFilelocation, query.owner, data);
                     resolve({
                         code: 200,
                         data: data
@@ -225,12 +227,13 @@ const uploadImage = (file, query) => {
 const _uploadFileToBucket = (file, dst, deleteFileLocation, owner, data) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let result = await uploadFileBuffer(file, dst, deleteFileLocation);
+            await uploadFileBuffer(file, dst, deleteFileLocation);
             data.save((err) => {
-                if (err)
+                if (err) {
                     return reject(err);
-                else
+                } else {
                     resolve(data);
+                }
             });
         } catch (err) {
             return reject(err);

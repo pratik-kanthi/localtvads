@@ -3,11 +3,11 @@ const log = require('../log')(module);
 const {authenticate} = require.main.require('./middlewares/Auth');
 
 module.exports = (app, models) => {
-    for (let key in models) {
-        if (models.hasOwnProperty(key)) {
-            let controller = controllerBuilder(models[key]);
-            app.get('/api/' + key,authenticate,  controller.get);
-            app.get('/api/' + key + "/count", controller.count);
+    for (const key in models) {
+        if (Object.prototype.hasOwnProperty.call(models, key)) {
+            const controller = controllerBuilder(models[key]);
+            app.get('/api/' + key, authenticate, controller.get);
+            app.get('/api/' + key + '/count', controller.count);
             app.get('/api/' + key + '/:_id', controller.getById);
         }
     }

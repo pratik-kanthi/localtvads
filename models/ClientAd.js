@@ -22,7 +22,7 @@ const schema = new mongoose.Schema({
         enum: ['DRAFT', 'UNDERREVIEW', 'APPROVED', 'REJECTED'],
         required: true
     },
-    Length: {         // length of the video in seconds
+    Length: { // length of the video in seconds
         type: Number
     },
     Comments: {

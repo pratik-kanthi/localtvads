@@ -11,14 +11,14 @@ const {getTaxes} = require.main.require('./services/TaxService');
  */
 const getChannels = (projection) => {
     return new Promise(async (resolve, reject) => {
-        let query = {
-            Status: "LIVE"
+        const query = {
+            Status: 'LIVE'
         };
-        let project = projection || {
-            "Name": 1,
-            "Description": 1,
-            "Address.Location": 1,
-            "Viewerships": 1
+        const project = projection || {
+            'Name': 1,
+            'Description': 1,
+            'Address.Location': 1,
+            'Viewerships': 1
         };
 
         Channel.find(query, project).exec((err, channels) => {
@@ -54,15 +54,15 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
             });
         }
         seconds = parseInt(seconds);
-        let splitStartDate = startDateString.split('-');
-        let splitEndDate = endDateString.split('-');
-        let startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
-        let endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
+        const splitStartDate = startDateString.split('-');
+        const splitEndDate = endDateString.split('-');
+        const startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
+        const endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
         let query = {
             Channel: channel,
             IsActive: true
         };
-        let project = {
+        const project = {
             ChannelAdSchedule: 1
         };
         ChannelPlan.find(query, project).distinct('ChannelAdSchedule').exec((err, channelPlans) => {
@@ -72,7 +72,7 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
                     error: err
                 });
             }
-            let channelAdScheduleIds = channelPlans.map(cp => cp);
+            const channelAdScheduleIds = channelPlans.map(cp => cp);
             query = {
                 $and: [
                     {
@@ -90,7 +90,7 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
                     $in: channelAdScheduleIds
                 }
             };
-            let project = {
+            const project = {
                 DateTime: 1,
                 TotalSeconds: 1
             };
@@ -101,14 +101,14 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
                         error: err
                     });
                 }
-                let result = {};
+                const result = {};
 
                 for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
                     result[_formatDate(i)] = [];
                 }
                 for (let i = 0; i < countsByDate.length; i++) {
-                    let key = _formatDate(countsByDate[i].DateTime);
-                    if (countsByDate[i].ChannelAdSchedule && (countsByDate[i].ChannelAdSchedule.TotalAvailableSeconds < seconds + countsByDate[i].TotalSeconds)) {
+                    const key = _formatDate(countsByDate[i].DateTime);
+                    if (countsByDate[i].ChannelAdSchedule && countsByDate[i].ChannelAdSchedule.TotalAvailableSeconds < seconds + countsByDate[i].TotalSeconds) {
                         result[key].push(false);
                     }
                 }
@@ -138,11 +138,11 @@ const getSecondsByChannel = (channel) => {
                 }
             });
         }
-        let query = {
+        const query = {
             Channel: channel
         };
 
-        let project = {
+        const project = {
             _id: 0,
             Seconds: 1,
             ExpectedAdViews: 1
@@ -152,7 +152,7 @@ const getSecondsByChannel = (channel) => {
                 return reject({
                     code: 500,
                     error: err
-                })
+                });
             } else {
                 resolve({
                     code: 200,
@@ -181,15 +181,15 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
             });
         }
         seconds = parseInt(seconds);
-        let splitStartDate = startDateString.split('-');
-        let startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
-        let splitEndDate = endDateString.split('-');
-        let endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
+        const splitStartDate = startDateString.split('-');
+        const startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
+        const splitEndDate = endDateString.split('-');
+        const endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
         // memoization - reduce space complexity and additional function calls. Store all possible key value pairs of adSchedule for later use
-        let adScheduleMapping = {};
-        let adScheduleViewershipMapping = {};
+        const adScheduleMapping = {};
+        const adScheduleViewershipMapping = {};
         try {
-            let channelModel = await Channel.findOne({_id: channel}, {Viewerships: 1});
+            const channelModel = await Channel.findOne({_id: channel}, {Viewerships: 1});
             if (!channelModel) {
                 return reject({
                     code: 404,
@@ -208,13 +208,13 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
             Seconds: seconds,
             IsActive: true
         };
-        let project = {
+        const project = {
             _id: 1,
             ChannelAdSchedule: 1,
             Seconds: 1,
             BaseAmount: 1
         };
-        let populateOptions = {
+        const populateOptions = {
             path: 'ChannelAdSchedule',
             select: {
                 TotalAvailableSeconds: 1,
@@ -241,12 +241,12 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                     error: err
                 });
             } else {
-                let channelAdScheduleIds = channelPlans.map(c => {
+                const channelAdScheduleIds = channelPlans.map(c => {
                     adScheduleMapping[c.ChannelAdSchedule._id.toString()] = {
                         AdSchedule: c.ChannelAdSchedule.AdSchedule,
                         ChannelAdSchedule: c.ChannelAdSchedule
                     };
-                    return c.ChannelAdSchedule._id
+                    return c.ChannelAdSchedule._id;
                 });
                 query = {
                     $and: [
@@ -265,7 +265,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                         $in: channelAdScheduleIds
                     }
                 };
-                let project = {
+                const project = {
                     DateTime: 1,
                     TotalSeconds: 1,
                     ChannelAdSchedule: 1
@@ -277,10 +277,10 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                             error: err
                         });
                     }
-                    let result = {};
+                    const result = {};
                     let taxes;
                     try {
-                        let taxResult = await getTaxes();
+                        const taxResult = await getTaxes();
                         taxes = taxResult.taxes;
                     } catch (ex) {
                         return reject({
@@ -290,9 +290,9 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                     }
 
                     for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
-                        let key = _formatDate(i);
+                        const key = _formatDate(i);
                         result[key] = {};
-                        channelPlans.map((p) => {
+                        channelPlans.forEach((p) => {
                             if (p.ChannelAdSchedule && adScheduleMapping[p.ChannelAdSchedule._id.toString()]) {
                                 // Dynamic price calculation
                                 result[key][adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule.Name] = {
@@ -301,7 +301,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                                     Description: p.Description,
                                     AdSchedule: p.ChannelAdSchedule.AdSchedule,
                                     Seconds: p.Seconds,
-                                    TotalAmount: p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + (tax.Value * p.BaseAmount * 0.01) : (accumulator + tax.Value), 0),
+                                    TotalAmount: p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * p.BaseAmount * 0.01 : accumulator + tax.Value, 0),
                                     BaseAmount: p.BaseAmount,
                                     ViewershipCount: adScheduleViewershipMapping[p.ChannelAdSchedule.AdSchedule._id.toString()]
                                 };
@@ -310,10 +310,10 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                     }
 
                     for (let i = 0; i < countsByDate.length; i++) {
-                        let key = _formatDate(countsByDate[i].DateTime);
+                        const key = _formatDate(countsByDate[i].DateTime);
                         if (adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()] && adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule) {
-                            let totalAvailableSeconds = adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule.TotalAvailableSeconds;
-                            if ((totalAvailableSeconds < seconds + countsByDate[i].TotalSeconds)) {
+                            const totalAvailableSeconds = adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule.TotalAvailableSeconds;
+                            if (totalAvailableSeconds < seconds + countsByDate[i].TotalSeconds) {
                                 result[key][adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].AdSchedule.Name] = undefined;
                             }
                         } else {
@@ -344,13 +344,13 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
  */
 const updateChannelAdLengthCounter = (clientAdPlan) => {
     return new Promise(async (resolve, reject) => {
-        let dates = [];
+        const dates = [];
         for (let i = clientAdPlan.StartDate; i <= clientAdPlan.EndDate; i = moment(i).add(7, 'days').toDate()) {
             dates.push(i);
         }
-        let queue = dates.map(d => _updateChannelAdLengthByDate(clientAdPlan, d));
+        const queue = dates.map(d => _updateChannelAdLengthByDate(clientAdPlan, d));
         try {
-            let result = await Promise.all(queue);
+            await Promise.all(queue);
             resolve();
         } catch (err) {
             return reject({
@@ -363,12 +363,12 @@ const updateChannelAdLengthCounter = (clientAdPlan) => {
 
 const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
     return new Promise(async (resolve, reject) => {
-        let query = {
+        const query = {
             Channel: clientAdPlan.ChannelPlan.Plan.Channel,
             ChannelAdSchedule: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule,
             DateTime: dateTime
         };
-        let value = {
+        const value = {
             Channel: clientAdPlan.ChannelPlan.Plan.Channel,
             ChannelAdSchedule: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule,
             DateTime: dateTime,
@@ -389,9 +389,9 @@ const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
 };
 
 const _formatDate = (date) => {
-    let month = date.getMonth() + 1;
-    let day = date.getDate();
-    return date.getFullYear() + '-' + (month > 9 ? month : ('0' + month)) + '-' + (day > 9 ? day : ('0' + day));
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    return date.getFullYear() + '-' + (month > 9 ? month : '0' + month) + '-' + (day > 9 ? day : '0' + day);
 };
 
 module.exports = {

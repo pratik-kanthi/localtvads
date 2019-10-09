@@ -42,13 +42,14 @@ const socialRegister = (profile) => {
                     error: {
                         message: utilities.ErrorMessages.USER_ALREADY_EXISTS
                     }
-                })
+                });
             }
-            let client = new Client({
+            const client = new Client({
                 Name: profile.Name,
                 Email: profile.Email,
                 Phone: profile.Phone,
-                IsActive: true
+                IsActive: true,
+                ImageUrl: undefined
             });
             if (profile.ImageUrl) {
                 try {
@@ -67,7 +68,7 @@ const socialRegister = (profile) => {
                         error: err
                     });
                 } else {
-                    let user = new User({
+                    const user = new User({
                         UserName: profile.Email,
                         Name: profile.Name,
                         Email: profile.Email,
@@ -89,7 +90,7 @@ const socialRegister = (profile) => {
                                 error: err
                             });
                         }
-                        let claim = new UserClaim({
+                        const claim = new UserClaim({
                             UserId: user._id,
                             ClaimType: 'Client',
                             ClaimValue: client._id
@@ -101,7 +102,7 @@ const socialRegister = (profile) => {
                                     error: err
                                 });
                             }
-                            let accessToken = new AccessToken({
+                            const accessToken = new AccessToken({
                                 UserName: user.Email,
                                 UserId: user._id,
                                 AuthorisationScheme: user.AuthorisationScheme,
@@ -155,7 +156,7 @@ const standardRegister = (profile) => {
                 error: {
                     message: utilities.ErrorMessages.WEAK_PASSWORD
                 }
-            })
+            });
         }
         let result;
         try {
@@ -177,7 +178,7 @@ const standardRegister = (profile) => {
             });
         }
 
-        let client = new Client({
+        const client = new Client({
             Name: profile.Name,
             Email: profile.Email,
             Phone: profile.Phone,
@@ -190,7 +191,7 @@ const standardRegister = (profile) => {
                     error: err
                 });
             } else {
-                let user = new User({
+                const user = new User({
                     UserName: profile.Email,
                     Name: profile.Name,
                     Email: profile.Email,
@@ -212,7 +213,7 @@ const standardRegister = (profile) => {
                             error: err
                         });
                     }
-                    let claim = new UserClaim({
+                    const claim = new UserClaim({
                         UserId: user._id,
                         ClaimType: 'Client',
                         ClaimValue: client._id
@@ -225,7 +226,7 @@ const standardRegister = (profile) => {
                             });
                         }
 
-                        let verification_link = process.env.APP + 'api/auth/confirmation/' + user._id
+                        const verification_link = process.env.APP + 'api/auth/confirmation/' + user._id;
                         email.helper.standardRegisterEmail(user.Email, verification_link);
 
                         resolve({
@@ -254,18 +255,18 @@ const socialLogin = (profile, req) => {
                 }
             });
         } else {
-            let query = {
+            const query = {
                 UserName: profile.Email
             };
             User.findOne(query, async (err, user) => {
                 if (err) {
-                    _logLogin(profile.Email, req, "API_ERROR");
+                    _logLogin(profile.Email, req, 'API_ERROR');
                     return reject({
                         code: 500,
                         error: err
                     });
                 } else if (!user) {
-                    _logLogin(profile.Email, req, "FAILED_LOGIN");
+                    _logLogin(profile.Email, req, 'FAILED_LOGIN');
                     return reject({
                         code: 404,
                         error: {
@@ -273,7 +274,7 @@ const socialLogin = (profile, req) => {
                         }
                     });
                 } else if (user && user.IsLockoutEnabled) {
-                    _logLogin(profile.Email, req, "FAILED_LOGIN");
+                    _logLogin(profile.Email, req, 'FAILED_LOGIN');
                     return reject({
                         code: 401,
                         error: {
@@ -281,7 +282,7 @@ const socialLogin = (profile, req) => {
                         }
                     });
                 } else if (user && user.PasswordHash) {
-                    _logLogin(profile.Email, req, "FAILED_LOGIN");
+                    _logLogin(profile.Email, req, 'FAILED_LOGIN');
                     return reject({
                         code: 409,
                         error: {
@@ -293,15 +294,15 @@ const socialLogin = (profile, req) => {
                 try {
                     claims = await _fetchClaim(user._id);
                 } catch (ex) {
-                    _logLogin(profile.Email, req, "FAILED_LOGIN");
+                    _logLogin(profile.Email, req, 'FAILED_LOGIN');
                     return reject({
                         code: ex.code || 500,
                         error: ex.error
                     });
                 }
-                let claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join("|");
+                const claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join('|');
 
-                let accessToken = new AccessToken({
+                const accessToken = new AccessToken({
                     UserName: user.Email,
                     UserId: user._id,
                     AuthorisationScheme: user.AuthorisationScheme,
@@ -347,7 +348,7 @@ const standardLogin = (email, password, req) => {
                 }
             });
         }
-        let query = {
+        const query = {
             UserName: email,
             AuthorisationScheme: 'Standard'
         };
@@ -358,25 +359,25 @@ const standardLogin = (email, password, req) => {
                     error: err
                 });
             } else if (!user) {
-                _logLogin(email, req, "FAILED_LOGIN");
+                _logLogin(email, req, 'FAILED_LOGIN');
                 return reject({
                     code: 404,
                     error: {
                         message: utilities.ErrorMessages.USERNAME_NOT_FOUND
                     }
-                })
+                });
             } else {
                 if (user.ValidatePassword(password, user.PasswordHash)) {
                     if (user && !user.IsEmailConfirmed) {
-                        _logLogin(email, req, "EMAIL_UNVERIFIED");
+                        _logLogin(email, req, 'EMAIL_UNVERIFIED');
                         return reject({
                             code: 401,
                             error: {
                                 message: utilities.ErrorMessages.EMAIL_NOT_CONFIRMED
                             }
-                        })
+                        });
                     } else if (user && user.IsLockoutEnabled) {
-                        _logLogin(email, req, "FAILED_LOGIN");
+                        _logLogin(email, req, 'FAILED_LOGIN');
                         return reject({
                             code: 401,
                             error: {
@@ -388,15 +389,15 @@ const standardLogin = (email, password, req) => {
                         try {
                             claims = await _fetchClaim(user._id);
                         } catch (ex) {
-                            _logLogin(email, req, "FAILED_LOGIN");
+                            _logLogin(email, req, 'FAILED_LOGIN');
                             return reject({
                                 code: ex.code || 500,
                                 error: ex.error
                             });
                         }
-                        let claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join("|");
+                        const claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join('|');
 
-                        let accessToken = new AccessToken({
+                        const accessToken = new AccessToken({
                             UserName: user.Email,
                             UserId: user._id,
                             AuthorisationScheme: user.AuthorisationScheme,
@@ -421,10 +422,10 @@ const standardLogin = (email, password, req) => {
                                 });
                             }
                         });
-                        _logLogin(email, req, "SUCCESS");
+                        _logLogin(email, req, 'SUCCESS');
                     }
                 } else {
-                    _logLogin(email, req, "FAILED_LOGIN");
+                    _logLogin(email, req, 'FAILED_LOGIN');
                     return reject({
                         code: 401,
                         error: {
@@ -452,7 +453,7 @@ const verifyUserEmail = (userid) => {
                 }
             });
         } else {
-            let query = {
+            const query = {
                 _id: userid
             };
 
@@ -469,18 +470,18 @@ const verifyUserEmail = (userid) => {
                             return reject({
                                 code: 500,
                                 error: err
-                            })
+                            });
                         } else {
                             resolve({
                                 code: 200,
                                 data: user
-                            })
+                            });
                         }
-                    })
+                    });
                 }
             });
         }
-    })
+    });
 };
 
 
@@ -495,7 +496,7 @@ const sendPasswordResetLink = (userEmail) => {
                 }
             });
         } else {
-            let query = {
+            const query = {
                 Email: userEmail
             };
 
@@ -513,7 +514,7 @@ const sendPasswordResetLink = (userEmail) => {
                         }
                     });
                 } else {
-                    let utcstamp = Date.parse(new Date());
+                    const utcstamp = Date.parse(new Date());
                     let verification_link = user._id + 'UTC' + utcstamp;
                     verification_link = process.env.WEBAPP + 'resetpassword?token=' + Buffer.from(verification_link).toString('base64');
                     email.helper.passwordResetEmail(user.Email, verification_link);
@@ -521,11 +522,11 @@ const sendPasswordResetLink = (userEmail) => {
                     resolve({
                         code: 200,
                         data: true
-                    })
+                    });
                 }
-            })
+            });
         }
-    })
+    });
 };
 
 
@@ -540,20 +541,20 @@ const resetPassword = (hash, newpassword) => {
             });
         } else {
             let hashstring = Buffer.from(hash, 'base64').toString();
-            hashstring = hashstring.split("UTC");
-            let utcnow = Date.parse(new Date());
-            let userid = hashstring[0];
-            let linktimestamp = hashstring[1];
+            hashstring = hashstring.split('UTC');
+            const utcnow = Date.parse(new Date());
+            const userid = hashstring[0];
+            const linktimestamp = hashstring[1];
 
-            if ((utcnow - parseInt(linktimestamp)) > 86400) {
+            if (utcnow - parseInt(linktimestamp) > 86400) {
                 return reject({
                     code: 401,
                     error: {
                         message: utilities.ErrorMessages.PASSWORD_LINK_EXPIRED
                     }
-                })
+                });
             } else {
-                let query = {
+                const query = {
                     _id: userid
                 };
                 User.findOne(query, async (err, user) => {
@@ -561,7 +562,7 @@ const resetPassword = (hash, newpassword) => {
                         return reject({
                             code: 500,
                             error: err
-                        })
+                        });
                     } else if (user) {
                         user.PasswordHash = user.EncryptPassword(newpassword);
                         user.save((err) => {
@@ -569,16 +570,16 @@ const resetPassword = (hash, newpassword) => {
                                 return reject({
                                     code: 500,
                                     error: err
-                                })
+                                });
                             } else {
                                 resolve({
                                     code: 200,
                                     data: true
-                                })
+                                });
                             }
-                        })
+                        });
                     }
-                })
+                });
             }
         }
     });
@@ -591,15 +592,15 @@ const _isExists = (Model, query) => {
                 return reject({
                     code: 500,
                     error: err
-                })
+                });
             }
             resolve(user);
-        })
+        });
     });
 };
 
 const _logLogin = (email, req, status) => {
-    let _userLogin = new UserLogin();
+    const _userLogin = new UserLogin();
     _userLogin.UserName = email;
     _userLogin.UserIP = req.ip;
     _userLogin.Status = status;
@@ -609,7 +610,7 @@ const _logLogin = (email, req, status) => {
 
 const _fetchClaim = (userId) => {
     return new Promise(async (resolve, reject) => {
-        let query = {
+        const query = {
             UserId: userId
         };
         UserClaim.find(query, (err, claims) => {
@@ -626,9 +627,9 @@ const _fetchClaim = (userId) => {
 
 const _fetchProfileImage = (client, profile) => {
     return new Promise(async (resolve, reject) => {
-        let extension = profile.AuthorisationScheme === 'Google' ? profile.ImageUrl.substr(profile.ImageUrl.lastIndexOf('.')) : '.jpg';
-        let dst = 'uploads/Client/' + client._id.toString() + '/' + Date.now() + extension;
-        let options = {
+        const extension = profile.AuthorisationScheme === 'Google' ? profile.ImageUrl.substr(profile.ImageUrl.lastIndexOf('.')) : '.jpg';
+        const dst = 'uploads/Client/' + client._id.toString() + '/' + Date.now() + extension;
+        const options = {
             url: profile.ImageUrl,
             method: 'GET',
             encoding: null

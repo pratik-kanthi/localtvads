@@ -13,10 +13,10 @@ const opts = {
 };
 
 passport.use(new JwtStrategy(opts, (token, done) => {
-    let query = {
+    const query = {
         _id: token.UserId
     };
-    let project = {
+    const project = {
         _id: 1
     };
     if (token.iat*1000 < Date.now()) {
@@ -31,13 +31,13 @@ passport.use(new JwtStrategy(opts, (token, done) => {
         if (err) {
             return done(err, false);
         } else if (user) {
-            let customUser = JSON.parse(JSON.stringify(user));
+            const customUser = JSON.parse(JSON.stringify(user));
             customUser.Claims = token.Claims.split('|').map((c) => {
-                let s = c.split(':');
+                const s = c.split(':');
                 return {
                     Name: s[0],
                     Value: s[1]
-                }
+                };
             });
             done(null, customUser, null);
         } else {

@@ -11,7 +11,7 @@ const deleteBucketFile = (fileLocation) => {
     return new Promise((resolve, reject) => {
         if (fileLocation) {
             googleBucket.deleteFile(fileLocation).then(() => {
-                resolve('Deleted')
+                resolve('Deleted');
             }, (err) => {
                 reject(err);
             });
@@ -50,10 +50,11 @@ const downloadFile = (source, destination) => {
  */
 const uploadFileBuffer = (file, destination, deleteFileLocation) => {
     return new Promise((resolve, reject) => {
-        if (deleteFileLocation)
+        if (deleteFileLocation) {
             googleBucket.deleteFile(deleteFileLocation);
+        }
         googleBucket.uploadFileBuffer(file.buffer, destination, file.mimetype).then(()=> {
-            resolve('Uploaded')
+            resolve('Uploaded');
         }, (err) => {
             reject(err);
         });
@@ -68,10 +69,11 @@ const uploadFileBuffer = (file, destination, deleteFileLocation) => {
  */
 const uploadFile = (source, destination, deleteFileLocation) => {
     return new Promise((resolve, reject) => {
-        if (deleteFileLocation)
+        if (deleteFileLocation) {
             googleBucket.deleteFile(deleteFileLocation);
+        }
         googleBucket.uploadFile(source, destination).then(() => {
-            resolve('Uploaded')
+            resolve('Uploaded');
         }, (err) => {
             reject(err);
         });
@@ -86,10 +88,11 @@ const uploadFile = (source, destination, deleteFileLocation) => {
  */
 const uploadImage = (file, destination, deleteFileLocation) => {
     return new Promise((resolve, reject) => {
-        if (deleteFileLocation)
+        if (deleteFileLocation) {
             googleBucket.deleteFile(deleteFileLocation);
+        }
         googleBucket.uploadFileBuffer(file.buffer, destination, file.mimetype).then(() => {
-            resolve('Uploaded')
+            resolve('Uploaded');
         }, (err) => {
             reject(err);
         });

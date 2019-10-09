@@ -16,9 +16,9 @@ const subscribeUser = (email, ip) => {
                 }
             });
         } else {
-            let query = {
+            const query = {
                 Email: email
-            }
+            };
             Subscriber.findOne(query, (err, subscriber) => {
                 if (err) {
                     return reject({
@@ -34,7 +34,7 @@ const subscribeUser = (email, ip) => {
                     });
                 } else {
 
-                    let subscriber = new Subscriber({
+                    const subscriber = new Subscriber({
                         DateSubscribed: new Date(),
                         Email: email,
                         IsActive: true,
@@ -51,12 +51,12 @@ const subscribeUser = (email, ip) => {
                             code: 200,
                             data: subscriber
                         });
-                    })
+                    });
                 }
-            })
+            });
         }
     });
-}
+};
 
 /**
  * Creates a new enquiry
@@ -74,9 +74,9 @@ const submitEnquiry = (name, email, subject, message) => {
                 error: {
                     message: utilities.ErrorMessages.BAD_REQUEST
                 }
-            })
+            });
         } else {
-            let enquiry = new Enquiry({
+            const enquiry = new Enquiry({
                 Date: new Date(),
                 Email: email,
                 Name: name,
@@ -95,13 +95,13 @@ const submitEnquiry = (name, email, subject, message) => {
                 resolve({
                     code: 200,
                     data: enquiry
-                })
-            })
+                });
+            });
         }
-    })
-}
+    });
+};
 
 module.exports = {
     subscribeUser,
     submitEnquiry
-}
+};

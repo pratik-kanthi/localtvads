@@ -43,7 +43,7 @@ const schema = new mongoose.Schema({
     StartDate: {
         type: Date,
         default: ()=> {
-            return new Date()
+            return new Date();
         }
     },
     EndDate: {
@@ -60,7 +60,7 @@ const schema = new mongoose.Schema({
     },
     Status: {
         type: String,
-        enum: ['ACTIVE','INACTIVE','EXPIRED']
+        enum: ['ACTIVE', 'INACTIVE', 'EXPIRED']
     },
     AuditInfo: auditSchema
 });

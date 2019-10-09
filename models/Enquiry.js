@@ -1,5 +1,5 @@
 const mongoose = require('mongoose');
-const name = "Enquiry";
+const name = 'Enquiry';
 
 const schema = new mongoose.Schema({
     Date: {

@@ -33,7 +33,7 @@ const schema = new mongoose.Schema({
         type: Date,
         required: true,
         default: () => {
-            return new Date()
+            return new Date();
         }
     },
     AdDiscount: {

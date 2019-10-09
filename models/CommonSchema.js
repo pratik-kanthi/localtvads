@@ -40,7 +40,7 @@ const addressSchema = new mongoose.Schema({
     },
     Country: {
         type: String,
-        default: "United Kingdom"
+        default: 'United Kingdom'
     },
     Location: {
         type: {

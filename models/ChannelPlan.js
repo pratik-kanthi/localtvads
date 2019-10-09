@@ -20,9 +20,9 @@ const schema = new mongoose.Schema({
         ref: 'ChannelAdSchedule',
         required: true
     },
-    Seconds: {         // length of the video
+    Seconds: { // length of the video
         type: Number,
-        enum: [15,20,25,30],
+        enum: [15, 20, 25, 30],
         required: true
     },
     BaseAmount: {
@@ -37,10 +37,10 @@ const schema = new mongoose.Schema({
 
 schema.plugin(deepPopulate, {
     populate: {
-        "ChannelAdSchedule": {
-            select: "AdSchedule"
+        'ChannelAdSchedule': {
+            select: 'AdSchedule'
         },
-        "ChannelAdSchedule.AdSchedule": {
+        'ChannelAdSchedule.AdSchedule': {
             select: 'Name'
         }
     }

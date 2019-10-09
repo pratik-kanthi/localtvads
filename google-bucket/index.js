@@ -1,3 +1,4 @@
+/* eslint no-console: 0 */
 const config = require('../config');
 const conf = {
     projectId: config.google_bucket.projectId,
@@ -55,17 +56,17 @@ const uploadFileBuffer = (buffer, filename, mimetype) => {
         });
 
         stream.on('error', (err) => {
-            console.log(err);
+            logger.logError(err);
             reject(err);
         });
 
         stream.on('finish', () => {
             file.makePublic().then(() => {
                 console.log('Uploaded');
-                resolve('Uploaded')
+                resolve('Uploaded');
             }, function (err) {
                 reject(err);
-                console.log(err);
+                logger.logError(err);
             });
         });
         stream.end(buffer);
@@ -81,14 +82,14 @@ const uploadFile = (source, destination) => {
                 const file = bucket.file(destination);
                 file.makePublic().then(() => {
                     console.log('Uploaded');
-                    resolve('Uploaded')
+                    resolve('Uploaded');
                 }, (err) => {
                     reject(err);
-                    console.log(err);
+                    logger.logError(err);
                 });
             })
             .catch((err) => {
-                console.log(err);
+                logger.logError(err);
                 reject('ERROR:', err);
             });
     });
@@ -126,7 +127,7 @@ const deleteFile = (filename) => {
             })
             .catch((err) => {
                 console.log('Delete Error');
-                console.log(err);
+                logger.logError(err);
                 reject('ERROR:', err);
             });
     });
@@ -204,9 +205,11 @@ const copyFile = (srcBucketName, srcFilename, destBucketName, destFilename) => {
             .copy(storage.bucket(destBucketName).file(destFilename))
             .then(() => {
                 console.log('gs://${srcBucketName}/${srcFilename} copied to gs://${destBucketName}/${destFilename}.');
+                resolve();
             })
             .catch(err => {
-                console.error('ERROR:', err);
+                logger.logError(err);
+                return reject(err);
             });
     });
 };

@@ -38,7 +38,7 @@ const checkCouponApplicable = (clientId, channel, adSchedule, startDate, couponC
                 CouponCode: couponCode
             });
         }
-        let project = {
+        const project = {
             ChannelPlans: 0,
             Channels: 0,
         };
@@ -113,10 +113,10 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
                 error: err
             });
         }
-        let couponsUsage = {};
-        let couponIds = coupons.map(coupon => {
+        const couponsUsage = {};
+        const couponIds = coupons.map(coupon => {
             couponsUsage[coupon._id.toString()] = 0;
-            return coupon._id
+            return coupon._id;
         });
         query = {
             AdDiscount: {
@@ -124,7 +124,7 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
             },
             Status: 'succeeded'
         };
-        let project = {
+        const project = {
             AdDiscount: 1
         };
         Transaction.find(query, project, (err, transactions) => {
@@ -137,7 +137,7 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
                 for (let i = 0; i < transactions.length; i++) {
                     couponsUsage[transactions[i].AdDiscount.toString()]++;
                 }
-                let availableCoupons = coupons.slice();
+                const availableCoupons = coupons.slice();
                 for (let i = 0; i < coupons.length; i++) {
                     if (coupons[i].PermittedUsageCount <= couponsUsage[coupons[i]._id.toString()]) {
                         availableCoupons.splice(i, 1);
@@ -166,7 +166,7 @@ const getClientAd = (id) => {
                 }
             });
         } else {
-            let query = {
+            const query = {
                 _id: id
             };
             ClientAd.findOne(query, (err, clientAd) => {
@@ -183,7 +183,7 @@ const getClientAd = (id) => {
                         }
                     });
                 } else {
-                    let clientAdObj = clientAd.toObject();
+                    const clientAdObj = clientAd.toObject();
                     resolve({
                         code: 200,
                         data: clientAdObj
@@ -208,7 +208,7 @@ const getClientAdPlan = (id) => {
                 }
             });
         } else {
-            let query = {
+            const query = {
                 _id: id
             };
             ClientAdPlan.findOne(query).populate('ClientAd').exec((err, clientAdPlan) => {
@@ -251,19 +251,19 @@ const getClientAdPlans = (clientId, top, skip) => {
                 }
             });
         }
-        let query = {
+        const query = {
             Client: clientId
         };
-        let project = {
-            "ChannelPlan.Plan.ChannelAdSchedule.AdSchedule": 1,
-            "ChannelPlan.Plan.Seconds": 1,
-            "ChannelPlanPlan.Channel": 1,
-            "Name": 1,
-            "StartDate": 1,
-            "EndDate": 1,
-            "ClientAd": 1
+        const project = {
+            'ChannelPlan.Plan.ChannelAdSchedule.AdSchedule': 1,
+            'ChannelPlan.Plan.Seconds': 1,
+            'ChannelPlanPlan.Channel': 1,
+            'Name': 1,
+            'StartDate': 1,
+            'EndDate': 1,
+            'ClientAd': 1
         };
-        let populateOptions = [{
+        const populateOptions = [{
             path: 'ClientAd',
             select: {
                 VideoUrl: 1
@@ -324,7 +324,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
                 }
             });
         }
-        let query = {
+        const query = {
             _id: clientAdPlan
         };
         ClientAdPlan.findOne(query, async (err, cAdPlan) => {
@@ -358,7 +358,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
 
             let charge, taxes;
             try {
-                let taxResult = await (cAdPlan.ChannelPlan.SubTotal);
+                const taxResult = await cAdPlan.ChannelPlan.SubTotal;
                 taxes = taxResult.taxes;
                 cAdPlan.ChannelPlan.TaxAmount = taxResult.totalTax;
                 cAdPlan.ChannelPlan.TotalAmount = cAdPlan.ChannelPlan.SubTotal + cAdPlan.ChannelPlan.TaxAmount;
@@ -370,7 +370,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
                 });
             }
 
-            let transaction = new Transaction({
+            const transaction = new Transaction({
                 ChannelPlan: cAdPlan.ChannelPlan,
                 Client: cAdPlan.Client,
                 ClientAdPlan: cAdPlan,
@@ -439,11 +439,11 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
 
             clientAdPlan.EndDate = moment().add(config.channels.plans.duration, 'days');
 
-            let query = {
+            const query = {
                 _id: channelPlan
             };
 
-            let project = {
+            const project = {
                 _id: 1,
                 ChannelAdSchedule: 1,
                 Channel: 1,
@@ -451,7 +451,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                 BaseAmount: 1
             };
 
-            ChannelPlan.findOne(query, project).populate('ChannelAdSchedule','AdSchedule').exec(async (err, chPlan) => {
+            ChannelPlan.findOne(query, project).populate('ChannelAdSchedule', 'AdSchedule').exec(async (err, chPlan) => {
                 if (err) {
                     return reject({
                         code: 500,
@@ -467,13 +467,13 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                 } else {
                     let card;
                     if (cardId) {
-                        let query = {
+                        const query = {
                             Client: clientAdPlan.Client,
                             _id: cardId
                         };
                         try {
                             card = await ClientPaymentMethod.findOne(query, {
-                                "Card.StripeCardToken": 1,
+                                'Card.StripeCardToken': 1,
                                 StripeCusToken: 1
                             });
                         } catch (err) {
@@ -495,9 +495,9 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                     let taxAmount, taxes, discount, finalAmount = chPlan.BaseAmount, discountAmount = 0;
                     if (couponCode) {
                         try {
-                            let result = await checkCouponApplicable(clientAdPlan.Client, chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, couponCode);
+                            const result = await checkCouponApplicable(clientAdPlan.Client, chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, couponCode);
                             discount = result.data;
-                            discountAmount = discount.AmountType === 'PERCENTAGE' ? (finalAmount * discount.Amount)/100 : discount.Amount;
+                            discountAmount = discount.AmountType === 'PERCENTAGE' ? finalAmount * discount.Amount/100 : discount.Amount;
                             finalAmount = finalAmount - discountAmount;
                         } catch (ex) {
                             return reject({
@@ -507,7 +507,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         }
                     }
                     try {
-                        let taxResult = await getTaxes(finalAmount);
+                        const taxResult = await getTaxes(finalAmount);
                         taxes = taxResult.taxes;
                         taxAmount = taxResult.totalTax;
                     } catch (ex) {
@@ -517,7 +517,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         });
                     }
 
-                    let cAdPlan = new ClientAdPlan({
+                    const cAdPlan = new ClientAdPlan({
                         Name: clientAdPlan.Name,
                         Description: isNewUser ? 'First Free Ad' + clientAdPlan.Description : clientAdPlan.Description,
                         Client: clientAdPlan.Client,
@@ -540,8 +540,9 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                     let charge, func;
                     if (card) {
                         func = chargeByExistingCard(cAdPlan.ChannelPlan.TotalAmount, card.StripeCusToken, card.Card.StripeCardToken);
-                    } else
+                    } else {
                         func = chargeByCard(cAdPlan.ChannelPlan.TotalAmount, token);
+                    }
                     try {
                         charge = await func;
                     } catch (err) {
@@ -551,7 +552,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         });
                     }
 
-                    let transaction = new Transaction({
+                    const transaction = new Transaction({
                         ChannelPlan: chPlan,
                         Client: clientAdPlan.Client,
                         ClientAdPlan: cAdPlan._id,
@@ -597,7 +598,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
  */
 const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
     return new Promise(async (resolve, reject) => {
-        let query = {
+        const query = {
             _id: clientAdPlan
         };
         ClientAdPlan.findOne(query, async (err, clientAdPlan) => {
@@ -617,9 +618,9 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
                 });
             }
             // uploadVideo
-            let dst = 'uploads/Client' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
+            const dst = 'uploads/Client' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
             try {
-                let result = await uploadFile(previewPath, dst);
+                await uploadFile(previewPath, dst);
             } catch (ex) {
                 deletePreviewFile();
                 return reject({
@@ -628,7 +629,7 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
                 });
             }
 
-            let clientAd = new ClientAd({
+            const clientAd = new ClientAd({
                 Client: clientAdPlan.Client,
                 VideoUrl: dst,
                 Status: 'UNDERREVIEW'
@@ -666,12 +667,12 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
                     error: err
                 });
             }
-        }
+        };
     });
 };
 
 const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
-    let query = {
+    const query = {
         $and: []
     };
     if (clientId) {

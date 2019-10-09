@@ -20,9 +20,9 @@ const socialRegisterEmail = (to, socialclient) => {
         subject: 'Your Local TV Ads account has been created',
         html: message
     };
-    mailgun.api.server.send(data, (err, body) => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
-            throw (err);
+            throw err;
         }
     });
 
@@ -34,7 +34,7 @@ const socialRegisterEmail = (to, socialclient) => {
  * @param {String} verificationlink - verification link to mailed to the user to verify his/her account
  */
 const standardRegisterEmail = (to, verificationlink) => {
-    const message = ejs.render(fs.readFileSync(path.join(__dirname, "..", '/email/templates/standardaccount_createdemail.ejs'), 'utf-8'), {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/standardaccount_createdemail.ejs'), 'utf-8'), {
         verificationlink: verificationlink
     });
 
@@ -45,16 +45,16 @@ const standardRegisterEmail = (to, verificationlink) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err, body) => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
-            throw (err);
+            throw err;
         }
     });
 };
 
 
 const passwordResetEmail = (to, verificationlink) => {
-    const message = ejs.render(fs.readFileSync(path.join(__dirname, "..", '/email/templates/forgotpassword_email.ejs'), 'utf-8'), {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/forgotpassword_email.ejs'), 'utf-8'), {
         verificationlink: verificationlink
     });
 
@@ -65,9 +65,9 @@ const passwordResetEmail = (to, verificationlink) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err, body) => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
-            throw (err);
+            throw err;
         }
     });
 };

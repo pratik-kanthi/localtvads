@@ -4,7 +4,9 @@
   "description": "API project for localtvads.com",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "lint": "eslint --ignore-path .gitignore .",
+    "lint-fix": "eslint --ignore-path .gitignore . --fix"
   },
   "repository": {
     "type": "git",
@@ -40,6 +42,25 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
-    "eslint": "^6.1.0"
+    "@e9ine/eslint-config-node": "0.0.9-a",
+    "husky": "^3.0.8",
+    "lint-staged": "^9.4.2"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@e9ine/eslint-config-node"
+    ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run lint"
+    }
+  },
+  "lint-staged": {
+    "*.js": [
+      "./node_modules/.bin/eslint --fix",
+      "git add"
+    ]
   }
 }

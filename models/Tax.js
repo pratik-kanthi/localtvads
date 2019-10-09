@@ -12,7 +12,7 @@ const schema = new mongoose.Schema({
     },
     Type: {
         type: String,
-        enum: ['PERCENTAGE','FIXED'],
+        enum: ['PERCENTAGE', 'FIXED'],
         required: true
     },
     Value:{

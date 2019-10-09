@@ -2,11 +2,11 @@ const multer = require('multer');
 const imageService = require.main.require('./services/ImageService');
 
 module.exports = (app) => {
-    let upload = multer({
+    const upload = multer({
         storage: multer.memoryStorage()
     });
 
-    let type = upload.single('file');
+    const type = upload.single('file');
 
     /**
      * @api {post} /api/image Upload a picture
@@ -21,14 +21,15 @@ module.exports = (app) => {
      * @apiSuccess {Object} data Owner entity object.
      */
     app.post('/api/image', type, async (req, res) => {
-        if (!req.query.owner || !req.query.ownerid || !req.query.attribute)
+        if (!req.query.owner || !req.query.ownerid || !req.query.attribute) {
             return res.status(400).json({
                 error: {
                     message: utilities.GeneralMessages.BAD_REQUEST
                 }
             });
+        }
         try {
-            let response = await imageService.uploadImage(req.file, req.query);
+            const response = await imageService.uploadImage(req.file, req.query);
             res.status(response.code).json(response.data);
         } catch (err) {
             res.status(err.code).json(err.error);
@@ -46,14 +47,15 @@ module.exports = (app) => {
      * @apiSuccess {String} Deleted Acknowledgement of image deleted.
      */
     app.delete('/api/image/bucketfile', type, async (req, res) => {
-        if (!req.query.location)
+        if (!req.query.location) {
             return res.status(400).json({
                 error: {
                     message: utilities.GeneralMessages.BAD_REQUEST
                 }
             });
+        }
         try {
-            let response = await imageService.removeBucketImage(req.query.location);
+            const response = await imageService.removeBucketImage(req.query.location);
             res.status(response.code).json(response.data);
         } catch (err) {
             res.status(err.code).json(err.error);
@@ -73,14 +75,15 @@ module.exports = (app) => {
      * @apiSuccess {String} data Owner entity object.
      */
     app.delete('/api/image', type, async (req, res) => {
-        if (!req.query.owner || !req.query.attribute || !req.query.ownerid)
+        if (!req.query.owner || !req.query.attribute || !req.query.ownerid) {
             return res.status(400).json({
                 error: {
                     message: utilities.GeneralMessages.BAD_REQUEST
                 }
             });
+        }
         try {
-            let response = await imageService.removeImage(req.query.attribute, req.query.owner, req.query.ownerid);
+            const response = await imageService.removeImage(req.query.attribute, req.query.owner, req.query.ownerid);
             res.status(response.code).json(response.data);
         } catch (err) {
             res.status(err.code).json(err.error);

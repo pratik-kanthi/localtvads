@@ -14,7 +14,7 @@ const schema = new mongoose.Schema({
     Status: {
         type: String,
         required: true,
-        enum: ['PROSPECTS', 'LIVE','DORMANT', 'INACTIVE']
+        enum: ['PROSPECTS', 'LIVE', 'DORMANT', 'INACTIVE']
     },
     ExpectedAdViews: {
         type: Number

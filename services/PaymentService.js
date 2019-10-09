@@ -1,6 +1,6 @@
 const config = require.main.require('./config');
 
-const stripe = require("stripe")(
+const stripe = require('stripe')(
     config.stripe.secret
 );
 
@@ -13,13 +13,13 @@ const stripe = require("stripe")(
 const chargeByExistingCard = (amount, cusToken, cardToken) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let charge = await stripe.charges.create({
+            const charge = await stripe.charges.create({
                 amount: amount * 100,
-                currency: "gbp",
-                description: "",
+                currency: 'gbp',
+                description: '',
                 customer: cusToken,
                 source: cardToken,
-                expand: ["balance_transaction"]
+                expand: ['balance_transaction']
             });
             resolve(charge);
         } catch (err) {
@@ -62,7 +62,7 @@ const saveCustomer = (stripeToken, email) => {
 const saveNewCardToCustomer = (stripeToken, cusToken) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let card = await stripe.customers.createSource(cusToken, {
+            const card = await stripe.customers.createSource(cusToken, {
                 source: stripeToken
             });
             resolve(card);
@@ -83,12 +83,12 @@ const saveNewCardToCustomer = (stripeToken, cusToken) => {
 const chargeByCard = async (amount, stripeToken) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let charge = await stripe.charges.create({
+            const charge = await stripe.charges.create({
                 amount: amount * 100,
-                currency: "gbp",
-                description: "",
+                currency: 'gbp',
+                description: '',
                 source: stripeToken,
-                expand: ["balance_transaction"]
+                expand: ['balance_transaction']
             });
             resolve(charge);
         } catch (err) {
@@ -105,10 +105,10 @@ const chargeByCard = async (amount, stripeToken) => {
  * @param {String} cusToken - Stripe token for customer
  * @param {String} cardToken - Stripe token for card
  */
-const deleteCardFromStripe = async  (cusToken, cardToken) => {
+const deleteCardFromStripe = async (cusToken, cardToken) => {
     return new Promise(async (resolve, reject) => {
         try {
-            let result = await stripe.customers.deleteSource(cusToken, cardToken);
+            const result = await stripe.customers.deleteSource(cusToken, cardToken);
             resolve(result);
         } catch (err) {
             return reject({
@@ -120,7 +120,7 @@ const deleteCardFromStripe = async  (cusToken, cardToken) => {
 };
 
 const _throwError = (err) => {
-    return utilities.ErrorMessages[err.type] ? utilities.ErrorMessages[err.type] : utilities.GeneralMessages.PAYMENT_ERROR
+    return utilities.ErrorMessages[err.type] ? utilities.ErrorMessages[err.type] : utilities.GeneralMessages.PAYMENT_ERROR;
 };
 
 module.exports = {

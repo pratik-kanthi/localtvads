@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name = "UserLogin";
+const name = 'UserLogin';
 
 const schema = new mongoose.Schema({
     UserName: String,
@@ -19,7 +19,7 @@ const schema = new mongoose.Schema({
     },
 });
 
-let model = mongoose.model(name, schema);
+const model = mongoose.model(name, schema);
 
 module.exports = {
     name: name,

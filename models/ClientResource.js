@@ -17,11 +17,11 @@ const schema = new mongoose.Schema({
     },
     Type: {
         type: String,
-        enum: ['IMAGE','VIDEO','AUDIO']
+        enum: ['IMAGE', 'VIDEO', 'AUDIO']
     }
 });
 
-let model = mongoose.model(name,schema);
+const model = mongoose.model(name, schema);
 
 module.exports = {
     name,

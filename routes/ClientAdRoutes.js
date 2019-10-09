@@ -5,13 +5,13 @@ const config = require.main.require('./config');
 const {addCard} = require.main.require('./services/ClientService');
 const {checkCouponApplicable, getApplicableCoupons, getClientAd, getClientAdPlan, getClientAdPlans, renewClientAdPlan, saveClientAdPlan, uploadClientAd} = require.main.require('./services/ClientAdService');
 
-let mediaUpload = multer({
+const mediaUpload = multer({
     storage: multer.memoryStorage(),
     fileFilter: (req, file, callback) => {
         if (!file) {
             return callback(null, true);
         }
-        let ext = file.originalname.substr(file.originalname.lastIndexOf('.') + 1);
+        const ext = file.originalname.substr(file.originalname.lastIndexOf('.') + 1);
         if (config.media.video.allowedExtensions.indexOf(ext) === -1) {
             return callback(
                 {
@@ -27,9 +27,9 @@ let mediaUpload = multer({
     }
 });
 
-let mediaType = mediaUpload.single('file');
+const mediaType = mediaUpload.single('file');
 
-module.exports = (app, io) => {
+module.exports = (app) => {
 
     app.post('/api/clientad/new', passport.authenticate('jwt', {session: false}), async (req, res) => {
         let card;
@@ -41,7 +41,7 @@ module.exports = (app, io) => {
             }
         }
         try {
-            let result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, req.body.cardid ? req.body.cardid : (card ? card.data._id : undefined), req.body.token, req.body.coupon, req);
+            const result = await saveClientAdPlan(req.body.clientadplan, req.body.channelplan, req.body.addons, req.body.cardid ? req.body.cardid : card ? card.data._id : undefined, req.body.token, req.body.coupon, req);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -50,20 +50,20 @@ module.exports = (app, io) => {
 
     app.post('/api/clientad/renew', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            let result = await renewClientAdPlan(req.body.clientadplan, req.body.card);
+            const result = await renewClientAdPlan(req.body.clientadplan, req.body.card);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
     });
 
-    app.post('/api/clientad/upload', passport.authenticate('jwt', {session: false}), mediaType, async (req, res) => {
+    app.post('/api/clientad/upload', passport.authenticate('jwt', {session: false}), mediaType, (req, res) => {
         mediaType(req, res, async (err) => {
             if (err) {
                 return res.status(500).send(err);
             }
             try {
-                let result = await uploadClientAd(req.body.clientadplan);
+                const result = await uploadClientAd(req.body.clientadplan);
                 return res.status(result.code).send(result.data);
             } catch (ex) {
                 return res.status(ex.code || 500).send(ex.error);
@@ -73,7 +73,7 @@ module.exports = (app, io) => {
 
     app.get('/api/clientad/getall', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            let result = await getClientAdPlans(req.query.clientid, req.query.top, req.query.skip);
+            const result = await getClientAdPlans(req.query.clientid, req.query.top, req.query.skip);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -82,7 +82,7 @@ module.exports = (app, io) => {
 
     app.get('/api/clientad/getone', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            let result = await getClientAd(req.query.clientad);
+            const result = await getClientAd(req.query.clientad);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -91,7 +91,7 @@ module.exports = (app, io) => {
 
     app.get('/api/clientad/getclientadplan', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            let result = await getClientAdPlan(req.query.clientadplan);
+            const result = await getClientAdPlan(req.query.clientadplan);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -100,7 +100,7 @@ module.exports = (app, io) => {
 
     app.get('/api/clientad/couponexists', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            let result = await checkCouponApplicable(req.query.clientid, req.query.channel, req.query.adschedule, req.query.startdate, req.query.couponcode);
+            const result = await checkCouponApplicable(req.query.clientid, req.query.channel, req.query.adschedule, req.query.startdate, req.query.couponcode);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -108,11 +108,11 @@ module.exports = (app, io) => {
     });
 
     app.get('/api/clientad/coupons', passport.authenticate('jwt', {session: false}), async (req, res) => {
-       try {
-           let result = await getApplicableCoupons(req.query.clientid, req.query.channel, req.query.adschedule, req.query.startdate);
-           return res.status(result.code).send(result.data);
-       } catch (ex) {
-           return res.status(ex.code || 500).send(ex.error);
-       }
+        try {
+            const result = await getApplicableCoupons(req.query.clientid, req.query.channel, req.query.adschedule, req.query.startdate);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
     });
 };

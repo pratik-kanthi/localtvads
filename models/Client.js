@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const commonSchema = require.main.require('./models/CommonSchema');
 
-const name = "Client";
+const name = 'Client';
 
 const schema = new mongoose.Schema({
     Name: {
@@ -25,7 +25,7 @@ const schema = new mongoose.Schema({
     Address: commonSchema.addressSchema
 });
 
-let model = mongoose.model(name, schema);
+const model = mongoose.model(name, schema);
 
 module.exports = {
     name: name,

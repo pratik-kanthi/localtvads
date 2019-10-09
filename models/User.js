@@ -2,7 +2,7 @@ const crypto = require('crypto');
 const mongoose = require('mongoose');
 const commonSchema = require('./CommonSchema');
 
-const name = "User";
+const name = 'User';
 
 const schema = new mongoose.Schema({
     UserName: {
@@ -27,7 +27,7 @@ const schema = new mongoose.Schema({
     },
     AuthorisationScheme: {
         type: String,
-        enum: ['Google','Facebook','Standard'],
+        enum: ['Google', 'Facebook', 'Standard'],
         required: true
     },
     IsEmailConfirmed: Boolean,
@@ -37,7 +37,7 @@ const schema = new mongoose.Schema({
 });
 
 schema.methods.toJSON = function() {
-    let obj = this.toObject();
+    const obj = this.toObject();
     delete obj.PasswordHash;
     delete obj.IsEmailConfirmed;
     delete obj.IsPhoneConfirmed;
@@ -50,14 +50,14 @@ schema.methods.EncryptPassword = (password, callback) => {
     let result = null;
 
     if (!password) {
-        error = new Error("Password is required.");
+        error = new Error('Password is required.');
         if (!callback) {
             throw error;
         }
         setImmediate(callback, error);
         return;
     }
-    crypto.randomBytes(16,  (err, salt) => {
+    crypto.randomBytes(16, (err, salt) => {
         if (err) {
             if (!callback) {
                 error = err;
@@ -66,7 +66,7 @@ schema.methods.EncryptPassword = (password, callback) => {
             setImmediate(callback, err);
             return;
         }
-        crypto.pbkdf2(password, salt, 1000, 32,'sha1',  (err, bytes) => {
+        crypto.pbkdf2(password, salt, 1000, 32, 'sha1', (err, bytes) => {
             if (err) {
                 if (!callback) {
                     error = err;
@@ -75,7 +75,7 @@ schema.methods.EncryptPassword = (password, callback) => {
                 setImmediate(callback, err);
                 return;
             }
-            let output = new Buffer(49);
+            const output = new Buffer(49);
             output.fill(0);
             salt.copy(output, 1, 0, 16);
             bytes.copy(output, 17, 0, 32);
@@ -118,7 +118,7 @@ schema.methods.ValidatePassword = (password, hashedPassword, callback) => {
 
     if (!password) {
 
-        error = new Error("Password is required.");
+        error = new Error('Password is required.');
 
         if (callback) {
             setImmediate(callback, error);
@@ -128,19 +128,19 @@ schema.methods.ValidatePassword = (password, hashedPassword, callback) => {
         throw error;
     }
 
-    let src = new Buffer(hashedPassword, 'base64');
+    const src = new Buffer(hashedPassword, 'base64');
 
     if (src.length !== 49 || src[0] !== 0) {
         return false;
     }
 
-    let salt = new Buffer(16);
+    const salt = new Buffer(16);
     src.copy(salt, 0, 1, 17);
 
-    let bytes = new Buffer(32);
+    const bytes = new Buffer(32);
     src.copy(bytes, 0, 17, 49);
 
-    crypto.pbkdf2(password, salt, 1000, 32,'sha1',  (err, hashBytes) => {
+    crypto.pbkdf2(password, salt, 1000, 32, 'sha1', (err, hashBytes) => {
 
         if (err) {
 
@@ -189,7 +189,7 @@ schema.methods.ValidatePassword = (password, hashedPassword, callback) => {
     return result;
 };
 
-let model = mongoose.model(name, schema);
+const model = mongoose.model(name, schema);
 module.exports = {
     name: name,
     model: model,
