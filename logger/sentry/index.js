@@ -30,11 +30,12 @@ module.exports = (app) => {
                 next();
             });
 
-            app.use((err, req, res) => {
+            app.use((err, req, res, next) => {
                 // The error id is attached to `res.sentry` to be returned
                 // and optionally displayed to the user for support.
                 res.statusCode = 500;
                 res.end(res.sentry + '\n');
+                next();
             });
 
             //add hostname to all the logs
