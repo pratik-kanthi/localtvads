@@ -42,7 +42,8 @@
     "winston": "^3.2.1"
   },
   "devDependencies": {
-    "@e9ine/eslint-config-node": "0.0.9-a",
+    "@e9ine/eslint-config-node": "0.0.9-b",
+    "chalk": "^2.4.2",
     "husky": "^3.0.8",
     "lint-staged": "^9.4.2"
   },
@@ -54,13 +55,17 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "lint-staged"
+      "pre-commit": "lint-staged",
+      "commit-msg": "node scripts/verifyCommit.js"
     }
   },
   "lint-staged": {
     "*.js": [
       "./node_modules/.bin/eslint --fix",
       "git add"
+    ],
+    "config.js": [
+      "node scripts/verifyUntrackable.js"
     ]
   }
 }
