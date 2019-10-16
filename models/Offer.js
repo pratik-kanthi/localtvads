@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='AdDiscount';
+const name='Offer';
 
 const schema = new mongoose.Schema({
     Name: {
@@ -8,11 +8,11 @@ const schema = new mongoose.Schema({
         required: true
     },
     Description: {
-        type: String
+        type: String,
+        required: true
     },
-    Client: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'Client'
+    ImageUrl: {
+        type: String
     },
     AdSchedules: [
         {
@@ -40,13 +40,6 @@ const schema = new mongoose.Schema({
     EndDate: {
         type: Date,
         required: true
-    },
-    CouponCode: {
-        type: String
-    },
-    PermittedUsageCount: {
-        type: Number,
-        default: 1
     }
 });
 

@@ -14,7 +14,7 @@ const chargeByExistingCard = (amount, cusToken, cardToken) => {
     return new Promise(async (resolve, reject) => {
         try {
             const charge = await stripe.charges.create({
-                amount: amount * 100,
+                amount: amount * 100 | 0,
                 currency: 'gbp',
                 description: '',
                 customer: cusToken,
@@ -84,7 +84,7 @@ const chargeByCard = async (amount, stripeToken) => {
     return new Promise(async (resolve, reject) => {
         try {
             const charge = await stripe.charges.create({
-                amount: amount * 100,
+                amount: amount * 100 | 0,
                 currency: 'gbp',
                 description: '',
                 source: stripeToken,

@@ -3,7 +3,7 @@ const moment = require('moment');
 
 const config = require.main.require('./config');
 
-const AdDiscount = require.main.require('./models/AdDiscount').model;
+const Coupon = require.main.require('./models/Coupon').model;
 const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const ClientAd = require.main.require('./models/ClientAd').model;
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
@@ -13,6 +13,7 @@ const Transaction = require.main.require('./models/Transaction').model;
 const {updateChannelAdLengthCounter} = require.main.require('./services/ChannelService');
 const {getPreferredCard} = require.main.require('./services/ClientAdService');
 const {uploadFile} = require.main.require('./services/FileService');
+const {getApplicableOffers} = require.main.require('./services/OfferService');
 const {chargeByCard, chargeByExistingCard} = require.main.require('./services/PaymentService');
 const {getTaxes} = require.main.require('./services/TaxService');
 
@@ -42,13 +43,13 @@ const checkCouponApplicable = (clientId, channel, adSchedule, startDate, couponC
             ChannelPlans: 0,
             Channels: 0,
         };
-        AdDiscount.findOne(query, project).exec((err, adDiscount) => {
+        Coupon.findOne(query, project).exec((err, coupon) => {
             if (err) {
                 return reject({
                     code: 500,
                     error: err
                 });
-            } else if (!adDiscount) {
+            } else if (!coupon) {
                 return reject({
                     code: 409,
                     error: {
@@ -57,7 +58,7 @@ const checkCouponApplicable = (clientId, channel, adSchedule, startDate, couponC
                 });
             }
             query = {
-                AdDiscount: adDiscount._id,
+                Coupon: coupon._id,
                 Client: clientId,
                 Status: {
                     $in: ['succeeded', 'pending']
@@ -69,7 +70,7 @@ const checkCouponApplicable = (clientId, channel, adSchedule, startDate, couponC
                         code: 500,
                         error: err
                     });
-                } else if (count >= adDiscount.PermittedUsageCount && adDiscount.CouponCode) {
+                } else if (count >= coupon.PermittedUsageCount && coupon.CouponCode) {
                     return reject({
                         code: 409,
                         error: {
@@ -79,7 +80,7 @@ const checkCouponApplicable = (clientId, channel, adSchedule, startDate, couponC
                 }
                 resolve({
                     code: 200,
-                    data: adDiscount
+                    data: coupon
                 });
             });
         });
@@ -106,7 +107,7 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
         let query = _generateDiscountQuery(clientId, channel, channelPlan, startDate);
         let coupons = [];
         try {
-            coupons = await AdDiscount.find(query).sort({Amount: -1}).exec();
+            coupons = await Coupon.find(query).sort({Amount: -1}).exec();
         } catch (err) {
             return reject({
                 code: 500,
@@ -119,13 +120,13 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
             return coupon._id;
         });
         query = {
-            AdDiscount: {
+            Coupon: {
                 $in: couponIds
             },
             Status: 'succeeded'
         };
         const project = {
-            AdDiscount: 1
+            Coupon: 1
         };
         Transaction.find(query, project, (err, transactions) => {
             if (err) {
@@ -135,7 +136,7 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
                 });
             } else {
                 for (let i = 0; i < transactions.length; i++) {
-                    couponsUsage[transactions[i].AdDiscount.toString()]++;
+                    couponsUsage[transactions[i].Coupon.toString()]++;
                 }
                 const availableCoupons = coupons.slice();
                 for (let i = 0; i < coupons.length; i++) {
@@ -492,13 +493,34 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         }
                     }
 
-                    let taxAmount, taxes, discount, finalAmount = chPlan.BaseAmount, discountAmount = 0;
+                    let offers;
+                    const project = {
+                        'Name': 1,
+                        'Amount': 1,
+                        'AmountType': 1,
+                        'AdSchedules': 1
+                    };
+                    try {
+                        const result = await getApplicableOffers(chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, project);
+                        offers = result.data;
+                    } catch (ex) {
+                        return reject({
+                            code: ex.code,
+                            error: ex.error
+                        });
+                    }
+
+                    let taxAmount, taxes, discount, finalAmount = chPlan.BaseAmount, discountAmount = 0, offerDiscountAmount = 0;
+                    offers.forEach(offer => {
+                        offerDiscountAmount += calculateOffer(chPlan.BaseAmount, offer, chPlan.ChannelAdSchedule.AdSchedule);
+                    });
+                    finalAmount = finalAmount - offerDiscountAmount;
                     if (couponCode) {
                         try {
                             const result = await checkCouponApplicable(clientAdPlan.Client, chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, couponCode);
                             discount = result.data;
                             discountAmount = discount.AmountType === 'PERCENTAGE' ? finalAmount * discount.Amount/100 : discount.Amount;
-                            finalAmount = finalAmount - discountAmount;
+                            finalAmount -= discountAmount;
                         } catch (ex) {
                             return reject({
                                 code: ex.code || 500,
@@ -529,11 +551,12 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         ChannelPlan: {
                             Plan: chPlan,
                             Extras: extras || [],
-                            Discount: discountAmount,
+                            Discount: discountAmount + offerDiscountAmount,
+                            Offers: offers,
                             Surge: 0,
                             SubTotal: chPlan.BaseAmount,
                             TaxAmount: taxAmount,
-                            TotalAmount: finalAmount
+                            TotalAmount: finalAmount + taxAmount
                         }
                     });
 
@@ -560,7 +583,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         Status: 'succeeded',
                         StripeResponse: charge,
                         TaxBreakdown: taxes,
-                        AdDiscount: discount ? discount._id : undefined
+                        Coupon: discount ? discount._id : undefined
                     });
                     transaction.save((err) => {
                         if (err) {
@@ -741,6 +764,10 @@ const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
         });
     }
     return query;
+};
+
+const calculateOffer = (amount, offer) => {
+    return offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount / 100 : offer.Amount;
 };
 
 module.exports = {

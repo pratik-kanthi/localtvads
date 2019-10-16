@@ -36,9 +36,9 @@ const schema = new mongoose.Schema({
             return new Date();
         }
     },
-    AdDiscount: {
+    Coupon: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'AdDiscount'
+        ref: 'Coupon'
     },
     TaxBreakdown: [],
     StripeResponse: {}
