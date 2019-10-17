@@ -101,6 +101,9 @@ const ownerSchema = new mongoose.Schema({
     },
     Email: {
         type: String
+    },
+    Phone: {
+        type: String
     }
 });
 const logSchema = new mongoose.Schema({

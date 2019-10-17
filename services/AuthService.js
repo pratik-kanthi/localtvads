@@ -402,6 +402,7 @@ const standardLogin = (email, password, req) => {
                             UserId: user._id,
                             AuthorisationScheme: user.AuthorisationScheme,
                             Owner: user.Owner,
+                            Phone: user.Phone,
                             iat: Math.floor(Date.now() / 1000) + config.token.ttl,
                             Claims: claimsValue
                         }).toObject();

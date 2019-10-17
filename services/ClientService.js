@@ -1,7 +1,7 @@
 const Client = require.main.require('./models/Client').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 
-const {saveCustomer, saveNewCardToCustomer, deleteCardFromStripe} = require.main.require('./services/PaymentService');
+const { saveCustomer, saveNewCardToCustomer, deleteCardFromStripe } = require.main.require('./services/PaymentService');
 
 /*
  * Add card to a client
@@ -34,7 +34,7 @@ const addCard = (clientId, stripeToken) => {
                 });
             } else if (!clientPaymentMethod) {
                 try {
-                    const client = await _getClient(clientId, {Email: 1});
+                    const client = await _getClient(clientId, { Email: 1 });
                     const csToken = await saveCustomer(stripeToken, client.Email);
                     newClientPaymentMethod = new ClientPaymentMethod({
                         StripeCusToken: csToken.id
@@ -49,9 +49,6 @@ const addCard = (clientId, stripeToken) => {
                     });
                 }
             } else {
-                newClientPaymentMethod = new ClientPaymentMethod({
-                    StripeCusToken: clientPaymentMethod.StripeCusToken
-                });
                 try {
                     cardToken = await saveNewCardToCustomer(
                         stripeToken,
@@ -116,7 +113,7 @@ const getSavedCards = (clientId) => {
             'Card.ExpiryYear': 1,
             'Card.LastFour': 1
         };
-        ClientPaymentMethod.find(query, project).sort({IsPreferred: -1}).exec((err, cards) => {
+        ClientPaymentMethod.find(query, project).sort({ IsPreferred: -1 }).exec((err, cards) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -152,7 +149,7 @@ const getPreferredCard = (clientId, cardId) => {
             IsPreferred: true
         };
         try {
-            const card = await ClientPaymentMethod.findOne(query, {CardToken: 1, CustomerToken: 1});
+            const card = await ClientPaymentMethod.findOne(query, { CardToken: 1, CustomerToken: 1 });
             if (!card) {
                 return reject({
                     code: 404,
@@ -322,9 +319,10 @@ const deleteCard = (clientId, cardId) => {
     });
 };
 
+
 const _getClient = (client, projection) => {
     return new Promise(async (resolve, reject) => {
-        Client.findOne({_id: client}, projection || {}, (err, client) => {
+        Client.findOne({ _id: client }, projection || {}, (err, client) => {
             if (err) {
                 return reject({
                     code: 500,

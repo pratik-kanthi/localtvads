@@ -2,7 +2,7 @@ const jimp = require('jimp');
 
 const Client = require.main.require('./models/Client').model;
 
-const {deleteBucketFile, uploadFileBuffer} = require.main.require('./services/FileService');
+const { deleteBucketFile, uploadFileBuffer } = require.main.require('./services/FileService');
 
 const model = {
     Client: Client
@@ -114,7 +114,7 @@ const removeImage = (attribute, owner, ownerid) => {
             });
         }
 
-        Owner.findOne({_id: ownerid}, (err, data) => {
+        Owner.findOne({ _id: ownerid }, (err, data) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -158,9 +158,7 @@ const uploadImage = (file, query) => {
     return new Promise((resolve, reject) => {
 
         const time = Date.now();
-
         const extension = file.originalname.substr(file.originalname.lastIndexOf('.'));
-
         const Owner = model[query.owner];
 
         if (!Owner) {
@@ -198,7 +196,7 @@ const uploadImage = (file, query) => {
 
                 if (query.cropx) {
                     try {
-                        file = await cropImage(query, file);
+                        file = cropImage(query, file);
                     } catch (ex) {
                         return reject({
                             code: 500,

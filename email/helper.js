@@ -53,6 +53,27 @@ const standardRegisterEmail = (to, verificationlink) => {
 };
 
 
+const emailChangeVerification = (to, verificationlink) => {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/emailchangeverification-email.ejs'), 'utf-8'), {
+        verificationlink: verificationlink
+    });
+
+    const data = {
+        from: config.mailgun.fromemail,
+        to: to,
+        subject: 'Verify your new email address',
+        html: message
+    };
+
+    mailgun.api.server.send(data, (err) => {
+        if (err) {
+            throw err;
+        }
+    });
+};
+
+
+
 const passwordResetEmail = (to, verificationlink) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/forgotpassword_email.ejs'), 'utf-8'), {
         verificationlink: verificationlink
@@ -74,7 +95,8 @@ const passwordResetEmail = (to, verificationlink) => {
 
 
 module.exports = {
-    socialRegisterEmail: socialRegisterEmail,
-    standardRegisterEmail: standardRegisterEmail,
-    passwordResetEmail: passwordResetEmail
+    socialRegisterEmail,
+    standardRegisterEmail,
+    passwordResetEmail,
+    emailChangeVerification
 };

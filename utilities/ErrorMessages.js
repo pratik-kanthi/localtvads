@@ -11,7 +11,7 @@ module.exports = {
     LOGIN_ERROR: 'Something went wrong while logging in',
     NO_RECORDS_FOUND: 'There were no records found for selected criteria. Please check your filters and try again',
     NOT_FOUND: ' not found or might have been deleted. Please refresh and check',
-    PASSWORD_INCORRECT: 'Provided username and password do not match. Please try again',
+    PASSWORD_INCORRECT: 'Provided password is invalid. Please try again',
     UNAUTHORISED: 'Unauthorised Access. You do not have rights to perform this action',
     UNAUTHORISED_SOCKET: 'Authentication Error while connecting to sockets',
     UNSUPPORTED_MEDIA_TYPE: 'System does not support this extension of the media. Please upload media from mentioned permissible extensions',
