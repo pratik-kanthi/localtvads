@@ -1,12 +1,10 @@
 const mongoose = require('mongoose');
-const adPlanSchema = require.main.require('./models/ChannelPlan').schema;
+
+const ServiceAddOnSchema = require.main.require('./models/ServiceAddOn').schema;
 
 const name = 'Transaction';
 
 const schema = new mongoose.Schema({
-    ChannelPlan: {
-        adPlanSchema
-    },
     Client: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client',
@@ -14,8 +12,10 @@ const schema = new mongoose.Schema({
     },
     ClientAdPlan: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ClientAdPlan',
-        required: true
+        ref: 'ClientAdPlan'
+    },
+    ServiceAddOn: {
+        type: ServiceAddOnSchema
     },
     TotalAmount: {
         type: Number,

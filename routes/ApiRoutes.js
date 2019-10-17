@@ -1,14 +1,15 @@
+const passport = require('passport');
+
 const controllerBuilder = require('../controllers/BaseController');
-const log = require('../log')(module);
-const {authenticate} = require.main.require('./middlewares/Auth');
+const log = require('../log');
 
 module.exports = (app, models) => {
     for (const key in models) {
         if (Object.prototype.hasOwnProperty.call(models, key)) {
             const controller = controllerBuilder(models[key]);
-            app.get('/api/' + key, authenticate, controller.get);
-            app.get('/api/' + key + '/count', controller.count);
-            app.get('/api/' + key + '/:_id', controller.getById);
+            app.get('/api/' + key, passport.authenticate('jwt', {session: false}), controller.get);
+            app.get('/api/' + key + '/count', passport.authenticate('jwt', {session: false}), controller.count);
+            app.get('/api/' + key + '/:_id', passport.authenticate('jwt', {session: false}), controller.getById);
         }
     }
 

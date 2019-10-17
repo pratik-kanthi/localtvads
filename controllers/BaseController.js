@@ -7,7 +7,7 @@ module.exports = (def) => {
     Model.schema.plugin(deepPopulate);
 
     const getAll = (req, res) => {
-        const Channels = req.user.Channels;
+        const Channels = req.user.Channels || [];
         //query string that filters just the records with the selected Brands or no brand all together
         const querystring = [{
             Channel: {
@@ -56,7 +56,7 @@ module.exports = (def) => {
     };
 
     const count = (req, res) => {
-        const Channels = req.user.Channels;
+        const Channels = req.user.Channels || [];
         //query string that filters just the records with the selected Brands or no brand all together
         const querystring = [{
             Channel: {
@@ -90,7 +90,7 @@ module.exports = (def) => {
     };
 
     const getOne = (req, res) => {
-        const Channels = req.user.Channels;
+        const Channels = req.user.Channels || [];
 
         //query string that filters just the records with the requested Id, selected brands or no brand all together
 

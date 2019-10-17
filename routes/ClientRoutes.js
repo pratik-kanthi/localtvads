@@ -1,6 +1,6 @@
 const passport = require('passport');
 
-const {addCard, deleteCard, getSavedCards, setPreferredCard} = require.main.require('./services/ClientService');
+const {addCard, deleteCard, getSavedCards, setPreferredCard, getTransactions} = require.main.require('./services/ClientService');
 
 module.exports = (app) => {
     app.post('/api/client/addcard', passport.authenticate('jwt', {session: false}), async(req, res) => {
@@ -33,6 +33,15 @@ module.exports = (app) => {
     app.delete('/api/client/deletecard', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
             const result = await deleteCard(req.query.client, req.query.card);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.get('/api/client/transactions', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            const result = await getTransactions(req.query.client);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

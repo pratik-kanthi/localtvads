@@ -1,7 +1,10 @@
-module.exports = ()=>{
-    require('./AdSchedule');
-    require('./Channel');
-    require('./ChannelAdSchedule');
-    require('./ChannelPlan');
-    require('./ClientResource');
+module.exports = () => {
+    return {
+        serviceaddons: require('./ServiceAddOn'),
+        adschedules: require('./AdSchedule'),
+        adchannels: require('./Channel'),
+        channeladschedules: require('./ChannelAdSchedule'),
+        channelplans: require('./ChannelPlan'),
+        clientresources: require('./ClientResource')
+    };
 };

@@ -377,6 +377,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
                 ClientAdPlan: cAdPlan,
                 TotalAmount: cAdPlan.ChannelPlan.TotalAmount,
                 Status: 'succeeded',
+                ReferenceId: charge.id,
                 StripeResponse: charge,
                 TaxBreakdown: taxes
             });
