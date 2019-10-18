@@ -6,6 +6,7 @@ module.exports = (app, models, io) => {
     require('./ClientRoutes')(app);
     require('./ContactRoutes')(app);
     require('./ImageRoutes')(app);
+    require('./OfferRoutes')(app);
     require('./ResourceRoutes')(app);
     require('./ApiRoutes')(app, models);
 };
