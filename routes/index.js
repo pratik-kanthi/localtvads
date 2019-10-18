@@ -1,4 +1,5 @@
 module.exports = (app, models, io) => {
+    require('./AddOnRoutes')(app);
     require('./AuthRoutes')(app);
     require('./ChannelRoutes')(app);
     require('./ClientAdRoutes')(app, io);
@@ -6,4 +7,5 @@ module.exports = (app, models, io) => {
     require('./ContactRoutes')(app);
     require('./ImageRoutes')(app);
     require('./ResourceRoutes')(app);
+    require('./ApiRoutes')(app, models);
 };

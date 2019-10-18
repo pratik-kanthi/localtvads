@@ -4,6 +4,7 @@ const Channel = require.main.require('./models/Channel').model;
 const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
 
+const {getApplicableOffers} = require.main.require('./services/OfferService');
 const {getTaxes} = require.main.require('./services/TaxService');
 
 /**
@@ -289,19 +290,46 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                         });
                     }
 
+                    let offers;
+                    const project = {
+                        'Name': 1,
+                        'Amount': 1,
+                        'AmountType': 1,
+                        'AdSchedules': 1
+                    };
+                    try {
+                        const result = await getApplicableOffers(channel, undefined, startDate, project);
+                        offers = result.data;
+                    } catch (ex) {
+                        return reject({
+                            code: ex.code,
+                            error: ex.error
+                        });
+                    }
+
                     for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
                         const key = _formatDate(i);
                         result[key] = {};
                         channelPlans.forEach((p) => {
                             if (p.ChannelAdSchedule && adScheduleMapping[p.ChannelAdSchedule._id.toString()]) {
-                                // Dynamic price calculation
+                                let offerDiscount = 0;
+                                const appliedOffers = offers.filter(offer => {
+                                    offerDiscount += calculateOffer(p.BaseAmount, offer, adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule._id);
+                                    return offerDiscount;
+                                });
+                                const subTotal = p.BaseAmount - offerDiscount;
+                                const totalAmount = subTotal + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * subTotal * 0.01 : accumulator + tax.Value, 0);
+                                const totalAmountWithoutDiscount = p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * p.BaseAmount * 0.01 : accumulator + tax.Value, 0);
                                 result[key][adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule.Name] = {
                                     Plan: p._id,
                                     Name: p.Name,
                                     Description: p.Description,
                                     AdSchedule: p.ChannelAdSchedule.AdSchedule,
                                     Seconds: p.Seconds,
-                                    TotalAmount: p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * p.BaseAmount * 0.01 : accumulator + tax.Value, 0),
+                                    TotalAmount: totalAmount,
+                                    TotalAmountWithoutDiscount: totalAmountWithoutDiscount,
+                                    OfferDiscount: offerDiscount,
+                                    Offers: appliedOffers,
                                     BaseAmount: p.BaseAmount,
                                     ViewershipCount: adScheduleViewershipMapping[p.ChannelAdSchedule.AdSchedule._id.toString()]
                                 };
@@ -386,6 +414,14 @@ const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
             resolve();
         });
     });
+};
+
+const calculateOffer = (amount, offer, adSchedule) => {
+    let discountAmount = 0;
+    if (offer.AdSchedules.length === 0 || offer.AdSchedules.indexOf(adSchedule) > -1) {
+        discountAmount = offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount/100 : offer.Amount;
+    }
+    return discountAmount;
 };
 
 const _formatDate = (date) => {

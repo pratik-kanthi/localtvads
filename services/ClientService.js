@@ -1,5 +1,6 @@
 const Client = require.main.require('./models/Client').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
+const Transaction = require.main.require('./models/Transaction').model;
 
 const { saveCustomer, saveNewCardToCustomer, deleteCardFromStripe } = require.main.require('./services/PaymentService');
 
@@ -319,6 +320,45 @@ const deleteCard = (clientId, cardId) => {
     });
 };
 
+const getTransactions = (clientId) => {
+    return new Promise(async (resolve, reject) => {
+        if (!clientId) {
+            return reject({
+                code: 500,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        const query = {
+                Client: clientId
+            }, project = {
+                TotalAmount: 1,
+                DateTime: 1,
+                Status: 1,
+                ReferenceId: 1,
+                ClientAdPlan: 1
+            };
+        const populateOptions = [{
+            path: 'ClientAdPlan',
+            select: {
+                'ChannelPlan.TotalAmount': 1
+            }
+        }];
+        Transaction.find(query, project).populate(populateOptions).sort({DateTime: -1}).exec((err, transactions) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({
+                code: 500,
+                data: transactions
+            });
+        });
+    });
+};
 
 const _getClient = (client, projection) => {
     return new Promise(async (resolve, reject) => {
@@ -340,5 +380,6 @@ module.exports = {
     deleteCard,
     getPreferredCard,
     getSavedCards,
-    setPreferredCard
+    setPreferredCard,
+    getTransactions
 };

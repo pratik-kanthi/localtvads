@@ -3,11 +3,11 @@ const mongoose = require('mongoose');
 const name='ServiceAddOn';
 
 const schema = new mongoose.Schema({
-    Title: {
+    Name: {
         type: String,
         required: true
     },
-    SubTitle: {
+    Description: {
         type: String
     },
     Benefits: [
