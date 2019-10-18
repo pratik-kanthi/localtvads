@@ -90,7 +90,11 @@ const saveAddOn = (addon, clientId, cardId, token) => {
 
                 const transaction = new Transaction({
                     Client: clientId,
-                    ServiceAddOn: addOn,
+                    ServiceAddOn: {
+                        ...addOn.toObject(),
+                        SubTotal: addOn.Amount,
+                        TaxAmount: taxAmount
+                    },
                     TotalAmount: addOn.Amount + taxAmount,
                     Status: 'succeeded',
                     StripeResponse: charge,

@@ -1,3 +1,5 @@
+const AdSchedule = require.main.require('./models/AdSchedule').model;
+const Channel = require.main.require('./models/Channel').model;
 const Client = require.main.require('./models/Client').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
@@ -333,18 +335,31 @@ const getTransactions = (clientId) => {
         const query = {
                 Client: clientId
             }, project = {
+                ChannelPlan: 1,
                 TotalAmount: 1,
                 DateTime: 1,
                 Status: 1,
                 ReferenceId: 1,
                 ClientAdPlan: 1
             };
-        const populateOptions = [{
-            path: 'ClientAdPlan',
-            select: {
-                'ChannelPlan.TotalAmount': 1
+        const populateOptions = [
+            {
+                path: 'ChannelPlan.Channel',
+                model: Channel,
+                select: {
+                    'Name': 1,
+                    _id: 0
+                }
+            },
+            {
+                path: 'ChannelPlan.AdSchedule',
+                model: AdSchedule,
+                select: {
+                    'Name': 1,
+                    _id: 0
+                }
             }
-        }];
+        ];
         Transaction.find(query, project).populate(populateOptions).sort({DateTime: -1}).exec((err, transactions) => {
             if (err) {
                 return reject({

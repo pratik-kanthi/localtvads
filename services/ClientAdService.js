@@ -577,7 +577,17 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                     }
 
                     const transaction = new Transaction({
-                        ChannelPlan: chPlan,
+                        ChannelPlan: {
+                            Channel: chPlan.Channel,
+                            AdSchedule: chPlan.ChannelAdSchedule.AdSchedule,
+                            Seconds: chPlan.Seconds,
+                            Extras: extras || [],
+                            Discount: discountAmount + offerDiscountAmount,
+                            Offers: offers,
+                            Surge: 0,
+                            SubTotal: chPlan.BaseAmount,
+                            TaxAmount: taxAmount
+                        },
                         Client: clientAdPlan.Client,
                         ClientAdPlan: cAdPlan._id,
                         TotalAmount: cAdPlan.ChannelPlan.TotalAmount,
