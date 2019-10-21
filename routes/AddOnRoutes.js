@@ -21,7 +21,7 @@ module.exports = (app) => {
         }
     });
 
-    app.get('/api/serviceaddons/all', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.get('/api/serviceaddons/all', async (req, res) => {
         try {
             const result = await getActiveAddOns();
             return res.status(result.code).send(result.data);
