@@ -97,7 +97,8 @@ const saveAddOn = (addon, clientId, cardId, token) => {
                     ServiceAddOn: addOn._id,
                     Images: [],
                     Videos: []
-                }).save(err => {
+                });
+                clientServiceAddOn.save(err => {
                     if (err) {
                         return reject({
                             code: 500,
