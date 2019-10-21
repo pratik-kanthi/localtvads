@@ -87,7 +87,7 @@ module.exports = (app) => {
                 return res.status(500).send(err);
             }
             try {
-                const result = await updateImageResource(req.body, req.file);
+                const result = await updateImageResource(req.body.document, req.file);
                 return res.status(result.code).send(result.data);
             } catch (ex) {
                 return res.status(ex.code || 500).send(ex.error);

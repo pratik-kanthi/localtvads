@@ -652,7 +652,7 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
                 });
             }
             // uploadVideo
-            const dst = 'uploads/Client' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
+            const dst = 'uploads/Client/' + clientAdPlan.Client + '/ClientAdPlans/' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
             try {
                 await uploadFile(previewPath, dst);
             } catch (ex) {
@@ -789,5 +789,5 @@ module.exports = {
     saveClientAdPlan,
     renewClientAdPlan,
     updateClientAd,
-    checkCouponApplicable,
+    checkCouponApplicable
 };

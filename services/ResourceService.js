@@ -63,7 +63,7 @@ const addImageResource = (image, file) => {
                     });
                 }
                 const clientResource = new ClientResource({
-                    Name: image.name,
+                    Name: image.name.replace(extension, ''),
                     Client: client._id,
                     Type: 'IMAGE',
                     ResourceUrl: dst

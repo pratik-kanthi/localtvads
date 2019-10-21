@@ -23,6 +23,10 @@ const schema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
+    IsUploadRequired: {
+        type: Boolean,
+        default: false
+    },
     IsActive: {
         type: Boolean,
         default: true

@@ -1,10 +1,14 @@
 const async = require('async');
+const fs = require('fs');
 
+const ClientResource = require.main.require('./models/ClientResource').model;
+const ClientServiceAddOn = require.main.require('./models/ClientServiceAddOn').model;
 const ServiceAddOn = require.main.require('./models/ServiceAddOn').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
 const Tax = require.main.require('./models/Tax').model;
 
+const {uploadFile} = require.main.require('./services/FileService');
 const {chargeByCard, chargeByExistingCard} = require.main.require('./services/PaymentService');
 const {getTaxes} = require.main.require('./services/TaxService');
 
@@ -88,29 +92,43 @@ const saveAddOn = (addon, clientId, cardId, token) => {
                     });
                 }
 
-                const transaction = new Transaction({
+                const clientServiceAddOn = new ClientServiceAddOn({
                     Client: clientId,
-                    ServiceAddOn: {
-                        ...addOn.toObject(),
-                        SubTotal: addOn.Amount,
-                        TaxAmount: taxAmount
-                    },
-                    TotalAmount: addOn.Amount + taxAmount,
-                    Status: 'succeeded',
-                    StripeResponse: charge,
-                    ReferenceId: charge.id,
-                    TaxBreakdown: taxes
-                });
-                transaction.save((err) => {
+                    ServiceAddOn: addOn._id,
+                    Images: [],
+                    Videos: []
+                }).save(err => {
                     if (err) {
                         return reject({
                             code: 500,
                             error: err
                         });
                     }
-                    resolve({
-                        code: 200,
-                        data: transaction
+                    const transaction = new Transaction({
+                        Client: clientId,
+                        ServiceAddOn: {
+                            ...addOn.toObject(),
+                            SubTotal: addOn.Amount,
+                            TaxAmount: taxAmount
+                        },
+                        ClientServiceAddOn: clientServiceAddOn._id,
+                        TotalAmount: addOn.Amount + taxAmount,
+                        Status: 'succeeded',
+                        StripeResponse: charge,
+                        ReferenceId: charge.id,
+                        TaxBreakdown: taxes
+                    });
+                    transaction.save((err) => {
+                        if (err) {
+                            return reject({
+                                code: 500,
+                                error: err
+                            });
+                        }
+                        resolve({
+                            code: 200,
+                            data: transaction
+                        });
                     });
                 });
             }
@@ -175,7 +193,138 @@ const getActiveAddOns = () => {
     });
 };
 
+/**
+ * Upload ClientAd video
+ * @param {Object} data - data for Client, ServiceAddOn, Name of file
+ * @param {String} previewPath - Path where intermediate video is stored
+ * @param {String} extension - Extension of the video
+ * @param {Object} socket - socket connection through which event will be sent
+ */
+const uploadVideoForAddOns = (data, previewPath, extension, socket) => {
+    return new Promise(async (resolve, reject) => {
+        const dst = 'uploads/Client/' + data.client + '/ClientServiceAddOns/' + data.serviceAddOn.toString() + '/' + Date.now() + extension;
+        try {
+            await uploadFile(previewPath, dst);
+            deletePreviewFile();
+        } catch (ex) {
+            deletePreviewFile();
+            return reject({
+                code: 500,
+                error: ex
+            });
+        }
+        const clientResource = new ClientResource({
+            Name: data.name,
+            Client: data.client,
+            ServiceAddOn: data.serviceAddOn,
+            ResourceUrl: dst
+        });
+        clientResource.save(async err => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            socket.emit('');
+        });
+
+        const deletePreviewFile = () => {
+            try {
+                fs.removeSync(previewPath);
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+        };
+    });
+};
+
+const getClientServiceAddOn = (clientServiceAddOnId) => {
+    return new Promise(async (resolve, reject) => {
+        if (!clientServiceAddOnId) {
+            return reject({
+                code: 500,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        const query = {
+            _id: clientServiceAddOnId
+        };
+        ClientServiceAddOn.findOne(query).populate('Images Videos').exec((err, clientServiceAddOn) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            } else if (!clientServiceAddOn) {
+                return reject({
+                    code: 404,
+                    error: {
+                        message: 'Client Add On' + utilities.ErrorMessages.NOT_FOUND
+                    }
+                });
+            } else {
+                resolve({
+                    code: 200,
+                    data: clientServiceAddOn
+                });
+            }
+        });
+    });
+};
+
+const saveClientServiceAddOn = (id, images, videos) => {
+    return new Promise(async (resolve, reject) => {
+        if (!id || !images.length && !videos.length) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        const query = {
+            _id: id
+        };
+        ClientServiceAddOn.findOne(query, (err, clientServiceAddOn) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            } else if (!clientServiceAddOn) {
+                return reject({
+                    code: 404,
+                    error: {
+                        message: 'Client Add-On' + utilities.ErrorMessages.NOT_FOUND
+                    }
+                });
+            } else {
+                clientServiceAddOn.Images = images;
+                clientServiceAddOn.Videos = videos;
+                clientServiceAddOn.save(err => {
+                    if(err){
+                        return reject({
+                            code: 500,
+                            error: err
+                        });
+                    }
+                    resolve(clientServiceAddOn);
+                });
+            }
+        });
+    });
+};
+
 module.exports = {
     saveAddOn,
-    getActiveAddOns
+    getActiveAddOns,
+    getClientServiceAddOn,
+    saveClientServiceAddOn,
+    uploadVideoForAddOns
 };

@@ -12,6 +12,10 @@ const schema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClientAdPlan'
     },
+    ClientServiceAddOn: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClientServiceAddOn'
+    },
     ChannelPlan: {},
     ServiceAddOn: {},
     TotalAmount: {
