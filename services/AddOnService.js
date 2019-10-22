@@ -16,7 +16,7 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
     return new Promise(async (resolve, reject) => {
         if (!addon || !clientId) {
             return reject({
-                code: 500,
+                code: 400,
                 error: {
                     message: utilities.ErrorMessages.BAD_REQUEST
                 }
@@ -128,7 +128,7 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                         }
                         resolve({
                             code: 200,
-                            data: transaction
+                            data: clientServiceAddOn
                         });
                     });
                 });
@@ -254,7 +254,7 @@ const getClientServiceAddOn = (clientServiceAddOnId) => {
         const query = {
             _id: clientServiceAddOnId
         };
-        ClientServiceAddOn.findOne(query).populate('Images Videos').exec((err, clientServiceAddOn) => {
+        ClientServiceAddOn.findOne(query).populate('ServiceAddOn').exec((err, clientServiceAddOn) => {
             if (err) {
                 return reject({
                     code: 500,
