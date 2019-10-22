@@ -368,7 +368,7 @@ const getTransactions = (clientId) => {
                 });
             }
             resolve({
-                code: 500,
+                code: 200,
                 data: transactions
             });
         });
