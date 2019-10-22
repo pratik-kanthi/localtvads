@@ -196,7 +196,7 @@ const uploadImage = (file, query) => {
 
                 if (query.cropx) {
                     try {
-                        file = cropImage(query, file);
+                        file = await cropImage(query, file);
                     } catch (ex) {
                         return reject({
                             code: 500,
