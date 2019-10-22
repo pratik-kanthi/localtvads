@@ -12,7 +12,7 @@ const {uploadFile} = require.main.require('./services/FileService');
 const {chargeByCard, chargeByExistingCard} = require.main.require('./services/PaymentService');
 const {getTaxes} = require.main.require('./services/TaxService');
 
-const saveAddOn = (addon, clientId, cardId, token) => {
+const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
     return new Promise(async (resolve, reject) => {
         if (!addon || !clientId) {
             return reject({
@@ -203,7 +203,18 @@ const getActiveAddOns = () => {
  */
 const uploadVideoForAddOns = (data, previewPath, extension, socket) => {
     return new Promise(async (resolve, reject) => {
-        const dst = 'uploads/Client/' + data.client + '/ClientServiceAddOns/' + data.serviceAddOn.toString() + '/' + Date.now() + extension;
+        const deletePreviewFile = () => {
+            try {
+                fs.removeSync(previewPath);
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+        };
+
+        const dst = 'uploads/Client/' + data.client + '/ClientServiceAddOns/' + data.clientServiceAddOn + '/' + Date.now() + extension;
         try {
             await uploadFile(previewPath, dst);
             deletePreviewFile();
@@ -215,31 +226,18 @@ const uploadVideoForAddOns = (data, previewPath, extension, socket) => {
             });
         }
         const clientResource = new ClientResource({
-            Name: data.name,
+            Name: data.name.replace(extension, ''),
             Client: data.client,
-            ServiceAddOn: data.serviceAddOn,
+            Type: 'VIDEO',
             ResourceUrl: dst
         });
         clientResource.save(async err => {
             if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
+                return reject(err);
             }
-            socket.emit('');
+            socket.emit('UPLOAD_FINISHED', clientResource._id);
+            resolve(clientResource);
         });
-
-        const deletePreviewFile = () => {
-            try {
-                fs.removeSync(previewPath);
-            } catch (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            }
-        };
     });
 };
 
@@ -279,7 +277,7 @@ const getClientServiceAddOn = (clientServiceAddOnId) => {
     });
 };
 
-const saveClientServiceAddOn = (id, images, videos) => {
+const updateClientServiceAddOn = (id, images, videos) => {
     return new Promise(async (resolve, reject) => {
         if (!id || !images.length && !videos.length) {
             return reject({
@@ -315,7 +313,10 @@ const saveClientServiceAddOn = (id, images, videos) => {
                             error: err
                         });
                     }
-                    resolve(clientServiceAddOn);
+                    resolve({
+                        code: 200,
+                        data: clientServiceAddOn
+                    });
                 });
             }
         });
@@ -323,9 +324,9 @@ const saveClientServiceAddOn = (id, images, videos) => {
 };
 
 module.exports = {
-    saveAddOn,
     getActiveAddOns,
     getClientServiceAddOn,
     saveClientServiceAddOn,
+    updateClientServiceAddOn,
     uploadVideoForAddOns
 };

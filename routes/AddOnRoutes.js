@@ -1,7 +1,7 @@
 const passport = require('passport');
 
 const {addCard} = require.main.require('./services/ClientService');
-const {getActiveAddOns, saveAddOn, getClientServiceAddOn, saveClientServiceAddOn} = require.main.require('./services/AddOnService');
+const {getActiveAddOns, getClientServiceAddOn, saveClientServiceAddOn, updateClientServiceAddOn} = require.main.require('./services/AddOnService');
 
 module.exports = (app) => {
     app.post('/api/serviceaddons/save', passport.authenticate('jwt', {session: false}), async (req, res) => {
@@ -14,7 +14,7 @@ module.exports = (app) => {
             }
         }
         try {
-            const result = await saveAddOn(req.body.addon, req.body.client, req.body.cardid ? req.body.cardid : card ? card.data._id : undefined, req.body.token);
+            const result = await saveClientServiceAddOn(req.body.addon, req.body.client, req.body.cardid ? req.body.cardid : card ? card.data._id : undefined, req.body.token);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -30,16 +30,16 @@ module.exports = (app) => {
         }
     });
 
-    app.put('/api/client/serviceaddon', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.put('/api/serviceaddons/update', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            const result = await saveClientServiceAddOn(req.body.serviceaddon, req.body.images, req.body.videos);
+            const result = await updateClientServiceAddOn(req.body.serviceaddon, req.body.images, req.body.videos);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
     });
 
-    app.get('/api/client/serviceaddon', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.get('/api/serviceaddons/getone', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
             const result = await getClientServiceAddOn(req.query.serviceaddon);
             return res.status(result.code).send(result.data);

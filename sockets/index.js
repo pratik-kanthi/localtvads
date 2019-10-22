@@ -153,9 +153,12 @@ module.exports = () => {
                 outputFile.end();
 
                 outputFile.on('finish', async () => {
-                    fs.removeSync(tempDir);
-                    socket.emit('UPLOAD_FINISHED');
-                    uploadVideoForAddOns(data, outputFile.path, extension, socket);
+                    try {
+                        await uploadVideoForAddOns(data, outputFile.path, extension, socket);
+                        fs.removeSync(tempDir);
+                    } catch (err) {
+                        logger.logError(err);
+                    }
                 });
             } else {
                 socket.emit('UPLOAD_CHUNK_FINISHED', data.sequence);
