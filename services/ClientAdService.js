@@ -594,6 +594,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         Status: 'succeeded',
                         StripeResponse: charge,
                         TaxBreakdown: taxes,
+                        ReferenceId: charge.id,
                         Coupon: discount ? discount._id : undefined
                     });
                     transaction.save((err) => {
