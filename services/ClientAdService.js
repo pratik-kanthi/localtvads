@@ -499,7 +499,8 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         'Name': 1,
                         'Amount': 1,
                         'AmountType': 1,
-                        'AdSchedules': 1
+                        'AdSchedules': 1,
+                        'DaysOfWeek': 1
                     };
                     try {
                         const result = await getApplicableOffers(chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, project);

@@ -295,7 +295,8 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                         'Name': 1,
                         'Amount': 1,
                         'AmountType': 1,
-                        'AdSchedules': 1
+                        'AdSchedules': 1,
+                        'DaysOfWeek': 1
                     };
                     try {
                         const result = await getApplicableOffers(channel, undefined, startDate, project);

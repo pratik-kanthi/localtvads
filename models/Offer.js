@@ -40,6 +40,9 @@ const schema = new mongoose.Schema({
     EndDate: {
         type: Date,
         required: true
+    },
+    DaysOfWeek: {
+        type: []
     }
 });
 

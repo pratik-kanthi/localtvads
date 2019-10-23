@@ -1,3 +1,4 @@
+const moment = require('moment');
 const Offer = require.main.require('./models/Offer').model;
 
 const getApplicableOffers = (channel, adSchedule, startDate, project = {}) => {
@@ -10,6 +11,9 @@ const getApplicableOffers = (channel, adSchedule, startDate, project = {}) => {
                     error: err
                 });
             }
+            offers = offers.filter(offer => {
+                return offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(startDate).isoWeekday()) > -1;
+            });
             resolve({
                 code: 200,
                 data: offers
