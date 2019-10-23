@@ -94,9 +94,39 @@ const passwordResetEmail = (to, verificationlink) => {
 };
 
 
+const updateClientAdEmail = (to, videolink, emailinfo) => {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/updateclientad-email.ejs'), 'utf-8'), {
+        client_name: emailinfo.client_name,
+        client_email: emailinfo.client_email,
+        booking_date: emailinfo.booking_date,
+        channel: emailinfo.channel,
+        slot: emailinfo.slot,
+        start_date: emailinfo.start_date,
+        end_date: emailinfo.end_date,
+        ad_length: emailinfo.ad_length,
+        // videolink: videolink
+    });
+
+    const data = {
+        from: config.mailgun.fromemail,
+        to: to,
+        subject: 'Your ad plan details',
+        html: message
+    };
+
+    mailgun.api.server.send(data, (err) => {
+        if (err) {
+            throw err;
+        }
+    });
+};
+
+
+
 module.exports = {
     socialRegisterEmail,
     standardRegisterEmail,
     passwordResetEmail,
-    emailChangeVerification
+    emailChangeVerification,
+    updateClientAdEmail
 };
