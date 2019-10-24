@@ -128,6 +128,9 @@ const _generateOfferQuery = (channel, adSchedule, startDate) => {
             }]
         });
     }
+    query.$and.push({
+        ApplyToBooking: true
+    });
     return query;
 };
 

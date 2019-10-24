@@ -92,7 +92,7 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                     });
                 }
 
-                const clientServiceAddOn = new ClientServiceAddOn({
+                let clientServiceAddOn = new ClientServiceAddOn({
                     Client: clientId,
                     ServiceAddOn: addOn._id,
                     Images: [],
@@ -105,6 +105,8 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                             error: err
                         });
                     }
+                    clientServiceAddOn = clientServiceAddOn.toObject();
+                    clientServiceAddOn.ServiceAddOn = addOn;
                     const transaction = new Transaction({
                         Client: clientId,
                         ServiceAddOn: {

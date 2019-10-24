@@ -43,6 +43,10 @@ const schema = new mongoose.Schema({
     },
     DaysOfWeek: {
         type: []
+    },
+    ApplyToBooking: {
+        type: Boolean,
+        default: false
     }
 });
 
