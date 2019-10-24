@@ -199,58 +199,11 @@ const getActiveAddOns = () => {
     });
 };
 
-/**
- * Upload ClientAd video
- * @param {Object} data - data for Client, ServiceAddOn, Name of file
- * @param {String} previewPath - Path where intermediate video is stored
- * @param {String} extension - Extension of the video
- * @param {Object} socket - socket connection through which event will be sent
- */
-const uploadVideoForAddOns = (data, previewPath, extension, socket) => {
-    return new Promise(async (resolve, reject) => {
-        const deletePreviewFile = () => {
-            try {
-                fs.removeSync(previewPath);
-            } catch (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            }
-        };
-
-        const dst = 'uploads/Client/' + data.client + '/ClientServiceAddOns/' + data.clientServiceAddOn + '/' + Date.now() + extension;
-        try {
-            await uploadFile(previewPath, dst);
-            deletePreviewFile();
-        } catch (ex) {
-            deletePreviewFile();
-            return reject({
-                code: 500,
-                error: ex
-            });
-        }
-        const clientResource = new ClientResource({
-            Name: data.name.replace(extension, ''),
-            Client: data.client,
-            Type: 'VIDEO',
-            ResourceUrl: dst
-        });
-        clientResource.save(async err => {
-            if (err) {
-                return reject(err);
-            }
-            socket.emit('UPLOAD_FINISHED', clientResource._id);
-            resolve(clientResource);
-        });
-    });
-};
-
 const getClientServiceAddOn = (clientServiceAddOnId) => {
     return new Promise(async (resolve, reject) => {
         if (!clientServiceAddOnId) {
             return reject({
-                code: 500,
+                code: 400,
                 error: {
                     message: utilities.ErrorMessages.BAD_REQUEST
                 }
@@ -276,6 +229,47 @@ const getClientServiceAddOn = (clientServiceAddOnId) => {
                 resolve({
                     code: 200,
                     data: clientServiceAddOn
+                });
+            }
+        });
+    });
+};
+
+const getClientServiceAddOns = (clientid) => {
+    return new Promise(async (resolve, reject) => {
+        if (!clientid) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        const query = {
+            Client: clientid
+        };
+        const project = {
+            _id: 1,
+            ServiceAddOn: 1,
+            DateTime: 1
+        };
+        ClientServiceAddOn.findOne(query, project).populate('ServiceAddOn', 'Name Description').exec((err, clientServiceAddOns) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            } else if (!clientServiceAddOns) {
+                return reject({
+                    code: 404,
+                    error: {
+                        message: 'Client Add On' + utilities.ErrorMessages.NOT_FOUND
+                    }
+                });
+            } else {
+                resolve({
+                    code: 200,
+                    data: clientServiceAddOns
                 });
             }
         });
@@ -328,9 +322,57 @@ const updateClientServiceAddOn = (id, images, videos) => {
     });
 };
 
+/**
+ * Upload ClientAd video
+ * @param {Object} data - data for Client, ServiceAddOn, Name of file
+ * @param {String} previewPath - Path where intermediate video is stored
+ * @param {String} extension - Extension of the video
+ * @param {Object} socket - socket connection through which event will be sent
+ */
+const uploadVideoForAddOns = (data, previewPath, extension, socket) => {
+    return new Promise(async (resolve, reject) => {
+        const deletePreviewFile = () => {
+            try {
+                fs.removeSync(previewPath);
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+        };
+
+        const dst = 'uploads/Client/' + data.client + '/ClientServiceAddOns/' + data.clientServiceAddOn + '/' + Date.now() + extension;
+        try {
+            await uploadFile(previewPath, dst);
+            deletePreviewFile();
+        } catch (ex) {
+            deletePreviewFile();
+            return reject({
+                code: 500,
+                error: ex
+            });
+        }
+        const clientResource = new ClientResource({
+            Name: data.name.replace(extension, ''),
+            Client: data.client,
+            Type: 'VIDEO',
+            ResourceUrl: dst
+        });
+        clientResource.save(async err => {
+            if (err) {
+                return reject(err);
+            }
+            socket.emit('UPLOAD_FINISHED', clientResource._id);
+            resolve(clientResource);
+        });
+    });
+};
+
 module.exports = {
     getActiveAddOns,
     getClientServiceAddOn,
+    getClientServiceAddOns,
     saveClientServiceAddOn,
     updateClientServiceAddOn,
     uploadVideoForAddOns
