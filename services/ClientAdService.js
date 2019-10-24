@@ -505,6 +505,9 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                     try {
                         const result = await getApplicableOffers(chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, project);
                         offers = result.data;
+                        offers = offers.filter(offer => {
+                            return offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(clientAdPlan.StartDate).isoWeekday()) > -1;
+                        });
                     } catch (ex) {
                         return reject({
                             code: ex.code,

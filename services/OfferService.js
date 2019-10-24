@@ -1,8 +1,15 @@
-const moment = require('moment');
 const Offer = require.main.require('./models/Offer').model;
 
 const getApplicableOffers = (channel, adSchedule, startDate, project = {}) => {
     return new Promise(async (resolve, reject) => {
+        if (!startDate) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
         const query = _generateOfferQuery(channel, adSchedule, startDate);
         Offer.find(query, project, (err, offers) => {
             if (err) {
@@ -11,9 +18,53 @@ const getApplicableOffers = (channel, adSchedule, startDate, project = {}) => {
                     error: err
                 });
             }
-            offers = offers.filter(offer => {
-                return offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(startDate).isoWeekday()) > -1;
+            resolve({
+                code: 200,
+                data: offers
             });
+        });
+    });
+};
+
+const getAllOffers = (startDate, project = {
+    Name: 1,
+    Description: 1,
+    StartDate: 1,
+    EndDate: 1,
+    Amount: 1,
+    AmountType: 1,
+    ImageUrl: 1
+}) => {
+    return new Promise(async (resolve, reject) => {
+        if (!startDate) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        const query = {
+            $and: []
+        };
+        query.$and.push({
+            $and: [{
+                StartDate: {
+                    $lte: new Date(startDate)
+                }
+            }, {
+                EndDate: {
+                    $gte: new Date(startDate)
+                }
+            }]
+        });
+        Offer.find(query, project, (err, offers) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
             resolve({
                 code: 200,
                 data: offers
@@ -81,5 +132,6 @@ const _generateOfferQuery = (channel, adSchedule, startDate) => {
 };
 
 module.exports = {
-    getApplicableOffers
+    getApplicableOffers,
+    getAllOffers
 };

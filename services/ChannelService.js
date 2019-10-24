@@ -296,7 +296,9 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                         'Amount': 1,
                         'AmountType': 1,
                         'AdSchedules': 1,
-                        'DaysOfWeek': 1
+                        'DaysOfWeek': 1,
+                        'StartDate': 1,
+                        'EndDate': 1
                     };
                     try {
                         const result = await getApplicableOffers(channel, undefined, startDate, project);
@@ -315,7 +317,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                             if (p.ChannelAdSchedule && adScheduleMapping[p.ChannelAdSchedule._id.toString()]) {
                                 let offerDiscount = 0;
                                 const appliedOffers = offers.filter(offer => {
-                                    offerDiscount += calculateOffer(p.BaseAmount, offer, adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule._id);
+                                    offerDiscount += calculateOffer(p.BaseAmount, offer, adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule._id, key);
                                     return offerDiscount;
                                 });
                                 const subTotal = p.BaseAmount - offerDiscount;
@@ -417,9 +419,9 @@ const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
     });
 };
 
-const calculateOffer = (amount, offer, adSchedule) => {
+const calculateOffer = (amount, offer, adSchedule, startDate) => {
     let discountAmount = 0;
-    if (offer.AdSchedules.length === 0 || offer.AdSchedules.indexOf(adSchedule) > -1) {
+    if ((offer.AdSchedules.length === 0 || offer.AdSchedules.indexOf(adSchedule) > -1) && (offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(startDate).isoWeekday()) > -1) && new Date(startDate) <= offer.EndDate && new Date(startDate) >= offer.StartDate) {
         discountAmount = offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount/100 : offer.Amount;
     }
     return discountAmount;
