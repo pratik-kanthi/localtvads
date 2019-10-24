@@ -338,7 +338,9 @@ const getTransactions = (clientId) => {
                 DateTime: 1,
                 Status: 1,
                 ReferenceId: 1,
-                ClientAdPlan: 1
+                ClientAdPlan: 1,
+                ServiceAddOn: 1,
+                ClientServiceAddOn: 1
             };
         const populateOptions = [
             {
