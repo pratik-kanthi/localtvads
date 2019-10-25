@@ -1,0 +1,591 @@
+<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Transitional//EN""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> <html>
+
+<head>
+    <title>Payment Invoice</title>
+    <meta content="exported via StampReady" name="sr_export">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta http-equiv="x-ua-compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css?family=Noto+Sans&display=swap" rel="stylesheet">
+    <style type="text/css">
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f2f4f7;
+            -webkit-text-size-adjust: none;
+            -ms-text-size-adjust: none;
+        }
+
+        table {
+            border-spacing: 0;
+            table-layout: fixed;
+            margin: 0 auto;
+        }
+
+        table.content {
+            background-color: #FFFFFF;
+            border-radius: 8px;
+            border: 1px solid #dcdfe5;
+        }
+
+        table.content-box {
+            background-color: #f2f4f7;
+            border-radius: 8px;
+        }
+
+        .content-box-left,
+        .content-box-right,
+        .content-box-single {
+            padding: 16px;
+            vertical-align: top;
+        }
+
+        table td {
+            border-collapse: collapse;
+        }
+
+        table.header-row {
+            border-radius: 8px 8px 0 0;
+        }
+
+        table.header-row>tbody>tr>td:first-child {
+            padding-left: 24px;
+        }
+
+        table.header-row>tbody>tr>td:last-child {
+            padding-right: 24px;
+        }
+
+        table.button {
+            border-radius: 8px;
+            padding: 2px;
+            background-color: #B4775A;
+        }
+
+        .text-button {
+            height: 40px;
+            width: 220px;
+            text-align: center;
+            font-family: Arial, sans-serif;
+            color: #FFFFFF;
+            padding: 4px;
+        }
+
+        .text-button a {
+            color: #FFFFFF;
+            padding: 4px;
+            font-size: 18px;
+            text-decoration: none;
+        }
+
+        .text {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            color: #9E9E9E;
+            font-size: 14px;
+        }
+
+        .footer-text {
+            font-family: 'Noto Sans', sans-serif;
+
+            text-align: center;
+            color: #9E9E9E;
+            font-size: 12px;
+        }
+
+        .nav {
+            text-align: right;
+            padding-left: 16px;
+        }
+
+        .nav a {
+            font-family: Arial, sans-serif;
+            color: #9E9E9E;
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .hero {
+            color: #373737;
+            font-family: 'Noto Sans', sans-serif;
+
+            font-size: 32px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .hero-child {
+            text-align: center;
+            color: #6E6E6E;
+            font-size: 14px;
+            font-family: 'Noto Sans', sans-serif;
+
+            line-height: 22px;
+        }
+
+        .link-login {
+            color: #FF6500;
+            font-family: 'Noto Sans', sans-serif;
+
+            font-size: 14px;
+            text-decoration: none;
+        }
+
+        .text-label {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #868C9D;
+            line-height: 22px;
+        }
+
+        .text-value {
+            color: #576381;
+            font-size: 14px;
+            font-family: Arial, sans-serif;
+            line-height: 22px;
+        }
+
+        .text-title {
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            color: #525F7F;
+            line-height: 22px;
+        }
+
+        .socialmediaicons {
+            height: 22px;
+            padding: 4px;
+
+        }
+
+        .footer-text {
+            font-family: 'Noto Sans', sans-serif;
+
+            text-align: center;
+            color: #9E9E9E;
+            font-size: 12px;
+        }
+
+        .invoice-headings {
+            color: #494949;
+            font-size: 12px;
+            font-family: 'Noto Sans', sans-serif;
+
+            line-height: 22px;
+        }
+
+        .invoice-details {
+            color: #494949;
+            font-size: 12px;
+            font-family: 'Noto Sans', sans-serif;
+
+            line-height: 22px;
+        }
+
+        .payment-details {
+            color: #6E6E6E;
+            font-size: 14px;
+            font-family: 'Noto Sans', sans-serif;
+
+            line-height: 22px;
+        }
+
+        .invoice-details-total {
+            color: #373637;
+            font-size: 14px;
+            font-family: 'Noto Sans', sans-serif;
+
+            font-weight: 800;
+        }
+
+        .payment-heading-table {
+            background-color: #FF6500;
+            height: 32px;
+            color: white;
+            font-family: 'Noto Sans', sans-serif;
+
+            font-size: 14px;
+            padding: 8px;
+        }
+
+        .ad-description {
+            font-family: 'Noto Sans', sans-serif;
+
+            font-size: 12px;
+            color: #6E6E6E;
+        }
+
+        table.payment-data-table td {
+            border-bottom: 2px solid #E6EBF1;
+        }
+
+        table.payment-bill-table td {
+            border-bottom: 2px solid #E6EBF1;
+            padding: 0 24px;
+        }
+
+        table.payment-total-table td {
+            padding: 0 24px;
+        }
+
+
+
+        @media only screen and (max-width: 767px) {
+            .mobileOff {
+                width: 0px !important;
+                display: none !important;
+            }
+
+            .content-box-right {
+                width: 0px !important;
+                display: none !important;
+            }
+
+            *[class*="mobileOn"] {
+                display: block !important;
+                max-height: none !important;
+            }
+
+            br {
+                display: static;
+            }
+
+            table.table-inner {
+                width: 90% !important;
+            }
+
+            .hero {
+                font-size: 16px !important;
+                text-align: center;
+            }
+
+            .hero-child {
+                font-size: 10px !important;
+                line-height: 18px !important;
+            }
+
+            table.table-inner-sub {
+                width: 96% !important;
+            }
+
+            .logo-wrapper {
+                text-align: center !important;
+            }
+
+            table.header-row {
+                width: 100% !important;
+            }
+
+            .textbutton {
+                width: 170px;
+            }
+
+            table.content-box td strong,
+            table.content-box td span {
+                font-size: 14px !important;
+            }
+
+            .hero {
+                padding-top: 10px;
+            }
+
+            .booking-img-wrp {
+                text-align: center !important;
+            }
+
+
+            table.content-box-left {
+                width: 100%;
+            }
+
+            table.content-box-right {
+                width: 100%;
+            }
+
+
+            .hero-img {
+                width: 100% !important;
+            }
+
+            .footer-text {
+                font-family: 'Noto Sans', sans-serif;
+
+                text-align: center;
+                color: #9E9E9E;
+                font-size: 10px;
+            }
+
+            .ad-description {
+                font-family: 'Noto Sans', sans-serif;
+
+                font-size: 8px;
+                color: #6E6E6E;
+            }
+
+            .payment-heading-table {
+                background-color: #FF6500;
+                height: 32px;
+                color: white;
+                font-family: 'Noto Sans', sans-serif;
+
+                font-size: 8px;
+                padding: 8px;
+            }
+
+        }
+    </style>
+</head>
+
+<body>
+    <table width="100%" cellspacing="0" cellpadding="0">
+        <!--START MAIN BODY-->
+        <tr>
+            <td align="center">
+                <table cellspacing="0" cellpadding="0" width="600" class="table-inner content">
+                    <tr>
+                        <td align="center">
+                            <!--START HEADER-->
+                            <table cellspacing="0" cellpadding="0" width="598" class="header-row">
+                                <tr>
+                                    <td height="16"></td>
+                                </tr>
+                                <tr>
+                                    <td align="center">
+                                        <table class="table-inner-sub" cellspacing="0" cellpadding="0" width="552">
+                                            <tr>
+                                                <td align="center" class="logo-wrapper">
+                                                    <img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/logo.png" alt="img" width="90" class="logo-img">
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td height="16"></td>
+                                </tr>
+                            </table>
+                            <!--END HEADER-->
+                            <!--START CONTENT-->
+                            <table cellspacing="0" cellpadding="0" width="598" class="table-inner-sub">
+                                <tr class="mobileOff">
+                                    <td height="24">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="hero">
+                                        Payment Invoice
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td height="16">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="hero-child">
+                                        The detailed invoice of your ad in Local TV Ads has been generated.
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td height="16">
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="payment-details" align="center">
+                                        <table class="table-inner-sub content-box" cellspacing="0" cellpadding="0" width="552">
+                                            <tr>
+                                                <td class="content-box-single">
+                                                    <table cellpadding="0" cellspacing="0" width="100%">
+                                                        <tr>
+                                                            <td align="center" class="logo-wrapper">
+                                                                <img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/logo.png" alt="img" width="60" class="logo-img">
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td height="16"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                <table cellpadding="0" cellspacing="0" width="100%" class="payment-table">
+                                                                    <tr>
+                                                                        <td width="70%" align="left" class="payment-details">
+                                                                            <span class="invoice-headings">Invoice
+                                                                                Number</span><br>
+                                                                            <strong class="invoice-details"><%= emailinfo.invoice_number %></strong>
+                                                                        </td>
+                                                                        <td width="30%" align="right">
+                                                                            <strong class="invoice-details"><%= emailinfo.client_name %></strong><br>
+                                                                        </td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td width="70%" align="left" class="payment-details">
+                                                                            <span class="invoice-headings">Invoice
+                                                                                Date</span><br>
+                                                                            <strong class="invoice-details"><%= emailinfo.invoice_date %></strong>
+                                                                        </td>
+
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td height="16"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                <table cellpadding="0" cellspacing="0" width="100%" class="payment-heading-table">
+                                                                    <tr>
+                                                                        <td align="left"> Region </td>
+                                                                        <td align="center">Plan Length </td>
+                                                                        <td align="center"> Start Date </td>
+                                                                        <td align="center"> End Date </td>
+                                                                        <td align="right"> Ad Length </td>
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td height="16"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                <table cellpadding="0" cellspacing="0" width="100%" class="payment-data-table">
+                                                                    <tr>
+                                                                        <td align="center" class="ad-description"><%= emailinfo.region %></td>
+                                                                        <td align="center" class="ad-description">6 months</td>
+                                                                        <td align="center" class="ad-description"><%= emailinfo.start_date %></td>
+                                                                        <td align="center" class="ad-description"><%= emailinfo.end_date %></td>
+                                                                        <td align="center" class="ad-description"><%= emailinfo.ad_length %></td>
+                                                                    </tr>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td height="16"></td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td>
+                                                                <table cellpadding="0" cellspacing="0" width="100%" class="payment-bill-table">
+                                                                    <tr>
+                                                                        <td width="70%" align="left" class="payment-details">
+                                                                            <strong class="invoice-details">Sub
+                                                                                Total</strong><br>
+                                                                            <strong class="invoice-details">Taxes</strong><br />
+                                                                            <strong><%= emailinfo.tax_type%>(<%= emailinfo.tax_rate %>)</strong>
+                                                                        <td>
+                                                                        <td></td>
+                                                            </td>
+                                                </td>
+                                                <td width="30%" align="right">
+                                                    <strong class="invoice-details">£<%= emailinfo.subtotal %></strong><br>
+                                                    <strong class="invoice-details">£<%= emailinfo.tax_value %></strong><br>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td height="16"></td>
+                                </tr>
+                                <tr>
+                                    <td>
+                                        <table cellpadding="0" cellspacing="0" width="100%" class="payment-total-table">
+                                            <tr>
+                                                <td width="70%" align="left" class="payment-details">
+                                                    <strong class="invoice-details-total">Total</strong>
+                                                </td>
+                                                <td width="30%" align="right">
+                                                    <strong class="invoice-details-total">£<%= emailinfo.total %></strong>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+        <tr>
+            <td height="16">
+            </td>
+        </tr>
+        <tr>
+            <td height="16">
+            </td>
+        </tr>
+        <tr>
+            <td align="center" style="border-collapse: collapse;">
+                <table cellspacing="0" cellpadding="0" class="button" style="border-spacing: 0;table-layout: fixed;margin: 0 auto;border-radius: 4px;padding: 2px;background-color: #4c4c4c;">
+                    <tr>
+                        <td class="text-button" align="center" style="border-collapse: collapse;height: 40px;width: 156px;text-align: center;font-family: 'Noto Sans', sans-serif;
+color: #FFFFFF;">
+                            <a href="" onClick="window.print()" style="color: #FFFFFF;padding: 4px;font-size: 16px;font-weight:500;text-decoration: none;">
+                                Print
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+        <tr>
+            <td height="16">
+            </td>
+        </tr>
+        <tr>
+            <td align="center">
+                <a href="http://www.localtvads.com" class="link-login">www.localtvads.com
+            </td>
+        </tr>
+        <tr>
+            <td height="16">
+            </td>
+        </tr>
+        <tr>
+            <td align="center">
+                <a href=""><img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/social_facebook.png" class="socialmediaicons"></a>
+                <a href=""><img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/social_twitter.png" class="socialmediaicons"></a>
+                <!--END CONTENT-->
+            </td>
+        </tr>
+    </table>
+    </td>
+    </tr>
+    <!--END MAIN BODY-->
+    <!--START FOOTER-->
+    <tr>
+        <td align="center">
+            <table cellspacing="0" cellpadding="0" width="552" class="table-inner">
+                <tr>
+                    <td height="32"></td>
+                </tr>
+                <tr>
+                    <td class="footer-text">
+                        Terms & Conditions
+                    </td>
+                    <td class="footer-text">
+                        Support
+                    </td>
+                    <td class="footer-text">
+                        Privacy Policy
+                    </td>
+                </tr>
+                <tr>
+                    <td height="32"></td>
+                </tr>
+            </table>
+            <table cellspacing="0" cellpadding="0" width="552" class="table-inner">
+                <tr>
+                    <td class="footer-text">
+                        &copy;2019 LOCAL TV ADS. All Rights Reserved
+                    </td>
+                </tr>
+                <tr>
+                    <td height="32"></td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <!--END FOOTER-->
+    </table>
+</body>
+
+</html>

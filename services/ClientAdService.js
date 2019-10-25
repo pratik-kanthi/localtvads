@@ -499,11 +499,15 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         'Name': 1,
                         'Amount': 1,
                         'AmountType': 1,
-                        'AdSchedules': 1
+                        'AdSchedules': 1,
+                        'DaysOfWeek': 1
                     };
                     try {
                         const result = await getApplicableOffers(chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, project);
                         offers = result.data;
+                        offers = offers.filter(offer => {
+                            return offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(clientAdPlan.StartDate).isoWeekday()) > -1;
+                        });
                     } catch (ex) {
                         return reject({
                             code: ex.code,
