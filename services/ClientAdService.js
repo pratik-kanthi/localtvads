@@ -1,6 +1,6 @@
 const fs = require('fs-extra');
 const moment = require('moment');
-
+const email = require('../email');
 const config = require.main.require('./config');
 
 const Coupon = require.main.require('./models/Coupon').model;
@@ -10,12 +10,12 @@ const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
 
-const {updateChannelAdLengthCounter} = require.main.require('./services/ChannelService');
-const {getPreferredCard} = require.main.require('./services/ClientAdService');
-const {uploadFile} = require.main.require('./services/FileService');
-const {getApplicableOffers} = require.main.require('./services/OfferService');
-const {chargeByCard, chargeByExistingCard} = require.main.require('./services/PaymentService');
-const {getTaxes} = require.main.require('./services/TaxService');
+const { updateChannelAdLengthCounter } = require.main.require('./services/ChannelService');
+const { getPreferredCard } = require.main.require('./services/ClientAdService');
+const { uploadFile } = require.main.require('./services/FileService');
+const { getApplicableOffers } = require.main.require('./services/OfferService');
+const { chargeByCard, chargeByExistingCard } = require.main.require('./services/PaymentService');
+const { getTaxes } = require.main.require('./services/TaxService');
 
 /**
  * Check for Discount coupon
@@ -107,7 +107,7 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
         let query = _generateDiscountQuery(clientId, channel, channelPlan, startDate);
         let coupons = [];
         try {
-            coupons = await Coupon.find(query).sort({Amount: -1}).exec();
+            coupons = await Coupon.find(query).sort({ Amount: -1 }).exec();
         } catch (err) {
             return reject({
                 code: 500,
@@ -429,7 +429,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
 
         // check if the user is first timer
         let isNewUser = false;
-        ClientAdPlan.countDocuments({Client: clientAdPlan.Client}, (err, count) => {
+        ClientAdPlan.countDocuments({ Client: clientAdPlan.Client }, (err, count) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -453,7 +453,8 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                 BaseAmount: 1
             };
 
-            ChannelPlan.findOne(query, project).populate('ChannelAdSchedule', 'AdSchedule').exec(async (err, chPlan) => {
+
+            ChannelPlan.findOne(query, project).populate('Channel ChannelAdSchedule AdSchedule').exec(async (err, chPlan) => {
                 if (err) {
                     return reject({
                         code: 500,
@@ -524,7 +525,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         try {
                             const result = await checkCouponApplicable(clientAdPlan.Client, chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, couponCode);
                             discount = result.data;
-                            discountAmount = discount.AmountType === 'PERCENTAGE' ? finalAmount * discount.Amount/100 : discount.Amount;
+                            discountAmount = discount.AmountType === 'PERCENTAGE' ? finalAmount * discount.Amount / 100 : discount.Amount;
                             finalAmount -= discountAmount;
                         } catch (ex) {
                             return reject({
@@ -615,11 +616,32 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                                     error: err
                                 });
                             }
-                            resolve({
-                                code: 200,
-                                data: cAdPlan
+
+                            ClientAdPlan.findOne({ _id: cAdPlan.id }).populate('Client ClientAd').exec((err, cap) => {
+                                //invoice email
+                                const adEmailInfo = {
+                                    invoice_number: transaction.ReferenceId,
+                                    invoice_date: moment().format('DD/MM/YYYY'),
+                                    region: chPlan.Channel.Name,
+                                    ad_length: chPlan.Seconds,
+                                    start_date: moment(cAdPlan.StartDate).format('DD/MM/YYYY'),
+                                    end_date: moment(cAdPlan.EndDate).format('DD/MM/YYYY'),
+                                    client_name: cap.Client.Name,
+                                    total: transaction.TotalAmount,
+                                    subtotal: transaction.ChannelPlan.SubTotal,
+                                    tax_value: transaction.ChannelPlan.TaxAmount,
+                                    tax_type: transaction.TaxBreakdown[0].Name,
+                                    tax_rate: transaction.TaxBreakdown[0].Value
+                                };
+
+                                email.helper.paymentInvoiceEmail(cap.Client.Email, adEmailInfo);
+
+                                resolve({
+                                    code: 200,
+                                    data: cAdPlan
+                                });
+                                updateChannelAdLengthCounter(cAdPlan);
                             });
-                            updateChannelAdLengthCounter(cAdPlan);
                         });
                     });
                 }
@@ -640,7 +662,41 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
         const query = {
             _id: clientAdPlan
         };
-        ClientAdPlan.findOne(query, async (err, clientAdPlan) => {
+        const populateOptions = [{
+            path: 'Client',
+            model: 'Client',
+            select: {
+                Name: 1,
+                Email: 1
+            }
+        }, {
+            path: 'ChannelPlan.Plan.Channel',
+            model: 'Channel',
+            select: {
+                Name: 1,
+                Description: 1
+            }
+        }, {
+            path: 'ChannelPlan.Plan.ChannelAdSchedule',
+            model: 'ChannelAdSchedule',
+            select: {
+                _id: 1
+            },
+            populate: [
+                {
+                    path: 'AdSchedule',
+                    model: 'AdSchedule',
+                    select: {
+                        Name: 1,
+                        Description: 1,
+                        StartTime: 1,
+                        EndTime: 1
+                    }
+                }
+            ]
+        }];
+
+        ClientAdPlan.findOne(query).populate(populateOptions).exec((err, clientAdPlan) => {
             if (err) {
                 deletePreviewFile();
                 return reject({
@@ -657,9 +713,9 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
                 });
             }
             // uploadVideo
-            const dst = 'uploads/Client/' + clientAdPlan.Client + '/ClientAdPlans/' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
+            const dst = 'uploads/Client/' + clientAdPlan.Client.id + '/ClientAdPlans/' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
             try {
-                await uploadFile(previewPath, dst);
+                uploadFile(previewPath, dst);
             } catch (ex) {
                 deletePreviewFile();
                 return reject({
@@ -692,6 +748,20 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
                     }
                     deletePreviewFile();
                     socket.emit('PROCESS_FINISHED');
+                    const adEmailInfo = {
+                        client_name: clientAdPlan.Client.Name,
+                        client_email: clientAdPlan.Client.Email,
+                        booking_date: moment().format('DD/MM/YYYY'),
+                        channel: clientAdPlan.ChannelPlan.Plan.Channel.Name,
+                        slot: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule.AdSchedule.Name,
+                        start_time: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule.AdSchedule.StartTime,
+                        end_time: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule.AdSchedule.EndTime,
+                        start_date: moment(clientAdPlan.StartDate).format('DD/MM/YYYY'),
+                        end_date: moment(clientAdPlan.EndDate).format('DD/MM/YYYY'),
+                        ad_length: clientAdPlan.ChannelPlan.Plan.Seconds
+                    };
+                    const videolink = config.google_bucket.bucket_url + clientAd.VideoUrl;
+                    email.helper.updateClientAdEmail(config.mailgun.adminEmail, videolink, adEmailInfo);
                     resolve(clientAd);
                 });
             });

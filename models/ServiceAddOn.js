@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='ServiceAddOn';
+const name = 'ServiceAddOn';
 
 const schema = new mongoose.Schema({
     Name: {
@@ -30,6 +30,9 @@ const schema = new mongoose.Schema({
     IsActive: {
         type: Boolean,
         default: true
+    },
+    EmailRecipients: {
+        type: Array,
     }
 });
 

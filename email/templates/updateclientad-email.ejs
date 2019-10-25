@@ -1,8 +1,7 @@
-<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Transitional//EN""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
-    <html>
+<!DOCTYPE html PUBLIC"-//W3C//DTD XHTML 1.0 Transitional//EN""http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"> <html>
 
 <head>
-    <title>Payment Invoice</title>
+    <title></title>
     <meta content="exported via StampReady" name="sr_export">
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta http-equiv="x-ua-compatible" content="IE=edge">
@@ -355,8 +354,7 @@
                                         <table class="table-inner-sub" cellspacing="0" cellpadding="0" width="552">
                                             <tr>
                                                 <td align="center" class="logo-wrapper">
-                                                    <img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/logo.png"
-                                                        alt="img" width="90" class="logo-img">
+                                                    <img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/logo.png" alt="img" width="90" class="logo-img">
                                                 </td>
                                             </tr>
                                         </table>
@@ -375,7 +373,7 @@
                                 </tr>
                                 <tr>
                                     <td class="hero">
-                                        Payment Invoice
+                                        New ad booking details
                                     </td>
                                 </tr>
                                 <tr>
@@ -384,7 +382,7 @@
                                 </tr>
                                 <tr>
                                     <td class="hero-child">
-                                        The detailed invoice of your ad in Local TV Ads has been generated.
+                                        A new ad was booked. Please find the details and the video link below.
                                     </td>
                                 </tr>
                                 <tr>
@@ -393,49 +391,27 @@
                                 </tr>
                                 <tr>
                                     <td class="payment-details" align="center">
-                                        <table class="table-inner-sub content-box" cellspacing="0" cellpadding="0"
-                                            width="552">
+                                        <table class="table-inner-sub content-box" cellspacing="0" cellpadding="0" width="552">
                                             <tr>
                                                 <td class="content-box-single">
                                                     <table cellpadding="0" cellspacing="0" width="100%">
-                                                        <tr>
-                                                            <td align="center" class="logo-wrapper">
-                                                                <img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/logo.png"
-                                                                    alt="img" width="60" class="logo-img">
-                                                            </td>
-                                                        </tr>
+
                                                         <tr>
                                                             <td height="16"></td>
                                                         </tr>
                                                         <tr>
                                                             <td>
-                                                                <table cellpadding="0" cellspacing="0" width="100%"
-                                                                    class="payment-table">
+                                                                <table cellpadding="0" cellspacing="0" width="100%" class="payment-table">
                                                                     <tr>
-                                                                        <td width="70%" align="left"
-                                                                            class="payment-details">
-                                                                            <span class="invoice-headings">Invoice
-                                                                                Number</span><br>
-                                                                            <strong
-                                                                                class="invoice-details">LTV00011900</strong>
+                                                                        <td width="70%" align="left" class="payment-details">
+                                                                            <span class="invoice-headings">Client's Name</span>
+                                                                            <strong class="invoice-details"> : <%= client_name %></strong><br />
+                                                                            <span class="invoice-headings">Client's Email</span>
+                                                                            <strong class="invoice-details">: <%= client_email %></strong>
                                                                         </td>
-                                                                        <td width="30%" align="right">
-                                                                            <strong class="invoice-details">John
-                                                                                Doe</strong><br>
-                                                                        </td>
-                                                                    </tr>
-                                                                    <tr>
-                                                                        <td width="70%" align="left"
-                                                                            class="payment-details">
-                                                                            <span class="invoice-headings">Invoice
-                                                                                Date</span><br>
-                                                                            <strong
-                                                                                class="invoice-details">03/09/2019</strong>
-                                                                        </td>
-                                                                        <td width="30%" align="right">
-                                                                            <span class="invoice-headings address">XYZ
-                                                                                Street <br> qwerty, abc 7t <br> United
-                                                                                kingdom</span>
+                                                                        <td width="30%" align="right" class="payment-details">
+                                                                            <span class="invoice-headings">Date of booking</span><br>
+                                                                            <strong class="invoice-details"><%= booking_date %></strong>
                                                                         </td>
                                                                     </tr>
                                                                 </table>
@@ -446,14 +422,13 @@
                                                         </tr>
                                                         <tr>
                                                             <td>
-                                                                <table cellpadding="0" cellspacing="0" width="100%"
-                                                                    class="payment-heading-table">
+                                                                <table cellpadding="0" cellspacing="0" width="100%" class="payment-heading-table">
                                                                     <tr>
-                                                                        <td align="left"> Region </td>
-                                                                        <td align="center">Plan Length </td>
-                                                                        <td align="center"> Start Date </td>
-                                                                        <td align="center"> End Date </td>
-                                                                        <td align="right"> Ad Length </td>
+                                                                        <td align="left">Region</td>
+                                                                        <td align="center">Slot</td>
+                                                                        <td align="center">Start Date </td>
+                                                                        <td align="center">End Date</td>
+                                                                        <td align="right">Ad Length</td>
                                                                     </tr>
                                                                 </table>
                                                             </td>
@@ -463,69 +438,19 @@
                                                         </tr>
                                                         <tr>
                                                             <td>
-                                                                <table cellpadding="0" cellspacing="0" width="100%"
-                                                                    class="payment-data-table">
+                                                                <table cellpadding="0" cellspacing="0" width="100%" class="payment-data-table">
                                                                     <tr>
-                                                                        <td align="center" class="ad-description"> West
-                                                                            Midlands </td>
-                                                                        <td align="center" class="ad-description">6
-                                                                            Months </td>
-                                                                        <td align="center" class="ad-description">
-                                                                            07/06/2019 </td>
-                                                                        <td align="center" class="ad-description">
-                                                                            06/12/2019 </td>
-                                                                        <td align="center" class="ad-description"> 15
-                                                                            sec </td>
+                                                                        <td align="center" class="ad-description"><%= channel %></td>
+                                                                        <td align="center" class="ad-description"><%= slot %></td>
+                                                                        <td align="center" class="ad-description"><%= start_date %></td>
+                                                                        <td align="center" class="ad-description"><%= end_date %></td>
+                                                                        <td align="center" class="ad-description"><%= ad_length %></td>
                                                                     </tr>
                                                                 </table>
                                                             </td>
                                                         </tr>
-                                                        <tr>
-                                                            <td height="16"></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>
-                                                                <table cellpadding="0" cellspacing="0" width="100%"
-                                                                    class="payment-bill-table">
-                                                                    <tr>
-                                                                        <td width="70%" align="left"
-                                                                            class="payment-details">
-                                                                            <strong class="invoice-details">Sub
-                                                                                Total</strong><br>
-                                                                            <strong class="invoice-details">Tax
-                                                                                (8.6%)</strong>
-                                                                        </td>
-                                                                        <td width="30%" align="right">
-                                                                            <strong
-                                                                                class="invoice-details">£200.00</strong><br>
-                                                                            <strong
-                                                                                class="invoice-details">£17.20</strong><br>
-                                                                        </td>
-                                                                    </tr>
-                                                                </table>
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td height="16"></td>
-                                                        </tr>
-                                                        <tr>
-                                                            <td>
-                                                                <table cellpadding="0" cellspacing="0" width="100%"
-                                                                    class="payment-total-table">
-                                                                    <tr>
-                                                                        <td width="70%" align="left"
-                                                                            class="payment-details">
-                                                                            <strong
-                                                                                class="invoice-details-total">Total</strong>
-                                                                        </td>
-                                                                        <td width="30%" align="right">
-                                                                            <strong
-                                                                                class="invoice-details-total">£217.20</strong>
-                                                                        </td>
-                                                                    </tr>
-                                                                </table>
-                                                            </td>
-                                                        </tr>
+
+
                                                     </table>
                                                 </td>
                                             </tr>
@@ -540,14 +465,12 @@
                                 </tr>
                                 <tr>
                                     <td align="center" style="border-collapse: collapse;">
-                                        <table cellspacing="0" cellpadding="0" class="button"
-                                            style="border-spacing: 0;table-layout: fixed;margin: 0 auto;border-radius: 4px;padding: 2px;background-color: #4c4c4c;">
+                                        <table cellspacing="0" cellpadding="0" class="button" style="border-spacing: 0;table-layout: fixed;margin: 0 auto;border-radius: 4px;padding: 2px;background-color: #4c4c4c;">
                                             <tr>
                                                 <td class="text-button" align="center" style="border-collapse: collapse;height: 40px;width: 156px;text-align: center;font-family: 'Noto Sans', sans-serif;
 color: #FFFFFF;">
-                                                    <a href="" onClick="window.print()"
-                                                        style="color: #FFFFFF;padding: 4px;font-size: 16px;font-weight:500;text-decoration: none;">
-                                                        Print
+                                                    <a href="<%= videolink %>" style="color: #FFFFFF;padding: 4px;font-size: 16px;font-weight:500;text-decoration: none;">
+                                                        View video
                                                     </a>
                                                 </td>
                                             </tr>
@@ -569,12 +492,8 @@ color: #FFFFFF;">
                                 </tr>
                                 <tr>
                                     <td align="center">
-                                        <a href=""><img
-                                                src="https://storage.googleapis.com/localtvads-dev-bucket/logo/social_facebook.png"
-                                                class="socialmediaicons"></a>
-                                        <a href=""><img
-                                                src="https://storage.googleapis.com/localtvads-dev-bucket/logo/social_twitter.png"
-                                                class="socialmediaicons"></a>
+                                        <a href=""><img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/social_facebook.png" class="socialmediaicons"></a>
+                                        <a href=""><img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/social_twitter.png" class="socialmediaicons"></a>
                                         <!--END CONTENT-->
                                     </td>
                                 </tr>

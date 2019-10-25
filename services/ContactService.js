@@ -1,5 +1,6 @@
 const Subscriber = require.main.require('./models/Subscriber').model;
 const Enquiry = require.main.require('./models/Enquiry').model;
+const Email = require.main.require('./email');
 
 /**
  * Creates a new subscriber
@@ -92,6 +93,7 @@ const submitEnquiry = (name, email, subject, message) => {
                     });
 
                 }
+                Email.helper.enquiryAdminEmail(enquiry);
                 resolve({
                     code: 200,
                     data: enquiry
