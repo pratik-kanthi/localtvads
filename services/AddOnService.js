@@ -272,7 +272,7 @@ const getClientServiceAddOns = (clientid) => {
             ServiceAddOn: 1,
             DateTime: 1
         };
-        ClientServiceAddOn.findOne(query, project).populate('ServiceAddOn', 'Name Description').exec((err, clientServiceAddOns) => {
+        ClientServiceAddOn.find(query, project).populate('ServiceAddOn', 'Name Description').exec((err, clientServiceAddOns) => {
             if (err) {
                 return reject({
                     code: 500,
