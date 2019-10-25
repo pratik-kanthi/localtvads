@@ -25,7 +25,6 @@ const addCard = (clientId, stripeToken) => {
             Client: clientId
         };
 
-        let isNew = false;
         let newClientPaymentMethod;
         let cardToken;
 
@@ -43,7 +42,6 @@ const addCard = (clientId, stripeToken) => {
                         StripeCusToken: csToken.id
                     });
                     cardToken = csToken.sources.data[0];
-                    isNew = true;
                     newClientPaymentMethod.IsPreferred = true;
                 } catch (err) {
                     return reject({
@@ -53,10 +51,10 @@ const addCard = (clientId, stripeToken) => {
                 }
             } else {
                 try {
-                    cardToken = await saveNewCardToCustomer(
-                        stripeToken,
-                        isNew ? newClientPaymentMethod.StripeCusToken : clientPaymentMethod.StripeCusToken
-                    );
+                    cardToken = await saveNewCardToCustomer(stripeToken, clientPaymentMethod.StripeCusToken);
+                    newClientPaymentMethod = new ClientPaymentMethod({
+                        StripeCusToken: clientPaymentMethod.StripeCusToken
+                    });
                 } catch (ex) {
                     return reject({
                         code: ex.code,
@@ -340,7 +338,9 @@ const getTransactions = (clientId) => {
                 DateTime: 1,
                 Status: 1,
                 ReferenceId: 1,
-                ClientAdPlan: 1
+                ClientAdPlan: 1,
+                ServiceAddOn: 1,
+                ClientServiceAddOn: 1
             };
         const populateOptions = [
             {
