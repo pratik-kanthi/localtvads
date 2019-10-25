@@ -10,7 +10,7 @@ const path = require('path');
  * @param {String} socialclient - AuthorisationScheme value from AccessToken model
  */
 const socialRegisterEmail = (to, socialclient) => {
-    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/socialaccount_createdemail.ejs'), 'utf-8'), {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/socialaccount-createdemail.ejs'), 'utf-8'), {
         social: socialclient
     });
 
@@ -34,7 +34,7 @@ const socialRegisterEmail = (to, socialclient) => {
  * @param {String} verificationlink - verification link to mailed to the user to verify his/her account
  */
 const standardRegisterEmail = (to, verificationlink) => {
-    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/standardaccount_createdemail.ejs'), 'utf-8'), {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/standardaccount-createdemail.ejs'), 'utf-8'), {
         verificationlink: verificationlink
     });
 
@@ -75,7 +75,7 @@ const emailChangeVerification = (to, verificationlink) => {
 
 
 const passwordResetEmail = (to, verificationlink) => {
-    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/forgotpassword_email.ejs'), 'utf-8'), {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/forgotpassword-email.ejs'), 'utf-8'), {
         verificationlink: verificationlink
     });
 
@@ -94,6 +94,44 @@ const passwordResetEmail = (to, verificationlink) => {
 };
 
 
+const paymentInvoiceEmail = (to, emailinfo) => {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/paymentinvoice-email.ejs'), 'utf-8'), {
+        emailinfo: emailinfo
+    });
+
+    const data = {
+        from: config.mailgun.fromemail,
+        to: to,
+        subject: 'Payment Invoice For Your Ad Booking',
+        html: message
+    };
+
+    mailgun.api.server.send(data, (err) => {
+        if (err) {
+            throw err;
+        }
+    });
+};
+
+const addOnpaymentInvoiceEmail = (to, emailinfo) => {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/addon-paymentinvoice-email.ejs'), 'utf-8'), {
+        emailinfo: emailinfo
+    });
+
+    const data = {
+        from: config.mailgun.fromemail,
+        to: to,
+        subject: 'Payment Invoice For Your Add On Purchase',
+        html: message
+    };
+
+    mailgun.api.server.send(data, (err) => {
+        if (err) {
+            throw err;
+        }
+    });
+};
+
 const updateClientAdEmail = (to, videolink, emailinfo) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/updateclientad-email.ejs'), 'utf-8'), {
         client_name: emailinfo.client_name,
@@ -104,13 +142,36 @@ const updateClientAdEmail = (to, videolink, emailinfo) => {
         start_date: emailinfo.start_date,
         end_date: emailinfo.end_date,
         ad_length: emailinfo.ad_length,
-        // videolink: videolink
+        videolink: videolink
     });
 
     const data = {
         from: config.mailgun.fromemail,
-        to: to,
-        subject: 'Your ad plan details',
+        to: config.mailgun.adminEmail,
+        subject: 'New ad booking',
+        html: message
+    };
+
+    mailgun.api.server.send(data, (err) => {
+        if (err) {
+            throw err;
+        }
+    });
+};
+
+
+const enquiryAdminEmail = (enquiry) => {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/enquiryadmin-email.ejs'), 'utf-8'), {
+        client_name: enquiry.Name,
+        client_email: enquiry.Email,
+        client_message: enquiry.Message,
+        client_subject: enquiry.Subject
+    });
+
+    const data = {
+        from: config.mailgun.fromemail,
+        to: config.mailgun.adminEmail,
+        subject: '<Enquiry From:' + enquiry.Email + ' >' + enquiry.Subject,
         html: message
     };
 
@@ -128,5 +189,8 @@ module.exports = {
     standardRegisterEmail,
     passwordResetEmail,
     emailChangeVerification,
-    updateClientAdEmail
+    updateClientAdEmail,
+    enquiryAdminEmail,
+    paymentInvoiceEmail,
+    addOnpaymentInvoiceEmail
 };

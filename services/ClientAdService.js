@@ -453,7 +453,8 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                 BaseAmount: 1
             };
 
-            ChannelPlan.findOne(query, project).populate('ChannelAdSchedule', 'AdSchedule').exec(async (err, chPlan) => {
+
+            ChannelPlan.findOne(query, project).populate('Channel ChannelAdSchedule AdSchedule').exec(async (err, chPlan) => {
                 if (err) {
                     return reject({
                         code: 500,
@@ -615,11 +616,32 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                                     error: err
                                 });
                             }
-                            resolve({
-                                code: 200,
-                                data: cAdPlan
+
+                            ClientAdPlan.findOne({ _id: cAdPlan.id }).populate('Client ClientAd').exec((err, cap) => {
+                                //invoice email
+                                const adEmailInfo = {
+                                    invoice_number: transaction.ReferenceId,
+                                    invoice_date: moment().format('DD/MM/YYYY'),
+                                    region: chPlan.Channel.Name,
+                                    ad_length: chPlan.Seconds,
+                                    start_date: moment(cAdPlan.StartDate).format('DD/MM/YYYY'),
+                                    end_date: moment(cAdPlan.EndDate).format('DD/MM/YYYY'),
+                                    client_name: cap.Client.Name,
+                                    total: transaction.TotalAmount,
+                                    subtotal: transaction.ChannelPlan.SubTotal,
+                                    tax_value: transaction.ChannelPlan.TaxAmount,
+                                    tax_type: transaction.TaxBreakdown[0].Name,
+                                    tax_rate: transaction.TaxBreakdown[0].Value
+                                };
+
+                                email.helper.paymentInvoiceEmail(cap.Client.Email, adEmailInfo);
+
+                                resolve({
+                                    code: 200,
+                                    data: cAdPlan
+                                });
+                                updateChannelAdLengthCounter(cAdPlan);
                             });
-                            updateChannelAdLengthCounter(cAdPlan);
                         });
                     });
                 }
@@ -691,7 +713,7 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
                 });
             }
             // uploadVideo
-            const dst = 'uploads/Client/' + clientAdPlan.Client + '/ClientAdPlans/' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
+            const dst = 'uploads/Client/' + clientAdPlan.Client.id + '/ClientAdPlans/' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
             try {
                 uploadFile(previewPath, dst);
             } catch (ex) {
@@ -738,7 +760,8 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
                         end_date: moment(clientAdPlan.EndDate).format('DD/MM/YYYY'),
                         ad_length: clientAdPlan.ChannelPlan.Plan.Seconds
                     };
-                    email.helper.updateClientAdEmail(config.mailgun.adminEmail, config.google_bucket.bucket_url + dst, adEmailInfo);
+                    const videolink = config.google_bucket.bucket_url + clientAd.VideoUrl;
+                    email.helper.updateClientAdEmail(config.mailgun.adminEmail, videolink, adEmailInfo);
                     resolve(clientAd);
                 });
             });

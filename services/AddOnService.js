@@ -1,5 +1,7 @@
 const async = require('async');
 const fs = require('fs');
+const moment = require('moment');
+const email = require.main.require('./email');
 
 const ClientResource = require.main.require('./models/ClientResource').model;
 const ClientServiceAddOn = require.main.require('./models/ClientServiceAddOn').model;
@@ -8,9 +10,9 @@ const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod')
 const Transaction = require.main.require('./models/Transaction').model;
 const Tax = require.main.require('./models/Tax').model;
 
-const {uploadFile} = require.main.require('./services/FileService');
-const {chargeByCard, chargeByExistingCard} = require.main.require('./services/PaymentService');
-const {getTaxes} = require.main.require('./services/TaxService');
+const { uploadFile } = require.main.require('./services/FileService');
+const { chargeByCard, chargeByExistingCard } = require.main.require('./services/PaymentService');
+const { getTaxes } = require.main.require('./services/TaxService');
 
 const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
     return new Promise(async (resolve, reject) => {
@@ -121,17 +123,34 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                         ReferenceId: charge.id,
                         TaxBreakdown: taxes
                     });
-                    transaction.save((err) => {
+                    transaction.save((err, t) => {
                         if (err) {
                             return reject({
                                 code: 500,
                                 error: err
                             });
                         }
-                        resolve({
-                            code: 200,
-                            data: clientServiceAddOn
+
+                        Transaction.findOne({ _id: t.id }).populate('ChannelPlan Client ClientAdPlan').exec((err, trans) => {
+                            const adEmailInfo = {
+                                invoice_number: transaction.ReferenceId,
+                                invoice_date: moment().format('DD/MM/YYYY'),
+                                client_name: trans.Client.Name,
+                                total: transaction.ServiceAddOn.TotalAmount,
+                                add_on: addOn.Name,
+                                subtotal: transaction.ServiceAddOn.SubTotal,
+                                tax_value: transaction.ServiceAddOn.TaxAmount,
+                                tax_type: transaction.TaxBreakdown[0].Name,
+                                tax_rate: transaction.TaxBreakdown[0].Value
+                            };
+
+                            email.helper.addOnpaymentInvoiceEmail(trans.Client.Email, adEmailInfo);
+                            resolve({
+                                code: 200,
+                                data: clientServiceAddOn
+                            });
                         });
+
                     });
                 });
             }
@@ -306,7 +325,7 @@ const updateClientServiceAddOn = (id, images, videos) => {
                 clientServiceAddOn.Images = images;
                 clientServiceAddOn.Videos = videos;
                 clientServiceAddOn.save(err => {
-                    if(err){
+                    if (err) {
                         return reject({
                             code: 500,
                             error: err
