@@ -15,6 +15,9 @@ const schema = new mongoose.Schema({
             ref: 'ClientResource'
         }
     ],
+    Text: {
+        type: String
+    },
     Client: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client',

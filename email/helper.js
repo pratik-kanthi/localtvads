@@ -11,7 +11,8 @@ const path = require('path');
  */
 const socialRegisterEmail = (to, socialclient) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/socialaccount_createdemail.ejs'), 'utf-8'), {
-        social: socialclient
+        social: socialclient,
+        email: to
     });
 
     const data = {

@@ -276,7 +276,7 @@ const getClientServiceAddOns = (clientid) => {
     });
 };
 
-const updateClientServiceAddOn = (id, images, videos) => {
+const updateClientServiceAddOn = (id, images, videos, text) => {
     return new Promise(async (resolve, reject) => {
         if (!id || !images.length && !videos.length) {
             return reject({
@@ -305,6 +305,7 @@ const updateClientServiceAddOn = (id, images, videos) => {
             } else {
                 clientServiceAddOn.Images = images;
                 clientServiceAddOn.Videos = videos;
+                clientServiceAddOn.Text = text;
                 clientServiceAddOn.save(err => {
                     if(err){
                         return reject({

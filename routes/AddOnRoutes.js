@@ -32,7 +32,7 @@ module.exports = (app) => {
 
     app.put('/api/serviceaddons/update', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            const result = await updateClientServiceAddOn(req.body.serviceaddon, req.body.images, req.body.videos);
+            const result = await updateClientServiceAddOn(req.body.serviceaddon, req.body.images, req.body.videos, req.body.text);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

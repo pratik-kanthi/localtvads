@@ -1,3 +1,4 @@
+const Client = require.main.require('./models/Client').model;
 const User = require.main.require('./models/User').model;
 const Email = require('../email');
 
@@ -23,8 +24,14 @@ const updateProfile = (userid, title, email, phone, currentpassword, newpassword
                     code: 500,
                     error: err
                 });
-            }
-            if (user) {
+            } else if (!user) {
+                return reject({
+                    code: 404,
+                    error: {
+                        message: 'User ' + utilities.ErrorMessages.NOT_FOUND
+                    }
+                });
+            } else {
 
                 user.Name = title;
                 user.Phone = phone;
@@ -55,30 +62,56 @@ const updateProfile = (userid, title, email, phone, currentpassword, newpassword
                         });
                     }
                 }
-
-                user.save((err) => {
+                Client.findOne({_id: user.Owner._id}, (err, client) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err.code == 11000 ? { message: 'Provided email already exists ' } : err
+                            error: err
+                        });
+                    } else if (!client) {
+                        return reject({
+                            code: 404,
+                            error: {
+                                message: 'User ' + utilities.ErrorMessages.NOT_FOUND
+                            }
                         });
                     } else {
-                        if (emailchanged) {
-                            const verification_link = process.env.APP + 'api/auth/confirmation/' + user.id;
-                            Email.helper.emailChangeVerification(user.Email, verification_link);
+                        client.Name = title;
+                        client.Email = email;
+                        client.Phone = phone;
+                        client.save(err, () => {
+                            if (err) {
+                                return reject({
+                                    code: 500,
+                                    error: err
+                                });
+                            }
+                            user.save((err) => {
+                                if (err) {
+                                    return reject({
+                                        code: 500,
+                                        error: err.code === 11000 ? { message: 'Provided email already exists ' } : err
+                                    });
+                                } else {
+                                    if (emailchanged) {
+                                        const verification_link = process.env.APP + 'api/auth/confirmation/' + user.id;
+                                        Email.helper.emailChangeVerification(user.Email, verification_link);
 
-                            resolve({
-                                code: 205,
-                                data: user
+                                        resolve({
+                                            code: 205,
+                                            data: user
+                                        });
+
+                                    } else {
+
+                                        resolve({
+                                            code: 200,
+                                            data: client
+                                        });
+                                    }
+                                }
                             });
-
-                        } else {
-
-                            resolve({
-                                code: 200,
-                                data: user
-                            });
-                        }
+                        });
                     }
                 });
             }
