@@ -22,7 +22,7 @@ const schema = new mongoose.Schema({
     },
     Seconds: { // length of the video
         type: Number,
-        enum: [15, 20, 25, 30],
+        enum: [20, 30],
         required: true
     },
     BaseAmount: {
