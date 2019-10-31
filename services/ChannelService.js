@@ -13,11 +13,14 @@ const {getTaxes} = require.main.require('./services/TaxService');
 const getChannels = (projection) => {
     return new Promise(async (resolve, reject) => {
         const query = {
-            Status: 'LIVE'
+            Status: {
+                $in: ['LIVE', 'PROSPECTS']
+            }
         };
         const project = projection || {
             'Name': 1,
             'Description': 1,
+            'Status': 1,
             'Address.Location': 1,
             'Viewerships': 1
         };
