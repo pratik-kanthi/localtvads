@@ -1,5 +1,6 @@
 const passport = require('passport');
-const { addCard, deleteCard, getSavedCards, setPreferredCard, getTransactions } = require.main.require('./services/ClientService');
+const mime = require('mime');
+const { addCard, deleteCard, getSavedCards, setPreferredCard, getTransactions, generateReceipt } = require.main.require('./services/ClientService');
 const { updateProfile } = require.main.require('./services/UserService');
 
 
@@ -51,10 +52,24 @@ module.exports = (app) => {
         }
     });
 
-    app.get('/api/client/transactions', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.get('/api/client/transactions', passport.authenticate('jwt', { session: false }), async (req, res) => {
         try {
             const result = await getTransactions(req.query.client);
             return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.get('/api/client/transaction/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
+
+        const result = await generateReceipt(req.params.id);
+        const mimetype = mime.getType(result.filePath);
+
+        try {
+            res.setHeader('Content-Disposition', 'attachment;filename=' + req.params.id + '.pdf');
+            res.setHeader('Content-Type', mimetype);
+            res.download(result.filePath, 'invoice.pdf');
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }

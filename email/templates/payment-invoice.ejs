@@ -381,11 +381,6 @@
                                     </td>
                                 </tr>
                                 <tr>
-                                    <td class="hero-child">
-                                        The detailed invoice of your ad in Local TV Ads has been generated.
-                                    </td>
-                                </tr>
-                                <tr>
                                     <td height="16">
                                     </td>
                                 </tr>
@@ -410,17 +405,19 @@
                                                                         <td width="70%" align="left" class="payment-details">
                                                                             <span class="invoice-headings">Invoice
                                                                                 Number</span><br>
-                                                                            <strong class="invoice-details"><%= emailinfo.invoice_number %></strong>
+                                                                            <b class="invoice-details"><%= receipt.InvoiceNo %></b>
                                                                         </td>
                                                                         <td width="30%" align="right">
-                                                                            <strong class="invoice-details"><%= emailinfo.client_name %></strong><br>
+                                                                            <b class="invoice-details"><%= receipt.User.Name %> </b><br>
+                                                                            <b class="invoice-details"><%= receipt.User.Email %> </b><br>
+                                                                            <b class="invoice-details"><%= receipt.User.Phone %> </b><br>
                                                                         </td>
                                                                     </tr>
                                                                     <tr>
                                                                         <td width="70%" align="left" class="payment-details">
                                                                             <span class="invoice-headings">Invoice
                                                                                 Date</span><br>
-                                                                            <strong class="invoice-details"><%= emailinfo.invoice_date %></strong>
+                                                                            <b class="invoice-details"><%= receipt.Date %><b>
                                                                         </td>
 
                                                                     </tr>
@@ -434,11 +431,7 @@
                                                             <td>
                                                                 <table cellpadding="0" cellspacing="0" width="100%" class="payment-heading-table">
                                                                     <tr>
-                                                                        <td align="left"> Region </td>
-                                                                        <td align="center">Plan Length </td>
-                                                                        <td align="center"> Start Date </td>
-                                                                        <td align="center"> End Date </td>
-                                                                        <td align="right"> Ad Length </td>
+                                                                        <td align="left"> Description </td>
                                                                     </tr>
                                                                 </table>
                                                             </td>
@@ -450,11 +443,14 @@
                                                             <td>
                                                                 <table cellpadding="0" cellspacing="0" width="100%" class="payment-data-table">
                                                                     <tr>
-                                                                        <td align="center" class="ad-description"><%= emailinfo.region %></td>
-                                                                        <td align="center" class="ad-description">6 months</td>
-                                                                        <td align="center" class="ad-description"><%= emailinfo.start_date %></td>
-                                                                        <td align="center" class="ad-description"><%= emailinfo.end_date %></td>
-                                                                        <td align="center" class="ad-description"><%= emailinfo.ad_length %></td>
+                                                                        <td class="ad-description">
+                                                                            <span>
+                                                                                <%= receipt.Type %> -
+                                                                            </span>
+                                                                            <span>
+                                                                                <%= receipt.Name %>
+                                                                            </span>
+                                                                        </td>
                                                                     </tr>
                                                                 </table>
                                                             </td>
@@ -469,15 +465,16 @@
                                                                         <td width="70%" align="left" class="payment-details">
                                                                             <strong class="invoice-details">Sub
                                                                                 Total</strong><br>
-                                                                            <strong class="invoice-details">Taxes</strong><br />
-                                                                            <strong><%= emailinfo.tax_type%>(<%= emailinfo.tax_rate %>)</strong>
+                                                                            <strong class="invoice-details">Taxes</strong><br>
+                                                                            <strong class="invoice-details"><%= receipt.TaxBreakdown.Name %> (<%= receipt.TaxBreakdown.Value %> %)</strong>
                                                                         <td>
                                                                         <td></td>
                                                             </td>
                                                 </td>
                                                 <td width="30%" align="right">
-                                                    <strong class="invoice-details">£<%= emailinfo.subtotal %></strong><br>
-                                                    <strong class="invoice-details">£<%= emailinfo.tax_value %></strong><br>
+                                                    <strong class="invoice-details">£<%= receipt.SubTotal %></strong><br>
+                                                    <br>
+                                                    <strong class="invoice-details">£<%= receipt.TaxAmount %></strong><br>
                                                 </td>
                                             </tr>
                                         </table>
@@ -494,7 +491,7 @@
                                                     <strong class="invoice-details-total">Total</strong>
                                                 </td>
                                                 <td width="30%" align="right">
-                                                    <strong class="invoice-details-total">£<%= emailinfo.total %></strong>
+                                                    <strong class="invoice-details-total">£<%= receipt.TotalAmount %></strong>
                                                 </td>
                                             </tr>
                                         </table>
@@ -513,26 +510,6 @@
             </td>
         </tr>
 
-        <tr>
-            <td height="16">
-            </td>
-        </tr>
-        <tr>
-            <td align="center">
-                <a href="http://www.localtvads.com" class="link-login">www.localtvads.com
-            </td>
-        </tr>
-        <tr>
-            <td height="16">
-            </td>
-        </tr>
-        <tr>
-            <td align="center">
-                <a href=""><img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/social_facebook.png" class="socialmediaicons"></a>
-                <a href=""><img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/social_twitter.png" class="socialmediaicons"></a>
-                <!--END CONTENT-->
-            </td>
-        </tr>
     </table>
     </td>
     </tr>
@@ -540,25 +517,6 @@
     <!--START FOOTER-->
     <tr>
         <td align="center">
-            <table cellspacing="0" cellpadding="0" width="552" class="table-inner">
-                <tr>
-                    <td height="32"></td>
-                </tr>
-                <tr>
-                    <td class="footer-text">
-                        Terms & Conditions
-                    </td>
-                    <td class="footer-text">
-                        Support
-                    </td>
-                    <td class="footer-text">
-                        Privacy Policy
-                    </td>
-                </tr>
-                <tr>
-                    <td height="32"></td>
-                </tr>
-            </table>
             <table cellspacing="0" cellpadding="0" width="552" class="table-inner">
                 <tr>
                     <td class="footer-text">

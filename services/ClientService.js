@@ -4,6 +4,10 @@ const Client = require.main.require('./models/Client').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
 
+const moment = require('moment');
+const email = require('../email');
+const pdf = require('html-pdf');
+const path = require('path');
 const { saveCustomer, saveNewCardToCustomer, deleteCardFromStripe } = require.main.require('./services/PaymentService');
 
 /*
@@ -65,7 +69,7 @@ const addCard = (clientId, stripeToken) => {
             newClientPaymentMethod.Card = {
                 PaymentMethodType: 'CARD',
                 StripeCardToken: cardToken.id,
-                Vendor: cardToken.brand.toUpperCase(),
+                Vendor: cardToken.brand.toUpperCase().replace(/ +/g, ''), // avoid space in filenames and tp match with image files
                 Name: cardToken.name,
                 ExpiryMonth: cardToken.exp_month,
                 ExpiryYear: cardToken.exp_year,
@@ -360,7 +364,7 @@ const getTransactions = (clientId) => {
                 }
             }
         ];
-        Transaction.find(query, project).populate(populateOptions).sort({DateTime: -1}).exec((err, transactions) => {
+        Transaction.find(query, project).populate(populateOptions).sort({ DateTime: -1 }).exec((err, transactions) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -372,6 +376,109 @@ const getTransactions = (clientId) => {
                 data: transactions
             });
         });
+    });
+};
+
+const generateReceipt = (transaction_id) => {
+    return new Promise(async (resolve, reject) => {
+        if (!transaction_id) {
+            return reject({
+                code: 500,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        } else {
+            const query = {
+                ReferenceId: transaction_id
+            };
+            const project = {
+                Client: 1,
+                ChannelPlan: 1,
+                TotalAmount: 1,
+                DateTime: 1,
+                Status: 1,
+                ReferenceId: 1,
+                ClientAdPlan: 1,
+                ServiceAddOn: 1,
+                ClientServiceAddOn: 1,
+                TaxBreakdown: 1
+            };
+            const populateOptions = [
+                {
+                    path: 'Client',
+                    model: Client,
+                    select: {
+                        'Name': 1,
+                        'Email': 1,
+                        'Phone': 1
+                    }
+                },
+                {
+                    path: 'ChannelPlan.Channel',
+                    model: Channel,
+                    select: {
+                        'Name': 1,
+                        _id: 0
+                    }
+                },
+                {
+                    path: 'ChannelPlan.AdSchedule',
+                    model: AdSchedule,
+                    select: {
+                        'Name': 1,
+                        _id: 0
+                    }
+                }
+            ];
+
+            Transaction.findOne(query, project).populate(populateOptions).exec((err, transaction) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+
+                const receipt = {
+                    InvoiceNo: transaction_id,
+                    Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
+                    Type: transaction.ServiceAddOn ? 'Add On' : 'Ad Slot',
+                    Name: transaction.ServiceAddOn ? transaction.ServiceAddOn.Name : transaction.ChannelPlan.Channel.Name,
+                    TotalAmount: transaction.TotalAmount,
+                    SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal : transaction.ChannelPlan.SubTotal,
+                    TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount : transaction.ChannelPlan.TaxAmount,
+                    TaxBreakdown: transaction.TaxBreakdown[0]
+
+                };
+
+                receipt.User = {};
+                receipt.User.Name = transaction.Client.Name;
+                receipt.User.Email = transaction.Client.Email;
+                receipt.User.Phone = transaction.Client.Phone;
+
+                const message = email.helper.downloadReceipt(receipt);
+                const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
+                const options = {
+                    height: '6.27in',
+                    width: '5.83in'
+                };
+
+                pdf.create(message, options).toFile(filePath, (err) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err
+                        });
+                    }
+                    resolve({
+                        code: 200,
+                        filePath: filePath
+                    });
+
+                });
+            });
+        }
     });
 };
 
@@ -396,5 +503,6 @@ module.exports = {
     getPreferredCard,
     getSavedCards,
     setPreferredCard,
-    getTransactions
+    getTransactions,
+    generateReceipt
 };

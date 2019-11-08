@@ -133,6 +133,14 @@ const addOnpaymentInvoiceEmail = (to, emailinfo) => {
     });
 };
 
+
+const downloadReceipt = (receipt) => {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/payment-invoice.ejs'), 'utf-8'), {
+        receipt: receipt
+    });
+    return message;
+};
+
 const updateClientAdEmail = (to, videolink, emailinfo) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/updateclientad-email.ejs'), 'utf-8'), {
         client_name: emailinfo.client_name,
@@ -193,5 +201,6 @@ module.exports = {
     updateClientAdEmail,
     enquiryAdminEmail,
     paymentInvoiceEmail,
-    addOnpaymentInvoiceEmail
+    addOnpaymentInvoiceEmail,
+    downloadReceipt
 };
