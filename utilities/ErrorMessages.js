@@ -28,5 +28,6 @@ module.exports = {
     StripeAPIError: 'Something went wrong. An error occurred. Any deductions will be refunded.',
     StripeConnectionError: 'Something went wrong at the payment provider. Kindly check with administrator.',
     StripeAuthenticationError: 'Payment Gateway Authentication Error',
-    TOKEN_EXPIRED: 'Token has expired. Kindly login again to continue'
+    TOKEN_EXPIRED: 'Token has expired. Kindly login again to continue',
+    CLIENT_NOT_FOUND: 'Client not found'
 };

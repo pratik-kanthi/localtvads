@@ -134,7 +134,27 @@ const _generateOfferQuery = (channel, adSchedule, startDate) => {
     return query;
 };
 
+
+const getAllOffersForStaff = () => {
+    return new Promise(async (resolve, reject) => {
+        const query = {};
+        Offer.find(query).populate('Channels AdSchedules').exec((err, offers) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({
+                code: 200,
+                data: offers
+            });
+        });
+    });
+};
+
 module.exports = {
     getApplicableOffers,
-    getAllOffers
+    getAllOffers,
+    getAllOffersForStaff
 };
