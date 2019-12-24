@@ -439,6 +439,112 @@ const standardLogin = (email, password, req) => {
     });
 };
 
+/**
+ * Portal Login
+ * @param {String} email - Email ID of the user
+ * @param {String} password - Password of the user
+ * @param {Object} req - request of the API
+ */
+const portalLogin = (email, password, req) => {
+    return new Promise(async (resolve, reject) => {
+        if (!email || !password || req.headers.referer !== process.env.PORTAL) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        const query = {
+            UserName: email,
+            AuthorisationScheme: 'Standard'
+        };
+        User.findOne(query, async (err, user) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            } else if (!user) {
+                _logLogin(email, req, 'FAILED_LOGIN');
+                return reject({
+                    code: 404,
+                    error: {
+                        message: utilities.ErrorMessages.USERNAME_NOT_FOUND
+                    }
+                });
+            } else {
+                if (user.ValidatePassword(password, user.PasswordHash)) {
+                    if (user && !user.IsEmailConfirmed) {
+                        _logLogin(email, req, 'EMAIL_UNVERIFIED');
+                        return reject({
+                            code: 401,
+                            error: {
+                                message: utilities.ErrorMessages.EMAIL_NOT_CONFIRMED
+                            }
+                        });
+                    } else if (user && user.IsLockoutEnabled) {
+                        _logLogin(email, req, 'FAILED_LOGIN');
+                        return reject({
+                            code: 401,
+                            error: {
+                                message: utilities.ErrorMessages.USER_LOCKED_OUT
+                            }
+                        });
+                    } else {
+                        let claims;
+                        try {
+                            claims = await _fetchClaim(user._id);
+                        } catch (ex) {
+                            _logLogin(email, req, 'FAILED_LOGIN');
+                            return reject({
+                                code: ex.code || 500,
+                                error: ex.error
+                            });
+                        }
+                        const claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join('|');
+
+                        const accessToken = new AccessToken({
+                            UserName: user.Email,
+                            UserId: user._id,
+                            AuthorisationScheme: user.AuthorisationScheme,
+                            Owner: user.Owner,
+                            Phone: user.Phone,
+                            iat: Math.floor(Date.now() / 1000) + config.token.ttl,
+                            Claims: claimsValue
+                        }).toObject();
+
+                        jwt.sign(accessToken, config.token.secret, {
+                            algorithm: 'HS256'
+                        }, (err, token) => {
+                            if (err) {
+                                return reject({
+                                    code: 500,
+                                    error: err
+                                });
+                            } else {
+                                accessToken.TokenString = token;
+                                resolve({
+                                    code: 200,
+                                    data: accessToken
+                                });
+                            }
+                        });
+                        _logLogin(email, req, 'SUCCESS');
+                    }
+                } else {
+                    _logLogin(email, req, 'FAILED_LOGIN');
+                    return reject({
+                        code: 401,
+                        error: {
+                            message: utilities.ErrorMessages.PASSWORD_INCORRECT
+                        }
+                    });
+                }
+            }
+        });
+    });
+};
 
 /**
  * Set IsEmailConfirmed to true for the user
@@ -659,6 +765,7 @@ const _fetchProfileImage = (client, profile) => {
 
 
 module.exports = {
+    portalLogin,
     socialLogin,
     socialRegister,
     standardLogin,

@@ -1,4 +1,5 @@
 const {
+    portalLogin,
     socialLogin,
     standardLogin,
     socialRegister,
@@ -9,6 +10,15 @@ const {
 } = require.main.require('./services/AuthService');
 
 module.exports = (app) => {
+
+    app.post('/api/auth/login', async (req, res) => {
+        try {
+            const result = await portalLogin(req.body.email, req.body.password, req);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code).send(ex.error);
+        }
+    });
 
     app.post('/api/auth/clientlogin', async (req, res) => {
         try {
