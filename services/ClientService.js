@@ -8,7 +8,11 @@ const moment = require('moment');
 const email = require('../email');
 const pdf = require('html-pdf');
 const path = require('path');
+const fs = require('fs');
+const config = require.main.require('./config');
+
 const { saveCustomer, saveNewCardToCustomer, deleteCardFromStripe } = require.main.require('./services/PaymentService');
+const { uploadFile } = require.main.require('./services/FileService');
 
 /*
  * Add card to a client
@@ -402,7 +406,8 @@ const generateReceipt = (transaction_id) => {
                 ClientAdPlan: 1,
                 ServiceAddOn: 1,
                 ClientServiceAddOn: 1,
-                TaxBreakdown: 1
+                TaxBreakdown: 1,
+                ReceiptUrl: 1
             };
             const populateOptions = [
                 {
@@ -439,44 +444,66 @@ const generateReceipt = (transaction_id) => {
                         error: err
                     });
                 }
-
-                const receipt = {
-                    InvoiceNo: transaction_id,
-                    Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
-                    Type: transaction.ServiceAddOn ? 'Add On' : 'Ad Slot',
-                    Name: transaction.ServiceAddOn ? transaction.ServiceAddOn.Name : transaction.ChannelPlan.Channel.Name,
-                    TotalAmount: transaction.TotalAmount,
-                    SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal : transaction.ChannelPlan.SubTotal,
-                    TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount : transaction.ChannelPlan.TaxAmount,
-                    TaxBreakdown: transaction.TaxBreakdown[0]
-
-                };
-
-                receipt.User = {};
-                receipt.User.Name = transaction.Client.Name;
-                receipt.User.Email = transaction.Client.Email;
-                receipt.User.Phone = transaction.Client.Phone;
-
-                const message = email.helper.downloadReceipt(receipt);
-                const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
-                const options = {
-                    height: '6.27in',
-                    width: '5.83in'
-                };
-
-                pdf.create(message, options).toFile(filePath, (err) => {
-                    if (err) {
-                        return reject({
-                            code: 500,
-                            error: err
-                        });
-                    }
+                if (transaction.ReceiptUrl) {
                     resolve({
                         code: 200,
-                        filePath: filePath
+                        data: transaction.ReceiptUrl
                     });
+                } else {
 
-                });
+
+                    const receipt = {
+                        InvoiceNo: transaction_id,
+                        Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
+                        Type: transaction.ServiceAddOn ? 'Add On' : 'Ad Slot',
+                        Name: transaction.ServiceAddOn ? transaction.ServiceAddOn.Name : transaction.ChannelPlan.Channel.Name,
+                        TotalAmount: transaction.TotalAmount,
+                        SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal : transaction.ChannelPlan.SubTotal,
+                        TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount : transaction.ChannelPlan.TaxAmount,
+                        TaxBreakdown: transaction.TaxBreakdown[0]
+
+                    };
+
+                    receipt.User = {};
+                    receipt.User.Name = transaction.Client.Name;
+                    receipt.User.Email = transaction.Client.Email;
+                    receipt.User.Phone = transaction.Client.Phone;
+
+                    const message = email.helper.downloadReceipt(receipt);
+                    const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
+                    const options = {
+                        height: '8.27in',
+                        width: '5.83in',
+                    };
+
+                    pdf.create(message, options).toFile(filePath, (err) => {
+                        if (err) {
+                            return reject({
+                                code: 500,
+                                error: err
+                            });
+                        }
+                        const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY') + '_' + transaction_id + '.pdf';
+                        uploadFile(filePath, bucket_file_path);
+                        fs.unlinkSync(filePath);
+                        const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
+                        transaction.ReceiptUrl = receipt_bucket_url;
+                        transaction.save((err, tr) => {
+                            if (err) {
+                                return reject({
+                                    code: 500,
+                                    error: err
+                                });
+                            }
+
+                            resolve({
+                                code: 200,
+                                data: tr.ReceiptUrl,
+                            });
+                        });
+                    });
+                }
+
             });
         }
     });

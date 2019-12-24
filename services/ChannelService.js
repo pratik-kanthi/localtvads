@@ -4,8 +4,8 @@ const Channel = require.main.require('./models/Channel').model;
 const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
 
-const {getApplicableOffers} = require.main.require('./services/OfferService');
-const {getTaxes} = require.main.require('./services/TaxService');
+const { getApplicableOffers } = require.main.require('./services/OfferService');
+const { getTaxes } = require.main.require('./services/TaxService');
 
 /**
  * get Channels
@@ -37,6 +37,34 @@ const getChannels = (projection) => {
                 data: channels
             });
         });
+    });
+};
+
+const getChannel = (channel_id) => {
+    return new Promise(async (resolve, reject) => {
+        if (!channel_id) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        } else {
+            const query = { _id: channel_id };
+            Channel.findOne(query).populate('Viewerships.AdSchedule').exec((err, channels) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+
+                resolve({
+                    code: 200,
+                    data: channels
+                });
+            });
+        }
     });
 };
 
@@ -98,7 +126,7 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
                 DateTime: 1,
                 TotalSeconds: 1
             };
-            ChannelAdLengthCounter.find(query, project).populate('ChannelAdSchedule', 'TotalAvailableSeconds').sort({DateTime: 1}).exec((err, countsByDate) => {
+            ChannelAdLengthCounter.find(query, project).populate('ChannelAdSchedule', 'TotalAvailableSeconds').sort({ DateTime: 1 }).exec((err, countsByDate) => {
                 if (err) {
                     return reject({
                         code: 500,
@@ -193,7 +221,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
         const adScheduleMapping = {};
         const adScheduleViewershipMapping = {};
         try {
-            const channelModel = await Channel.findOne({_id: channel}, {Viewerships: 1});
+            const channelModel = await Channel.findOne({ _id: channel }, { Viewerships: 1 });
             if (!channelModel) {
                 return reject({
                     code: 404,
@@ -238,7 +266,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                 }
             ]
         };
-        ChannelPlan.find(query, project).populate(populateOptions).sort({'BaseAmount': 1}).exec((err, channelPlans) => {
+        ChannelPlan.find(query, project).populate(populateOptions).sort({ 'BaseAmount': 1 }).exec((err, channelPlans) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -274,7 +302,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                     TotalSeconds: 1,
                     ChannelAdSchedule: 1
                 };
-                ChannelAdLengthCounter.find(query, project).sort({DateTime: 1}).exec(async(err, countsByDate) => {
+                ChannelAdLengthCounter.find(query, project).sort({ DateTime: 1 }).exec(async (err, countsByDate) => {
                     if (err) {
                         return reject({
                             code: 500,
@@ -410,7 +438,7 @@ const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
                 TotalSeconds: clientAdPlan.ChannelPlan.Plan.Seconds
             }
         };
-        ChannelAdLengthCounter.findOneAndUpdate(query, value, {upsert: true}, (err) => {
+        ChannelAdLengthCounter.findOneAndUpdate(query, value, { upsert: true }, (err) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -422,10 +450,35 @@ const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
     });
 };
 
+
+const updateChannel = (channel_id) => {
+    return new Promise(async (resolve, reject) => {
+        if (!channel_id) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        } else {
+            const query = { _id: channel_id };
+            Channel.findOne(query, (err, ch) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+                ch;
+
+            });
+        }
+    });
+};
 const calculateOffer = (amount, offer, adSchedule, startDate) => {
     let discountAmount = 0;
     if ((offer.AdSchedules.length === 0 || offer.AdSchedules.indexOf(adSchedule) > -1) && (offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(startDate).isoWeekday()) > -1) && new Date(startDate) <= offer.EndDate && new Date(startDate) >= offer.StartDate) {
-        discountAmount = offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount/100 : offer.Amount;
+        discountAmount = offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount / 100 : offer.Amount;
     }
     return discountAmount;
 };
@@ -438,8 +491,10 @@ const _formatDate = (date) => {
 
 module.exports = {
     getChannels,
+    getChannel,
     getSecondsByChannel,
     getPlansByChannel,
     updateChannelAdLengthCounter,
-    getChannelScheduleAvailability
+    getChannelScheduleAvailability,
+    updateChannel
 };
