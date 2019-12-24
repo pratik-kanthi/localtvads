@@ -42,7 +42,8 @@ const schema = new mongoose.Schema({
         ref: 'Coupon'
     },
     TaxBreakdown: [],
-    StripeResponse: {}
+    StripeResponse: {},
+    ReceiptUrl: String
 });
 
 const model = mongoose.model(name, schema);

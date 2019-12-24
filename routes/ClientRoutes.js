@@ -1,5 +1,4 @@
 const passport = require('passport');
-const mime = require('mime');
 const { addCard, deleteCard, getSavedCards, setPreferredCard, getTransactions, generateReceipt } = require.main.require('./services/ClientService');
 const { updateProfile } = require.main.require('./services/UserService');
 
@@ -62,14 +61,9 @@ module.exports = (app) => {
     });
 
     app.get('/api/client/transaction/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
-
-        const result = await generateReceipt(req.params.id);
-        const mimetype = mime.getType(result.filePath);
-
         try {
-            res.setHeader('Content-Disposition', 'attachment;filename=' + req.params.id + '.pdf');
-            res.setHeader('Content-Type', mimetype);
-            res.download(result.filePath, 'invoice.pdf');
+            const result = await generateReceipt(req.params.id);
+            return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
