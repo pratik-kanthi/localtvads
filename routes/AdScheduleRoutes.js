@@ -1,4 +1,5 @@
-const { getAdSchedules } = require.main.require('./services/AdScheduleService');
+const passport = require('passport');
+const { getAdSchedules, saveAdSchedule } = require.main.require('./services/AdScheduleService');
 
 module.exports = (app) => {
 
@@ -12,4 +13,12 @@ module.exports = (app) => {
     });
 
 
+    app.post('/api/adschedules', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            const result = await saveAdSchedule(req.body, req);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
 };

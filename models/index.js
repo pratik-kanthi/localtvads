@@ -5,6 +5,7 @@ module.exports = () => {
         adchannels: require('./Channel'),
         channeladschedules: require('./ChannelAdSchedule'),
         channelplans: require('./ChannelPlan'),
-        clientresources: require('./ClientResource')
+        clientresources: require('./ClientResource'),
+        offers: require('./Offer')
     };
 };

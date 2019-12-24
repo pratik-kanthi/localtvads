@@ -10,6 +10,7 @@ module.exports = (app, models) => {
             app.get('/api/' + key, passport.authenticate('jwt', {session: false}), controller.get);
             app.get('/api/' + key + '/count', passport.authenticate('jwt', {session: false}), controller.count);
             app.get('/api/' + key + '/:_id', passport.authenticate('jwt', {session: false}), controller.getById);
+            app.put('/api/' + key + '/:_id', passport.authenticate('jwt', {session: false}), controller.put);
         }
     }
 

@@ -129,9 +129,45 @@ module.exports = (def) => {
         });
     };
 
+    const putUpdate = (req, res) => {
+        const querystring = {
+            _id: req.params._id
+        };
+        Model.findOne(querystring, function (err, data) {
+            if (err) {
+                res.send(err);
+            } else {
+                if (data) {
+                    for (const field in req.body) {
+                        if (field !== '_id') {
+                            data[field] = req.body[field];
+                        }
+                    }
+                    if (!data.AuditInfo) {
+                        data.AuditInfo = {};
+                    }
+                    data.AuditInfo.EditedByUser = req.user._id;
+                    data.AuditInfo.EditDate = new Date();
+                    data.save(function (err) {
+                        if (err) {
+                            res.status(500).send(err);
+                        } else {
+                            res.status(200).json(data);
+                        }
+                    });
+                } else {
+                    res.status(404).json({
+                        error: 'Not Found'
+                    });
+                }
+            }
+        });
+    };
+
     return {
         get: getAll,
         count: count,
-        getById: getOne
+        getById: getOne,
+        put: putUpdate
     };
 };
