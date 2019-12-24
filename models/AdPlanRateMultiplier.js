@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='AdPlanRateMultiplier';
+const name = 'AdPlanRateMultiplier';
 
 const schema = new mongoose.Schema({
     Name: {
