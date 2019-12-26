@@ -447,7 +447,7 @@ const standardLogin = (email, password, req) => {
  */
 const portalLogin = (email, password, req) => {
     return new Promise(async (resolve, reject) => {
-        if (!email || !password || req.headers.referer !== process.env.PORTAL) {
+        if (!email || !password) {
             return reject({
                 code: 400,
                 error: {
@@ -503,7 +503,14 @@ const portalLogin = (email, password, req) => {
                             });
                         }
                         const claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join('|');
-
+                        if (claimsValue.indexOf('Client') > -1) {
+                            return reject({
+                                code: 400,
+                                error: {
+                                    message: utilities.ErrorMessages.BAD_REQUEST
+                                }
+                            });
+                        }
                         const accessToken = new AccessToken({
                             UserName: user.Email,
                             UserId: user._id,

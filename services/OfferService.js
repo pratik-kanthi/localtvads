@@ -73,6 +73,31 @@ const getAllOffers = (startDate, project = {
     });
 };
 
+const saveOffer = (offerObj) => {
+    return new Promise(async (resolve, reject) => {
+        if (!offerObj) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        new Offer(offerObj).save((err, offer) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({
+                code: 200,
+                data: offer
+            });
+        });
+    });
+};
+
 const _generateOfferQuery = (channel, adSchedule, startDate) => {
     const query = {
         $and: []
@@ -156,5 +181,6 @@ const getAllOffersForStaff = () => {
 module.exports = {
     getApplicableOffers,
     getAllOffers,
-    getAllOffersForStaff
+    getAllOffersForStaff,
+    saveOffer
 };
