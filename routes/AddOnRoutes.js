@@ -1,7 +1,7 @@
 const passport = require('passport');
 
 const {addCard} = require.main.require('./services/ClientService');
-const {getActiveAddOns, getClientServiceAddOn, getClientServiceAddOns, saveClientServiceAddOn, updateClientServiceAddOn} = require.main.require('./services/AddOnService');
+const {getActiveAddOns, getClientServiceAddOn, getClientServiceAddOns, saveClientServiceAddOn, updateClientServiceAddOn, saveServiceAddOn} = require.main.require('./services/AddOnService');
 
 module.exports = (app) => {
     app.post('/api/serviceaddons/save', passport.authenticate('jwt', {session: false}), async (req, res) => {
@@ -51,6 +51,15 @@ module.exports = (app) => {
     app.get('/api/serviceaddons/client/all', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
             const result = await getClientServiceAddOns(req.query.client);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.post('/api/serviceaddons', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            const result = await saveServiceAddOn(req.body);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

@@ -73,6 +73,136 @@ const getAllOffers = (startDate, project = {
     });
 };
 
+const saveOffer = (offerObj) => {
+    return new Promise(async (resolve, reject) => {
+        if (!offerObj) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        new Offer(offerObj).save((err, offer) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({
+                code: 200,
+                data: offer
+            });
+        });
+    });
+};
+
+const getAllOffersForStaff = () => {
+    return new Promise(async (resolve, reject) => {
+        const query = {};
+        Offer.find(query).populate('Channels AdSchedules').exec((err, offers) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({
+                code: 200,
+                data: offers
+            });
+        });
+    });
+};
+
+const getOffersByDuration = (startDate, endDate) => {
+    return new Promise(async (resolve, reject) => {
+        const query = {
+            $or: [
+                {
+                    $and: [
+                        {
+                            StartDate: {
+                                $lte: new Date(startDate)
+                            }
+                        }, {
+                            EndDate: {
+                                $lte: new Date(startDate)
+                            }
+                        }
+                    ]
+                },
+                {
+                    $and: [
+                        {
+                            StartDate: {
+                                $gte: new Date(startDate)
+                            }
+                        }, {
+                            EndDate: {
+                                $lte: new Date(endDate)
+                            }
+                        }
+                    ]
+                },
+                {
+                    $and: [
+                        {
+                            StartDate: {
+                                $lte: new Date(endDate)
+                            }
+                        }, {
+                            EndDate: {
+                                $gte: new Date(endDate)
+                            }
+                        }
+                    ]
+                }
+            ]
+        };
+        const projection = {
+            _id: 1,
+            Name: 1,
+            ImageUrl: 1,
+            StartDate: 1,
+            EndDate: 1,
+            Amount: 1,
+            Description: 1,
+            AdSchedules: 1,
+            Channels: 1,
+            DaysOfWeek: 1,
+            AmountType: 1
+        };
+        const populateOptions = [
+            {
+                path: 'AdSchedules',
+                select: {
+                    Name: 1
+                }
+            },
+            {
+                path: 'Channels',
+                select: {
+                    Name: 1
+                }
+            }
+        ];
+        Offer.find(query, projection).populate(populateOptions).exec((err, offers) => {
+            if (err) {
+                return reject({
+                    code: 400,
+                    error: err
+                });
+            }
+            resolve({
+                code: 200,
+                data: offers
+            });
+        });
+    });
+};
+
 const _generateOfferQuery = (channel, adSchedule, startDate) => {
     const query = {
         $and: []
@@ -134,27 +264,10 @@ const _generateOfferQuery = (channel, adSchedule, startDate) => {
     return query;
 };
 
-
-const getAllOffersForStaff = () => {
-    return new Promise(async (resolve, reject) => {
-        const query = {};
-        Offer.find(query).populate('Channels AdSchedules').exec((err, offers) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            }
-            resolve({
-                code: 200,
-                data: offers
-            });
-        });
-    });
-};
-
 module.exports = {
     getApplicableOffers,
     getAllOffers,
-    getAllOffersForStaff
+    getAllOffersForStaff,
+    getOffersByDuration,
+    saveOffer
 };

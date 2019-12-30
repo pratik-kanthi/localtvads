@@ -389,11 +389,43 @@ const uploadVideoForAddOns = (data, previewPath, extension, socket) => {
     });
 };
 
+/**
+ * save Service Add on
+ * @param {Object} serviceAddonObj - Service add on object
+ */
+const saveServiceAddOn = (serviceAddonObj) => {
+    return new Promise(async (resolve, reject) => {
+        if (!serviceAddonObj) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        const serviceAddOn = new ServiceAddOn(serviceAddonObj);
+        serviceAddOn.save(err => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({
+                code: 200,
+                data: serviceAddOn
+            });
+        });
+    });
+};
+
+
 module.exports = {
     getActiveAddOns,
     getClientServiceAddOn,
     getClientServiceAddOns,
     saveClientServiceAddOn,
+    saveServiceAddOn,
     updateClientServiceAddOn,
     uploadVideoForAddOns
 };
