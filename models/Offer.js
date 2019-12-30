@@ -42,7 +42,8 @@ const schema = new mongoose.Schema({
         required: true
     },
     DaysOfWeek: {
-        type: []
+        type: [],
+        default: []
     },
     ApplyToBooking: {
         type: Boolean,

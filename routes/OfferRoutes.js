@@ -1,5 +1,5 @@
-const { getAllOffers,
-    getAllOffersForStaff } = require.main.require('./services/OfferService');
+const passport = require('passport');
+const { getAllOffers, getAllOffersForStaff, saveOffer, getOffersByDuration } = require.main.require('./services/OfferService');
 
 module.exports = (app) => {
 
@@ -15,6 +15,24 @@ module.exports = (app) => {
     app.get('/api/staff/offers/all', async (req, res) => {
         try {
             const result = await getAllOffersForStaff();
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.post('/api/offers', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            const result = await saveOffer(req.body);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.get('/api/offers/byduration', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            const result = await getOffersByDuration(req.query.from, req.query.to);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

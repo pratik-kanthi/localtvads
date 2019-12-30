@@ -1,5 +1,7 @@
 module.exports = (app, models, io) => {
     require('./AdScheduleRoutes')(app);
+    require('./SliderRoutes')(app);
+    require('./TestimonialRoutes')(app);
     require('./AddOnRoutes')(app);
     require('./AuthRoutes')(app);
     require('./ChannelRoutes')(app);
@@ -10,5 +12,6 @@ module.exports = (app, models, io) => {
     require('./OfferRoutes')(app);
     require('./ResourceRoutes')(app);
     require('./StaffRoutes')(app);
+    require('./CouponRoutes')(app);
     require('./ApiRoutes')(app, models);
 };

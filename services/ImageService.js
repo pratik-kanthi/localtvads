@@ -1,11 +1,15 @@
 const jimp = require('jimp');
 
 const Client = require.main.require('./models/Client').model;
+const Offer = require.main.require('./models/Offer').model;
+const Testmonial = require.main.require('./models/Testimonial').model;
 
 const { deleteBucketFile, uploadFileBuffer } = require.main.require('./services/FileService');
 
 const model = {
-    Client: Client
+    Client: Client,
+    Offer: Offer,
+    Testmonial: Testmonial
 };
 
 /**
