@@ -8,6 +8,6 @@ module.exports = () => {
         clientresources: require('./ClientResource'),
         offers: require('./Offer'),
         coupons: require('./Coupon'),
-        clients: require('./Client')
+        clients: require('./Client'),
     };
 };
