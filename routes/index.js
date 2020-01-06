@@ -13,5 +13,8 @@ module.exports = (app, models, io) => {
     require('./ResourceRoutes')(app);
     require('./StaffRoutes')(app);
     require('./CouponRoutes')(app);
+    require('./EnquiryRoutes')(app);
+    require('./SubscriberRoutes')(app);
+    require('./AggregationRoutes')(app);
     require('./ApiRoutes')(app, models);
 };

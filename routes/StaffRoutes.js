@@ -4,7 +4,9 @@ const {
     approveAd,
     rejectAd,
     getAllClients,
-    getClient } = require.main.require('./services/StaffService');
+    getClient,
+    addStaff,
+    getAllStaff } = require.main.require('./services/StaffService');
 
 
 module.exports = (app) => {
@@ -47,6 +49,27 @@ module.exports = (app) => {
             return res.status(err.code).send(err.error);
         }
     });
+
+
+    app.post('/api/staff/add', async (req, res) => {
+        try {
+            const result = await addStaff(req.body);
+            return res.status(result.code).send(result.data);
+        } catch (err) {
+            return res.status(err.code).send(err.error);
+        }
+    });
+
+
+    app.get('/api/staff/all', async (req, res) => {
+        try {
+            const result = await getAllStaff(req.body);
+            return res.status(result.code).send(result.data);
+        } catch (err) {
+            return res.status(err.code).send(err.error);
+        }
+    });
+
 
     // Approve ad
     app.put('/api/staff/ad/action/:id', async (req, res) => {
