@@ -1,4 +1,5 @@
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
+const ClientAd = require.main.require('./models/ClientAd').model;
 
 
 const fetchAdsByChannels = () => {
@@ -56,6 +57,27 @@ const fetchAdsByChannels = () => {
 };
 
 
+const adCount = () => {
+    return new Promise(async (resolve, reject) => {
+        ClientAd.count((err, count) => {
+
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+
+            resolve({
+                code: 200,
+                data: count
+            });
+
+        });
+    });
+};
+
 module.exports = {
-    fetchAdsByChannels
+    fetchAdsByChannels,
+    adCount
 };
