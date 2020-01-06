@@ -1,9 +1,10 @@
 const mongoose = require('mongoose');
+const {auditSchema} = require.main.require('./models/CommonSchema');
 
 const name='Slider';
 
 const schema = new mongoose.Schema({
-    Title: {
+    Name: {
         type: String,
         required: true
     },
@@ -14,8 +15,10 @@ const schema = new mongoose.Schema({
         type: String
     },
     IsActive: {
-        type: Boolean
-    }
+        type: Boolean,
+        default: true
+    },
+    AuditInfo: auditSchema
 });
 
 const model = mongoose.model(name, schema);

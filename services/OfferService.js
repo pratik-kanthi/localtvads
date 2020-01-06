@@ -1,4 +1,5 @@
 const Offer = require.main.require('./models/Offer').model;
+const FileService = require.main.require('./services/FileService');
 
 const getApplicableOffers = (channel, adSchedule, startDate, project = {}) => {
     return new Promise(async (resolve, reject) => {
@@ -264,10 +265,42 @@ const _generateOfferQuery = (channel, adSchedule, startDate) => {
     return query;
 };
 
+const deleteOffer = (offerId) => {
+    return new Promise(async (resolve, reject) => {
+        const query = {
+            _id: offerId
+        };
+        if (!offerId) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        Offer.findOneAndDelete(query).exec((err, data) => {
+            if(err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            if(data){
+                FileService.deleteBucketFile(data.ImageUrl);
+                resolve({
+                    code: 200,
+                    data: 'Deleted'
+                });
+            }
+        });
+    });
+};
+
 module.exports = {
     getApplicableOffers,
     getAllOffers,
     getAllOffersForStaff,
     getOffersByDuration,
-    saveOffer
+    saveOffer,
+    deleteOffer
 };

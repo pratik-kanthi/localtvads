@@ -1,5 +1,5 @@
 const passport = require('passport');
-const { getAllOffers, getAllOffersForStaff, saveOffer, getOffersByDuration } = require.main.require('./services/OfferService');
+const { getAllOffers, getAllOffersForStaff, saveOffer, getOffersByDuration, deleteOffer } = require.main.require('./services/OfferService');
 
 module.exports = (app) => {
 
@@ -36,6 +36,15 @@ module.exports = (app) => {
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.delete('/api/offers/:id', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            const result = await deleteOffer(req.params.id);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code).send(ex.error);
         }
     });
 };
