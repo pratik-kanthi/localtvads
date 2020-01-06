@@ -54,6 +54,32 @@ const standardRegisterEmail = (to, verificationlink) => {
 };
 
 
+/**
+ *
+ * @param {String} to - email address of the registered user
+ * @param {String} verificationlink - verification link to mailed to the user to verify his/her account
+ */
+const staffRegisterEmail = (to, verificationlink, password) => {
+    const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/staff-createdemail.ejs'), 'utf-8'), {
+        verificationlink: verificationlink,
+        password: password
+    });
+
+    const data = {
+        from: config.mailgun.fromemail,
+        to: to,
+        subject: 'Verify your Local TV Ads account',
+        html: message
+    };
+
+    mailgun.api.server.send(data, (err) => {
+        if (err) {
+            throw err;
+        }
+    });
+};
+
+
 const emailChangeVerification = (to, verificationlink) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/emailchangeverification-email.ejs'), 'utf-8'), {
         verificationlink: verificationlink
@@ -196,6 +222,7 @@ const enquiryAdminEmail = (enquiry) => {
 module.exports = {
     socialRegisterEmail,
     standardRegisterEmail,
+    staffRegisterEmail,
     passwordResetEmail,
     emailChangeVerification,
     updateClientAdEmail,
