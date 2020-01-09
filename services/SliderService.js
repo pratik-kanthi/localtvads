@@ -12,7 +12,7 @@ const getSliders = () => {
         const query = {
             IsActive: true
         };
-        Slider.find(query).exec((err, sliders) => {
+        Slider.find(query).sort({Order: 1}).exec((err, sliders) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -124,7 +124,6 @@ const updateSlider = (slider, file, req) => {
                         data: sliderData
                     });
                 });
-                
             }
         });
     });
@@ -161,10 +160,57 @@ const deleteSlider = (sliderId) => {
     });
 };
 
+const updateOrders = (slidersData, req) => {
+    return new Promise(async (resolve, reject) => {
+        if(!slidersData) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+        const queue = slidersData.map(item => _updateOrder(item, req));
+        try {
+            const result = await Promise.all(queue);
+            resolve({
+                code: 200,
+                data: result
+            });
+        } catch (err) {
+            return reject({
+                code: err.code,
+                error: err.error
+            });
+        }
+    });
+};
+
+const _updateOrder = (slider, req) => {
+    return new Promise(async (resolve, reject) => {
+        const query = {
+            _id: slider._id
+        };
+        Slider.findOneAndUpdate(query, slider).exec((err, data) => {
+            if(err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            data.AuditInfo = {
+                EditedByUser: req.user._id,
+                EditDate: new Date()
+            };
+            resolve(data);
+        });
+    });
+};
 
 module.exports = {
     getSliders,
     saveSlider,
     updateSlider,
-    deleteSlider
+    deleteSlider,
+    updateOrders
 };
