@@ -11,6 +11,9 @@ const schema = new mongoose.Schema({
     Description: {
         type: String
     },
+    Order: {
+        type: Number
+    },
     ImageUrl: {
         type: String
     },

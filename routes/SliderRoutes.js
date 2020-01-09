@@ -1,6 +1,6 @@
 const passport = require('passport');
 const multer = require('multer');
-const { getSliders, saveSlider, updateSlider, deleteSlider } = require.main.require('./services/SliderService');
+const { getSliders, saveSlider, updateSlider, deleteSlider, updateOrders } = require.main.require('./services/SliderService');
 
 module.exports = (app) => {
     const upload = multer({
@@ -39,6 +39,15 @@ module.exports = (app) => {
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code).send(ex.error);
+        }
+    });
+
+    app.put('/api/sliders/updateorder', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try {
+            const result = await updateOrders(req.body, req);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
         }
     });
 };
