@@ -72,7 +72,7 @@ module.exports = (app) => {
 
 
     // Approve ad
-    app.put('/api/staff/ad/action/:id', async (req, res) => {
+    app.post('/api/staff/ad/approve/:id', async (req, res) => {
         try {
             const result = await approveAd(req.params.id);
             return res.status(result.code).send(result.data);
@@ -82,7 +82,7 @@ module.exports = (app) => {
     });
 
     // Reject
-    app.delete('/api/staff/ad/action/:id', async (req, res) => {
+    app.post('/api/staff/ad/reject/:id', async (req, res) => {
         try {
             const result = await rejectAd(req.params.id);
             return res.status(result.code).send(result.data);
