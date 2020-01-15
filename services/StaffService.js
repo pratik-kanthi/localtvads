@@ -1,4 +1,3 @@
-
 const email = require('../email');
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ClientAd = require.main.require('./models/ClientAd').model;
@@ -63,52 +62,49 @@ const getAllAds = () => {
             Status: 1
         };
 
-        const populateOptions = [
-            {
-                path: 'Client',
-                select: {
-                    Name: 1,
-                }
-            },
-            {
-                path: 'ClientAd',
-                select: {
-                    Status: 1,
-                    Length: 1
-                },
-
-            },
-            {
-                path: 'ChannelPlan.Plan.Channel',
-                model: 'Channel',
-                select: {
-                    Name: 1,
-                    Description: 1
-                }
-            },
-            {
-                path: 'ChannelPlan.Plan.ChannelAdSchedule',
-                model: 'ChannelAdSchedule',
-                select: {
-                    _id: 1
-                },
-                populate: [
-                    {
-                        path: 'AdSchedule',
-                        model: 'AdSchedule',
-                        select: {
-                            Name: 1,
-                            Description: 1,
-                            StartTime: 1,
-                            EndTime: 1
-                        }
-                    }
-                ]
+        const populateOptions = [{
+            path: 'Client',
+            select: {
+                Name: 1,
             }
+        },
+        {
+            path: 'ClientAd',
+            select: {
+                Status: 1,
+                Length: 1
+            },
+
+        },
+        {
+            path: 'ChannelPlan.Plan.Channel',
+            model: 'Channel',
+            select: {
+                Name: 1,
+                Description: 1
+            }
+        },
+        {
+            path: 'ChannelPlan.Plan.ChannelAdSchedule',
+            model: 'ChannelAdSchedule',
+            select: {
+                _id: 1
+            },
+            populate: [{
+                path: 'AdSchedule',
+                model: 'AdSchedule',
+                select: {
+                    Name: 1,
+                    Description: 1,
+                    StartTime: 1,
+                    EndTime: 1
+                }
+            }]
+        }
         ];
 
 
-        ClientAdPlan.find({}, projection).populate(populateOptions).exec((err, caps) => {
+        ClientAdPlan.find({}, projection).skip().limit().populate(populateOptions).exec((err, caps) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -152,51 +148,52 @@ const getClient = (clientid) => {
                 data: utilities.ErrorMessages.BAD_REQUEST
             });
         } else {
-            const query = { _id: clientid };
-            const populateOptions = [
-                {
-                    path: 'Client',
-                    select: {
-                        Name: 1,
-                    }
-                },
-                {
-                    path: 'ClientAd',
-                    select: {
-                        Status: 1,
-                        Length: 1
-                    },
-
-                },
-                {
-                    path: 'ChannelPlan.Plan.Channel',
-                    model: 'Channel',
-                    select: {
-                        Name: 1,
-                        Description: 1
-                    }
-                },
-                {
-                    path: 'ChannelPlan.Plan.ChannelAdSchedule',
-                    model: 'ChannelAdSchedule',
-                    select: {
-                        _id: 1
-                    },
-                    populate: [
-                        {
-                            path: 'AdSchedule',
-                            model: 'AdSchedule',
-                            select: {
-                                Name: 1,
-                                Description: 1,
-                                StartTime: 1,
-                                EndTime: 1
-                            }
-                        }
-                    ]
+            const query = {
+                _id: clientid
+            };
+            const populateOptions = [{
+                path: 'Client',
+                select: {
+                    Name: 1,
                 }
+            },
+            {
+                path: 'ClientAd',
+                select: {
+                    Status: 1,
+                    Length: 1
+                },
+
+            },
+            {
+                path: 'ChannelPlan.Plan.Channel',
+                model: 'Channel',
+                select: {
+                    Name: 1,
+                    Description: 1
+                }
+            },
+            {
+                path: 'ChannelPlan.Plan.ChannelAdSchedule',
+                model: 'ChannelAdSchedule',
+                select: {
+                    _id: 1
+                },
+                populate: [{
+                    path: 'AdSchedule',
+                    model: 'AdSchedule',
+                    select: {
+                        Name: 1,
+                        Description: 1,
+                        StartTime: 1,
+                        EndTime: 1
+                    }
+                }]
+            }
             ];
-            ClientAdPlan.find({ Client: clientid }).populate(populateOptions).exec((err, cad) => {
+            ClientAdPlan.find({
+                Client: clientid
+            }).populate(populateOptions).exec((err, cad) => {
                 if (err) {
                     return reject({
                         code: 500,
@@ -245,39 +242,36 @@ const getAd = (id) => {
         };
 
 
-        const populateOptions = [
-            {
-                path: 'Client',
-                model: 'Client'
-            },
-            {
-                path: 'ClientAd',
-                model: 'ClientAd'
-            },
-            {
-                path: 'ChannelPlan.Plan.Channel',
-                model: 'Channel',
+        const populateOptions = [{
+            path: 'Client',
+            model: 'Client'
+        },
+        {
+            path: 'ClientAd',
+            model: 'ClientAd'
+        },
+        {
+            path: 'ChannelPlan.Plan.Channel',
+            model: 'Channel',
 
+        },
+        {
+            path: 'ChannelPlan.Plan.ChannelAdSchedule',
+            model: 'ChannelAdSchedule',
+            select: {
+                ChannelAdSchedule: 1
             },
-            {
-                path: 'ChannelPlan.Plan.ChannelAdSchedule',
-                model: 'ChannelAdSchedule',
+            populate: [{
+                path: 'AdSchedule',
+                model: 'AdSchedule',
                 select: {
-                    ChannelAdSchedule: 1
-                },
-                populate: [
-                    {
-                        path: 'AdSchedule',
-                        model: 'AdSchedule',
-                        select: {
-                            Name: 1,
-                            Description: 1,
-                            StartTime: 1,
-                            EndTime: 1
-                        }
-                    }
-                ]
-            }
+                    Name: 1,
+                    Description: 1,
+                    StartTime: 1,
+                    EndTime: 1
+                }
+            }]
+        }
         ];
 
         ClientAdPlan.findOne(query).populate(populateOptions).exec((err, ad) => {

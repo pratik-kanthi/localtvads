@@ -21,6 +21,11 @@ const schema = new mongoose.Schema({
     Message: {
         type: String,
         required: true
+    },
+    ReadStatus: {
+        type: String,
+        enum: ['READ', 'UNREAD'],
+        required: true
     }
 });
 
