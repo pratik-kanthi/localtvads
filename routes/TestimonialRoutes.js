@@ -18,9 +18,9 @@ module.exports = (app) => {
             return res.status(ex.code || 500).send(ex.error);
         }
     });
-    app.delete('/api/testimonials/:id', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.delete('/api/testimonials', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            const result = await deleteTestimonial(req.params.id);
+            const result = await deleteTestimonial(req.query.id);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

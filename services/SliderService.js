@@ -96,10 +96,8 @@ const updateSlider = (slider, file, req) => {
                     }
                 });
             } else {
-                slider.AuditInfo = {
-                    EditedByUser: req.user._id,
-                    EditDate: new Date()
-                };
+                sliderData.AuditInfo.EditedByUser = req.user._id;
+                sliderData.AuditInfo.EditDate = new Date();
                 sliderData.Name = slider.Name;
                 sliderData.Description = slider.Description;
                 sliderData.IsActive = slider.IsActive;
@@ -198,10 +196,8 @@ const _updateOrder = (slider, req) => {
                     error: err
                 });
             }
-            data.AuditInfo = {
-                EditedByUser: req.user._id,
-                EditDate: new Date()
-            };
+            data.AuditInfo.EditedByUser = req.user._id;
+            data.AuditInfo.EditDate = new Date();
             resolve(data);
         });
     });

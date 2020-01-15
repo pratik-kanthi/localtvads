@@ -33,9 +33,9 @@ module.exports = (app) => {
         }
     });
 
-    app.delete('/api/sliders/:id', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.delete('/api/sliders', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            const result = await deleteSlider(req.params.id);
+            const result = await deleteSlider(req.query.id);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code).send(ex.error);
