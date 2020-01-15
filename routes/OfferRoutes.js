@@ -39,9 +39,9 @@ module.exports = (app) => {
         }
     });
 
-    app.delete('/api/offers/:id', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.delete('/api/offers', passport.authenticate('jwt', {session: false}), async (req, res) => {
         try {
-            const result = await deleteOffer(req.params.id);
+            const result = await deleteOffer(req.query.id);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code).send(ex.error);
