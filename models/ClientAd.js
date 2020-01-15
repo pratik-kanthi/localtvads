@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='ClientAd';
+const name = 'ClientAd';
 
 const schema = new mongoose.Schema({
     VideoUrl: {
