@@ -1,7 +1,9 @@
 const mongoose = require('mongoose');
-const {billingSchema} = require.main.require('./models/CommonSchema');
+const {
+    billingSchema
+} = require.main.require('./models/CommonSchema');
 
-const name='ClientPaymentMethod';
+const name = 'ClientPaymentMethod';
 
 const paymentCardSchema = new mongoose.Schema({
     PaymentMethodType: {

@@ -1,8 +1,10 @@
 const mongoose = require('mongoose');
 const channelPlanSchema = require.main.require('./models/ChannelPlan').schema;
-const {auditSchema} = require.main.require('./models/CommonSchema');
+const {
+    auditSchema
+} = require.main.require('./models/CommonSchema');
 
-const name='ClientAdPlan';
+const name = 'ClientAdPlan';
 
 const schema = new mongoose.Schema({
     Name: {
@@ -42,7 +44,7 @@ const schema = new mongoose.Schema({
     },
     StartDate: {
         type: Date,
-        default: ()=> {
+        default: () => {
             return new Date();
         }
     },
@@ -61,6 +63,13 @@ const schema = new mongoose.Schema({
     Status: {
         type: String,
         enum: ['ACTIVE', 'INACTIVE', 'EXPIRED']
+    },
+    BookedDate: {
+        type: Date,
+        default: () => {
+            return new Date();
+        },
+        required: true
     },
     AuditInfo: auditSchema
 });

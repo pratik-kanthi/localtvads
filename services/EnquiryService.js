@@ -2,7 +2,9 @@ const Enquiry = require.main.require('./models/Enquiry').model;
 
 const fetchEnquiries = () => {
     return new Promise(async (resolve, reject) => {
-        Enquiry.find({}, (err, enquiries) => {
+        Enquiry.find({}).sort({
+            Date: -1
+        }).exec((err, enquiries) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -28,7 +30,9 @@ const fetchEnquiry = (eid) => {
                 }
             });
         }
-        Enquiry.findOne({ _id: eid }, (err, enquiry) => {
+        Enquiry.findOne({
+            _id: eid
+        }, (err, enquiry) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -54,7 +58,9 @@ const deleteEnquiry = (eid) => {
                 }
             });
         }
-        Enquiry.deleteOne({ _id: eid }, (err, enquiry) => {
+        Enquiry.deleteOne({
+            _id: eid
+        }, (err, enquiry) => {
             if (err) {
                 return reject({
                     code: 500,

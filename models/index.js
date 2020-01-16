@@ -10,6 +10,9 @@ module.exports = () => {
         coupons: require('./Coupon'),
         clients: require('./Client'),
         sliders: require('./Slider'),
-        testimonials: require('./Testimonial')
+        testimonials: require('./Testimonial'),
+        clientads: require('./ClientAd'),
+        clientadplans: require('./ClientAdPlan'),
+        transactions: require('./Transaction')
     };
 };

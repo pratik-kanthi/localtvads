@@ -59,7 +59,8 @@ const getAllAds = () => {
             StartDate: 1,
             DayOfWeek: 1,
             ChannelPlan: 1,
-            Status: 1
+            Status: 1,
+            BookedDate: 1
         };
 
         const populateOptions = [{
