@@ -475,6 +475,26 @@ const _generatePassword = (length) => {
 
 };
 
+const fetchStaffsByPage = (page, size, sortby) => {
+    return new Promise(async (resolve, reject) => {
+        page = page - 1;
+
+        Staff.find({}).skip(page * size).limit(size).sort(sortby).exec((err, staffs) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            } else {
+                resolve({
+                    code: 200,
+                    data: staffs
+                });
+            }
+        });
+    });
+};
+
 module.exports = {
     approveAd,
     getAd,
@@ -483,5 +503,6 @@ module.exports = {
     getClient,
     rejectAd,
     addStaff,
-    getAllStaff
+    getAllStaff,
+    fetchStaffsByPage
 };

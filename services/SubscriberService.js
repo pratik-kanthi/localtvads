@@ -48,7 +48,27 @@ const unsubscribeUser = (email) => {
     });
 };
 
+const fetchSubscribersByPage = (page, size, sortby) => {
+    return new Promise(async (resolve, reject) => {
+        page = page - 1;
+        Subscriber.find({}).skip(page * size).limit(size).sort(sortby).exec((err, subscribers) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            } else {
+                resolve({
+                    code: 200,
+                    data: subscribers
+                });
+            }
+        });
+    });
+};
+
 module.exports = {
     getSubscribers,
-    unsubscribeUser
+    unsubscribeUser,
+    fetchSubscribersByPage
 };

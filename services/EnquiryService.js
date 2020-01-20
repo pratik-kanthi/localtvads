@@ -76,8 +76,29 @@ const deleteEnquiry = (eid) => {
     });
 };
 
+const fetchEnquiryByPage = (page, size, sortby) => {
+    return new Promise(async (resolve, reject) => {
+        page = page - 1;
+
+        Enquiry.find({}).skip(page * size).limit(size).sort(sortby).exec((err, enquiry) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            } else {
+                resolve({
+                    code: 200,
+                    data: enquiry
+                });
+            }
+        });
+    });
+};
+
 module.exports = {
     fetchEnquiries,
     fetchEnquiry,
-    deleteEnquiry
+    deleteEnquiry,
+    fetchEnquiryByPage
 };

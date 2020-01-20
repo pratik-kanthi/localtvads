@@ -13,10 +13,9 @@ module.exports = (app) => {
         }
     });
 
-
-    app.get('/api/dashboard/count', async (req, res) => {
+    app.get('/api/metrics/:modelname', async (req, res) => {
         try {
-            const result = await fetchMetricsByDate();
+            const result = await fetchMetricsByDate(req.params.modelname);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

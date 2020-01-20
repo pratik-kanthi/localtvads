@@ -126,7 +126,26 @@ const getCouponsByDuration = (startDate, endDate) => {
     });
 };
 
+const getAllCoupons = () => {
+    return new Promise(async (resolve, reject) => {
+        const query = {};
+        Coupon.find(query).populate('Channels AdSchedules Client').exec((err, coupons) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({
+                code: 200,
+                data: coupons
+            });
+        });
+    });
+};
+
 module.exports = {
     saveCoupon,
-    getCouponsByDuration
+    getCouponsByDuration,
+    getAllCoupons
 };

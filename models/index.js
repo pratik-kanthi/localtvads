@@ -13,6 +13,9 @@ module.exports = () => {
         testimonials: require('./Testimonial'),
         clientads: require('./ClientAd'),
         clientadplans: require('./ClientAdPlan'),
-        transactions: require('./Transaction')
+        transactions: require('./Transaction'),
+        enquiries: require('./Enquiry'),
+        staffs: require('./Staff'),
+        subscribers: require('./Subscriber')
     };
 };

@@ -1,5 +1,7 @@
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
+const Client = require.main.require('./models/Client').model;
 const Transaction = require.main.require('./models/Transaction').model;
+const Channel = require.main.require('./models/Channel').model;
 
 const fetchDashboardAds = () => {
     return new Promise(async (resolve, reject) => {
@@ -81,30 +83,54 @@ const fetchDashboardAds = () => {
     });
 };
 
-const fetchMetricsByDate = () => {
-    return new Promise(async (resolve, reject) => {
-        const startdate = new Date();
-        const enddate = new Date();
+const fetchMetricsByDate = (model) => {
+    const models = {
+        'transactions': Transaction,
+        'clientadplans': ClientAdPlan,
+        'clients': Client,
+        'channels': Channel
+    };
+    const startdate = new Date();
+    const enddate = new Date();
+    startdate.setMonth(startdate.getMonth() - 1);
 
-        startdate.setMonth(startdate.getMonth() - 1);
-
-        Transaction.find({
+    const queries = {
+        'transactions': { 
             DateTime: {
                 $gt: startdate,
                 $lt: enddate
             }
-        }).countDocuments((err, metricCount) => {
+        },
+        'clients': {
+            DateCreated: {
+                $gt: startdate,
+                $lt: enddate
+            }
+        },
+        'channels': {
+            Status: 'LIVE'
+        },
+        'clientadplans': {
+            BookedDate: {
+                $gt: startdate,
+                $lt: enddate
+            }
+        }
+    };
+    return new Promise(async (resolve, reject) => {
+
+        models[model].find(queries[model], (err, data) => {
             if (err) {
                 return reject({
                     code: 500,
                     error: err
                 });
             }
-
             resolve({
                 code: 200,
-                data: metricCount
+                data: data
             });
+            
         });
     });
 };

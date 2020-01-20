@@ -489,6 +489,25 @@ const _formatDate = (date) => {
     return date.getFullYear() + '-' + (month > 9 ? month : '0' + month) + '-' + (day > 9 ? day : '0' + day);
 };
 
+const fetchChannelByPage = (page, size, sortBy) => {
+    return new Promise(async (resolve, reject) => {
+        page = page - 1;
+        Channel.find({}).skip(page * size).limit(size).sort(sortBy).exec((err, channels) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            } else {
+                resolve({
+                    code: 200,
+                    data: channels
+                });
+            }
+        });
+    });
+};
+
 module.exports = {
     getChannels,
     getChannel,
@@ -496,5 +515,6 @@ module.exports = {
     getPlansByChannel,
     updateChannelAdLengthCounter,
     getChannelScheduleAvailability,
-    updateChannel
+    updateChannel,
+    fetchChannelByPage
 };
