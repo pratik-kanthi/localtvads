@@ -50,7 +50,7 @@ const approveAd = (id) => {
     });
 };
 
-const getAllAds = () => {
+const getAllAds = (skip, limit, sortBy) => {
     return new Promise(async (resolve, reject) => {
         const projection = {
             Name: 1,
@@ -105,7 +105,11 @@ const getAllAds = () => {
         ];
 
 
-        ClientAdPlan.find({}, projection).skip().limit().populate(populateOptions).exec((err, caps) => {
+        ClientAdPlan.find({
+            ClientAd: {
+                $ne: null
+            }
+        }, projection).skip(parseInt(skip)).limit(parseInt(limit)).sort(sortBy).populate(populateOptions).exec((err, caps) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -132,6 +136,16 @@ const getAllClients = () => {
                     error: err
                 });
             } else {
+
+                const date = new Date();
+                clients.map((c) => {
+                    c.DateCreated = date;
+                    c.save();
+
+                    return c;
+                });
+
+
                 resolve({
                     code: 200,
                     data: clients

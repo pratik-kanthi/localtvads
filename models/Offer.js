@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='Offer';
+const name = 'Offer';
 
 const schema = new mongoose.Schema({
     Name: {
@@ -14,12 +14,10 @@ const schema = new mongoose.Schema({
     ImageUrl: {
         type: String
     },
-    AdSchedules: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'AdSchedule'
-        }
-    ],
+    AdSchedules: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'AdSchedule'
+    }],
     Channels: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Channel'
@@ -30,7 +28,7 @@ const schema = new mongoose.Schema({
     },
     AmountType: {
         type: String,
-        enum: [ 'FIXED', 'PERCENTAGE' ],
+        enum: ['FIXED', 'PERCENTAGE'],
         required: true
     },
     StartDate: {
@@ -41,7 +39,7 @@ const schema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    DaysOfWeek: {
+    ha: {
         type: [],
         default: []
     },

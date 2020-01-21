@@ -1,6 +1,6 @@
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
-const Client = require.main.require('./models/Client').model;
 const Transaction = require.main.require('./models/Transaction').model;
+const Client = require.main.require('./models/Client').model;
 const Channel = require.main.require('./models/Channel').model;
 
 const fetchDashboardAds = () => {
@@ -83,59 +83,166 @@ const fetchDashboardAds = () => {
     });
 };
 
-const fetchMetricsByDate = (model) => {
-    const models = {
-        'transactions': Transaction,
-        'clientadplans': ClientAdPlan,
-        'clients': Client,
-        'channels': Channel
-    };
-    const startdate = new Date();
-    const enddate = new Date();
-    startdate.setMonth(startdate.getMonth() - 1);
+/**
+ * Fetch Metrics for Dashboard - (new and total) ads, channels, users, transactions
+ * 
+ * @param {String} startDate 
+ * @param {String} endDate 
+ */
+const fetchInsights = (startDate, endDate) => {
+    return new Promise(async (resolve, reject) => {
+        if (!startDate || !endDate) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        } else {
+            const result = {};
+            let query, countQuery, filterCount, totalCount;
 
-    const queries = {
-        'transactions': { 
-            DateTime: {
-                $gt: startdate,
-                $lt: enddate
-            }
+
+            /*------ Ads ---------------------------------*/
+            query = ClientAdPlan.countDocuments({
+                ClientAd: {
+                    $ne: null
+                },
+                BookedDate: {
+                    $gte: startDate,
+                    $lte: endDate
+                }
+            });
+            countQuery = ClientAdPlan.countDocuments({
+                ClientAd: {
+                    $ne: null
+                }
+            });
+            filterCount = await query.exec();
+            totalCount = await countQuery.exec();
+            result.ads = {
+                filtered: filterCount,
+                total: totalCount
+            };
+
+
+            /*---------- Users ---------------------------*/
+
+            query = Client.countDocuments({
+                DateCreated: {
+                    $gte: startDate,
+                    $lte: endDate
+                }
+            });
+            countQuery = Client.countDocuments({});
+            filterCount = await query.exec();
+            totalCount = await countQuery.exec();
+            result.clients = {
+                filtered: filterCount,
+                total: totalCount
+            };
+
+
+            /*------- Channels -----------------------------*/
+
+            query = Channel.countDocuments({
+                Status: 'LIVE'
+            });
+            countQuery = Channel.countDocuments();
+
+            filterCount = await query.exec();
+            totalCount = await countQuery.exec();
+
+            result.channels = {
+                active: filterCount,
+                total: totalCount
+            };
+
+            /*-------- Transactions ------------------------*/
+
+            query = Transaction.countDocuments({
+                DateTime: {
+                    $gte: startDate,
+                    $lte: endDate
+                }
+            });
+            countQuery = Transaction.countDocuments();
+
+            filterCount = await query.exec();
+            totalCount = await countQuery.exec();
+
+            result.transactions = {
+                filtered: filterCount,
+                total: totalCount
+            };
+
+
+
+            resolve({
+                code: 200,
+                data: result
+            });
+        }
+    });
+};
+
+
+const fetchAdsByChannels = () => {
+    return new Promise(async (resolve, reject) => {
+        const query = {};
+        const project = {
+            'ChannelPlanPlan.Channel': 1,
+            'ClientAd': 1
+        };
+        const populateOptions = [{
+            path: 'ClientAd',
         },
-        'clients': {
-            DateCreated: {
-                $gt: startdate,
-                $lt: enddate
-            }
-        },
-        'channels': {
-            Status: 'LIVE'
-        },
-        'clientadplans': {
-            BookedDate: {
-                $gt: startdate,
-                $lt: enddate
+        {
+            path: 'ChannelPlan.Plan.Channel',
+            model: 'Channel',
+            select: {
+                Name: 1,
             }
         }
-    };
-    return new Promise(async (resolve, reject) => {
+        ];
 
-        models[model].find(queries[model], (err, data) => {
+        ClientAdPlan.find(query, project).populate(populateOptions).exec((err, clientAdPlans) => {
             if (err) {
                 return reject({
                     code: 500,
                     error: err
                 });
             }
+            const adsbychannels = {};
+
+            clientAdPlans.map(cap => {
+                const cid = cap.ChannelPlan.Plan.Channel.Name;
+
+                if (adsbychannels[cid]) {
+                    if (cap.ClientAd) {
+                        adsbychannels[cid]++;
+                    }
+                } else {
+                    adsbychannels[cid] = 0;
+                    if (cap.ClientAd) {
+                        adsbychannels[cid]++;
+                    }
+                }
+
+                return cap;
+            });
+
             resolve({
                 code: 200,
-                data: data
+                data: adsbychannels
             });
-            
         });
     });
 };
 
+
 module.exports = {
     fetchDashboardAds,
-    fetchMetricsByDate
+    fetchInsights,
+    fetchAdsByChannels
 };

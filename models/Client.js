@@ -22,7 +22,14 @@ const schema = new mongoose.Schema({
         type: Boolean,
         default: true
     },
-    Address: commonSchema.addressSchema
+    Address: commonSchema.addressSchema,
+    DateCreated: {
+        type: Date,
+        required: true,
+        default: () => {
+            return new Date();
+        }
+    }
 });
 
 

@@ -1,6 +1,12 @@
-const passport = require('passport');
-
-const { getChannels, getChannel, getPlansByChannel, getSecondsByChannel, getChannelScheduleAvailability, updateChannel, fetchChannelByPage } = require.main.require('./services/ChannelService');
+const {
+    createChannel,
+    getChannels,
+    getChannel,
+    getPlansByChannel,
+    getSecondsByChannel,
+    getChannelScheduleAvailability,
+    updateChannel
+} = require.main.require('./services/ChannelService');
 
 module.exports = (app) => {
 
@@ -58,12 +64,13 @@ module.exports = (app) => {
         }
     });
 
-    app.get('/api/channels/byPage', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    app.post('/api/channel', async (req, res) => {
         try {
-            const result = await fetchChannelByPage(parseInt(req.query.page), parseInt(req.query.size), req.query.sortBy);
+            const result = await createChannel(req.body);
             return res.status(result.code).send(result.data);
         } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
+            return res.stats(ex.code || 500).send(ex.error);
         }
+
     });
 };
