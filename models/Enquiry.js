@@ -25,6 +25,7 @@ const schema = new mongoose.Schema({
     ReadStatus: {
         type: String,
         enum: ['READ', 'UNREAD'],
+        default: 'UNREAD',
         required: true
     }
 });

@@ -12,7 +12,9 @@ const getSliders = () => {
         const query = {
             IsActive: true
         };
-        Slider.find(query).sort({Order: 1}).exec((err, sliders) => {
+        Slider.find(query).sort({
+            Order: 1
+        }).exec((err, sliders) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -71,7 +73,7 @@ const saveSlider = (slider, file, req) => {
 
 const updateSlider = (slider, file, req) => {
     return new Promise(async (resolve, reject) => {
-        if(!slider) {
+        if (!slider) {
             return reject({
                 code: 400,
                 error: {
@@ -101,7 +103,7 @@ const updateSlider = (slider, file, req) => {
                 sliderData.Name = slider.Name;
                 sliderData.Description = slider.Description;
                 sliderData.IsActive = slider.IsActive;
-                if(file) {
+                if (file) {
                     const time = Date.now();
                     const extension = file.originalname.substr(file.originalname.lastIndexOf('.'));
                     const dst = 'uploads/Sliders/' + time + extension;
@@ -141,13 +143,13 @@ const deleteSlider = (sliderId) => {
             });
         }
         Slider.findOneAndDelete(query).exec((err, data) => {
-            if(err) {
+            if (err) {
                 return reject({
                     code: 500,
                     error: err
                 });
             }
-            if(data){
+            if (data) {
                 FileService.deleteBucketFile(data.ImageUrl);
                 resolve({
                     code: 200,
@@ -160,7 +162,7 @@ const deleteSlider = (sliderId) => {
 
 const updateOrders = (slidersData, req) => {
     return new Promise(async (resolve, reject) => {
-        if(!slidersData) {
+        if (!slidersData) {
             return reject({
                 code: 400,
                 error: {
@@ -190,7 +192,7 @@ const _updateOrder = (slider, req) => {
             _id: slider._id
         };
         Slider.findOneAndUpdate(query, slider).exec((err, data) => {
-            if(err) {
+            if (err) {
                 return reject({
                     code: 500,
                     error: err

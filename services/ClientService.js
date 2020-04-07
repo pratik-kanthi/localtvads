@@ -524,6 +524,26 @@ const _getClient = (client, projection) => {
     });
 };
 
+const fetchClientsByPage = (page, size, sortby) => {
+    return new Promise(async (resolve, reject) => {
+        page = page - 1;
+
+        Client.find({}).skip(page * size).limit(size).sort(sortby).exec((err, client) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            } else {
+                resolve({
+                    code: 200,
+                    data: client
+                });
+            }
+        });
+    });
+};
+
 module.exports = {
     addCard,
     deleteCard,
@@ -531,5 +551,6 @@ module.exports = {
     getSavedCards,
     setPreferredCard,
     getTransactions,
-    generateReceipt
+    generateReceipt,
+    fetchClientsByPage
 };

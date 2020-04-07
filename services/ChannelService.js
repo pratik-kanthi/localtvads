@@ -4,8 +4,51 @@ const Channel = require.main.require('./models/Channel').model;
 const ChannelPlan = require.main.require('./models/ChannelPlan').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
 
-const { getApplicableOffers } = require.main.require('./services/OfferService');
-const { getTaxes } = require.main.require('./services/TaxService');
+const {
+    getApplicableOffers
+} = require.main.require('./services/OfferService');
+const {
+    getTaxes
+} = require.main.require('./services/TaxService');
+
+
+const createChannel = (newchannel) => {
+    return new Promise(async (resolve, reject) => {
+        if (!newchannel.Name || !newchannel.Status || !newchannel.Viewerships) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+
+        const ch = new Channel({
+            Name: newchannel.Name,
+            Description: newchannel.Description ? newchannel.Description : null,
+            Address: newchannel.Address ? newchannel.Address : null,
+            PrimaryContact: newchannel.PrimaryContact ? newchannel.PrimaryContact : null,
+            AlternativeContact: newchannel.AlternativeContact ? newchannel.AlternativeContact : null,
+            Status: newchannel.Status,
+            ExpectedAdViews: newchannel.ExpectedAdViews,
+            Viewerships: newchannel.Viewerships
+        });
+
+        ch.save((err, new_ch) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+
+            resolve({
+                code: 200,
+                data: new_ch
+            });
+        });
+    });
+};
 
 /**
  * get Channels
@@ -50,7 +93,9 @@ const getChannel = (channel_id) => {
                 }
             });
         } else {
-            const query = { _id: channel_id };
+            const query = {
+                _id: channel_id
+            };
             Channel.findOne(query).populate('Viewerships.AdSchedule').exec((err, channels) => {
                 if (err) {
                     return reject({
@@ -106,17 +151,16 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
             }
             const channelAdScheduleIds = channelPlans.map(cp => cp);
             query = {
-                $and: [
-                    {
-                        DateTime: {
-                            $gte: startDate
-                        }
-                    },
-                    {
-                        DateTime: {
-                            $lte: endDate
-                        }
+                $and: [{
+                    DateTime: {
+                        $gte: startDate
                     }
+                },
+                {
+                    DateTime: {
+                        $lte: endDate
+                    }
+                }
                 ],
                 ChannelAdSchedule: {
                     $in: channelAdScheduleIds
@@ -126,7 +170,9 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
                 DateTime: 1,
                 TotalSeconds: 1
             };
-            ChannelAdLengthCounter.find(query, project).populate('ChannelAdSchedule', 'TotalAvailableSeconds').sort({ DateTime: 1 }).exec((err, countsByDate) => {
+            ChannelAdLengthCounter.find(query, project).populate('ChannelAdSchedule', 'TotalAvailableSeconds').sort({
+                DateTime: 1
+            }).exec((err, countsByDate) => {
                 if (err) {
                     return reject({
                         code: 500,
@@ -221,7 +267,11 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
         const adScheduleMapping = {};
         const adScheduleViewershipMapping = {};
         try {
-            const channelModel = await Channel.findOne({ _id: channel }, { Viewerships: 1 });
+            const channelModel = await Channel.findOne({
+                _id: channel
+            }, {
+                Viewerships: 1
+            });
             if (!channelModel) {
                 return reject({
                     code: 404,
@@ -252,21 +302,21 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                 TotalAvailableSeconds: 1,
                 AdSchedule: 1
             },
-            populate: [
-                {
-                    path: 'AdSchedule',
-                    model: 'AdSchedule',
-                    select: {
-                        _id: 1,
-                        Name: 1,
-                        Description: 1,
-                        StartTime: 1,
-                        EndTime: 1
-                    }
+            populate: [{
+                path: 'AdSchedule',
+                model: 'AdSchedule',
+                select: {
+                    _id: 1,
+                    Name: 1,
+                    Description: 1,
+                    StartTime: 1,
+                    EndTime: 1
                 }
-            ]
+            }]
         };
-        ChannelPlan.find(query, project).populate(populateOptions).sort({ 'BaseAmount': 1 }).exec((err, channelPlans) => {
+        ChannelPlan.find(query, project).populate(populateOptions).sort({
+            'BaseAmount': 1
+        }).exec((err, channelPlans) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -281,17 +331,16 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                     return c.ChannelAdSchedule._id;
                 });
                 query = {
-                    $and: [
-                        {
-                            DateTime: {
-                                $gte: startDate
-                            }
-                        },
-                        {
-                            DateTime: {
-                                $lte: endDate
-                            }
+                    $and: [{
+                        DateTime: {
+                            $gte: startDate
                         }
+                    },
+                    {
+                        DateTime: {
+                            $lte: endDate
+                        }
+                    }
                     ],
                     ChannelAdSchedule: {
                         $in: channelAdScheduleIds
@@ -302,7 +351,9 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                     TotalSeconds: 1,
                     ChannelAdSchedule: 1
                 };
-                ChannelAdLengthCounter.find(query, project).sort({ DateTime: 1 }).exec(async (err, countsByDate) => {
+                ChannelAdLengthCounter.find(query, project).sort({
+                    DateTime: 1
+                }).exec(async (err, countsByDate) => {
                     if (err) {
                         return reject({
                             code: 500,
@@ -438,7 +489,9 @@ const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
                 TotalSeconds: clientAdPlan.ChannelPlan.Plan.Seconds
             }
         };
-        ChannelAdLengthCounter.findOneAndUpdate(query, value, { upsert: true }, (err) => {
+        ChannelAdLengthCounter.findOneAndUpdate(query, value, {
+            upsert: true
+        }, (err) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -461,7 +514,9 @@ const updateChannel = (channel_id) => {
                 }
             });
         } else {
-            const query = { _id: channel_id };
+            const query = {
+                _id: channel_id
+            };
             Channel.findOne(query, (err, ch) => {
                 if (err) {
                     return reject({
@@ -490,6 +545,7 @@ const _formatDate = (date) => {
 };
 
 module.exports = {
+    createChannel,
     getChannels,
     getChannel,
     getSecondsByChannel,

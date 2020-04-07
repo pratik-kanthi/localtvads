@@ -21,12 +21,11 @@ const socialRegisterEmail = (to, socialclient) => {
         subject: 'Your Local TV Ads account has been created',
         html: message
     };
-    mailgun.api.server.send(data, (err) => {
+    mailgun.api.server.send(data, err => {
         if (err) {
             throw err;
         }
     });
-
 };
 
 /**
@@ -46,13 +45,12 @@ const standardRegisterEmail = (to, verificationlink) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err) => {
+    mailgun.api.server.send(data, err => {
         if (err) {
             throw err;
         }
     });
 };
-
 
 /**
  *
@@ -72,13 +70,12 @@ const staffRegisterEmail = (to, verificationlink, password) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err) => {
+    mailgun.api.server.send(data, err => {
         if (err) {
             throw err;
         }
     });
 };
-
 
 const emailChangeVerification = (to, verificationlink) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/emailchangeverification-email.ejs'), 'utf-8'), {
@@ -92,14 +89,12 @@ const emailChangeVerification = (to, verificationlink) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err) => {
+    mailgun.api.server.send(data, err => {
         if (err) {
             throw err;
         }
     });
 };
-
-
 
 const passwordResetEmail = (to, verificationlink) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/forgotpassword-email.ejs'), 'utf-8'), {
@@ -113,17 +108,18 @@ const passwordResetEmail = (to, verificationlink) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err) => {
+    mailgun.api.server.send(data, err => {
         if (err) {
             throw err;
         }
     });
 };
 
-
 const paymentInvoiceEmail = (to, emailinfo) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/paymentinvoice-email.ejs'), 'utf-8'), {
-        emailinfo: emailinfo
+        emailinfo: emailinfo,
+        year: date.getFullYear()
     });
 
     const data = {
@@ -133,7 +129,7 @@ const paymentInvoiceEmail = (to, emailinfo) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err) => {
+    mailgun.api.server.send(data, err => {
         if (err) {
             throw err;
         }
@@ -152,15 +148,14 @@ const addOnpaymentInvoiceEmail = (to, emailinfo) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err) => {
+    mailgun.api.server.send(data, err => {
         if (err) {
             throw err;
         }
     });
 };
 
-
-const downloadReceipt = (receipt) => {
+const downloadReceipt = receipt => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/payment-invoice.ejs'), 'utf-8'), {
         receipt: receipt
     });
@@ -187,15 +182,14 @@ const updateClientAdEmail = (to, videolink, emailinfo) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err) => {
+    mailgun.api.server.send(data, err => {
         if (err) {
             throw err;
         }
     });
 };
 
-
-const enquiryAdminEmail = (enquiry) => {
+const enquiryAdminEmail = enquiry => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/enquiryadmin-email.ejs'), 'utf-8'), {
         client_name: enquiry.Name,
         client_email: enquiry.Email,
@@ -210,14 +204,12 @@ const enquiryAdminEmail = (enquiry) => {
         html: message
     };
 
-    mailgun.api.server.send(data, (err) => {
+    mailgun.api.server.send(data, err => {
         if (err) {
             throw err;
         }
     });
 };
-
-
 
 module.exports = {
     socialRegisterEmail,

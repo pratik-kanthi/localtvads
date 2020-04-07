@@ -4,7 +4,7 @@ const Email = require.main.require('./email');
 
 /**
  * Creates a new subscriber
- * @param {String} email - email address of the user 
+ * @param {String} email - email address of the user
  * @param {String} ip  - ip address of the user fetched from req.ip
  */
 const subscribeUser = (email, ip) => {
@@ -13,44 +13,59 @@ const subscribeUser = (email, ip) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const query = {
-                Email: email
+                Email: email,
             };
             Subscriber.findOne(query, (err, subscriber) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 } else if (subscriber) {
-                    return reject({
-                        code: 409,
-                        error: {
-                            message: utilities.ErrorMessages.ALREADY_SUBSCRIBED
-                        }
-                    });
+                    if (subscriber.IsActive) {
+                        return reject({
+                            code: 409,
+                            error: {
+                                message: utilities.ErrorMessages.ALREADY_SUBSCRIBED,
+                            },
+                        });
+                    } else {
+                        subscriber.IsActive = true;
+                        subscriber.save((err) => {
+                            if (err) {
+                                return reject({
+                                    code: 500,
+                                    error: err,
+                                });
+                            }
+                            resolve({
+                                code: 200,
+                                data: subscriber,
+                            });
+                        });
+                    }
                 } else {
-
                     const subscriber = new Subscriber({
                         DateSubscribed: new Date(),
                         Email: email,
                         IsActive: true,
-                        IpAddress: ip
+                        IpAddress: ip,
                     });
                     subscriber.save((err) => {
                         if (err) {
                             return reject({
                                 code: 500,
-                                error: err
+                                error: err,
                             });
                         }
                         resolve({
                             code: 200,
-                            data: subscriber
+                            data: subscriber,
                         });
                     });
                 }
@@ -61,20 +76,19 @@ const subscribeUser = (email, ip) => {
 
 /**
  * Creates a new enquiry
- * @param {String} name 
- * @param {String} email 
- * @param {String} subject 
- * @param {String} message 
+ * @param {String} name
+ * @param {String} email
+ * @param {String} subject
+ * @param {String} message
  */
 const submitEnquiry = (name, email, subject, message) => {
     return new Promise(async (resolve, reject) => {
-
         if (!name || !email || !subject || !message) {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const enquiry = new Enquiry({
@@ -82,21 +96,20 @@ const submitEnquiry = (name, email, subject, message) => {
                 Email: email,
                 Name: name,
                 Subject: subject,
-                Message: message
+                Message: message,
             });
 
             enquiry.save((err) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
-
                 }
                 Email.helper.enquiryAdminEmail(enquiry);
                 resolve({
                     code: 200,
-                    data: enquiry
+                    data: enquiry,
                 });
             });
         }
@@ -105,5 +118,5 @@ const submitEnquiry = (name, email, subject, message) => {
 
 module.exports = {
     subscribeUser,
-    submitEnquiry
+    submitEnquiry,
 };

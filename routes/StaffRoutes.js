@@ -6,14 +6,15 @@ const {
     getAllClients,
     getClient,
     addStaff,
-    getAllStaff } = require.main.require('./services/StaffService');
+    getAllStaff
+} = require.main.require('./services/StaffService');
 
 
 module.exports = (app) => {
 
     app.get('/api/staff/ads', async (req, res) => {
         try {
-            const result = await getAllAds();
+            const result = await getAllAds(req.query.page, req.query.size);
             return res.status(result.code).send(result.data);
         } catch (err) {
             return res.status(err.code).send(err.error);

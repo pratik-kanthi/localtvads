@@ -1,7 +1,6 @@
 const { getSubscribers, unsubscribeUser } = require.main.require('./services/SubscriberService');
 
 module.exports = (app) => {
-
     app.get('/api/subscribers/all', async (req, res) => {
         try {
             const result = await getSubscribers();
@@ -19,5 +18,4 @@ module.exports = (app) => {
             return res.status(ex.code || 500).send(ex.error);
         }
     });
-
 };
