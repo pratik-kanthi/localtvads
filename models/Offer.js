@@ -39,7 +39,7 @@ const schema = new mongoose.Schema({
         type: Date,
         required: true
     },
-    ha: {
+    DaysOfWeek: {
         type: [],
         default: []
     },
