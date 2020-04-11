@@ -15,7 +15,7 @@ module.exports = (app, models, io) => {
     require('./CouponRoutes')(app);
     require('./EnquiryRoutes')(app);
     require('./SubscriberRoutes')(app);
-    require('./ChannelPlanRoutes')(app);
     require('./DashboardRoutes')(app);
+    require('./ChannelPlanRoutes')(app);
     require('./ApiRoutes')(app, models);
 };

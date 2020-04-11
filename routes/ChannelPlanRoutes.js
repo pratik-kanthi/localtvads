@@ -1,15 +1,21 @@
-const {
-    fetchChannelPlans
-} = require.main.require('./services/ChannelPlanService');
+const { fetchChannelPlans, saveChannelPlan } = require.main.require('./services/ChannelPlanService');
 
 module.exports = (app) => {
     app.get('/api/channelplan/all', async (req, res) => {
         try {
-            const result = await fetchChannelPlans();
+            const result = await fetchChannelPlans(req.query.channel);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
     });
 
+    app.post('/api/channelplan', async (req, res) => {
+        try {
+            const result = await saveChannelPlan(req.body);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
 };

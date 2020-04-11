@@ -4,7 +4,6 @@ module.exports = () => {
         adschedules: require('./AdSchedule'),
         channels: require('./Channel'),
         channeladschedules: require('./ChannelAdSchedule'),
-        channelplans: require('./ChannelPlan'),
         clientresources: require('./ClientResource'),
         offers: require('./Offer'),
         coupons: require('./Coupon'),
@@ -16,6 +15,7 @@ module.exports = () => {
         transactions: require('./Transaction'),
         enquiries: require('./Enquiry'),
         staffs: require('./Staff'),
-        subscribers: require('./Subscriber')
+        subscribers: require('./Subscriber'),
+        cplans: require('./ChannelPlan'),
     };
 };

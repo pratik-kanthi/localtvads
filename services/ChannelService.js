@@ -1,16 +1,11 @@
 const moment = require('moment');
-
 const Channel = require.main.require('./models/Channel').model;
 const ChannelPlan = require.main.require('./models/ChannelPlan').model;
+const ChannelAdSchedule = require.main.require('./models/ChannelAdSchedule').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
 
-const {
-    getApplicableOffers
-} = require.main.require('./services/OfferService');
-const {
-    getTaxes
-} = require.main.require('./services/TaxService');
-
+const { getApplicableOffers } = require.main.require('./services/OfferService');
+const { getTaxes } = require.main.require('./services/TaxService');
 
 const createChannel = (newchannel) => {
     return new Promise(async (resolve, reject) => {
@@ -18,8 +13,8 @@ const createChannel = (newchannel) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
 
@@ -31,21 +26,51 @@ const createChannel = (newchannel) => {
             AlternativeContact: newchannel.AlternativeContact ? newchannel.AlternativeContact : null,
             Status: newchannel.Status,
             ExpectedAdViews: newchannel.ExpectedAdViews,
-            Viewerships: newchannel.Viewerships
+            Viewerships: newchannel.Viewerships,
         });
 
         ch.save((err, new_ch) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
 
-            resolve({
-                code: 200,
-                data: new_ch
+            //generate channel ad schedules
+            const channel_adschedules = new_ch.Viewerships.map((vship) => {
+                const new_ad_sch = new ChannelAdSchedule({
+                    Channel: new_ch._id,
+                    AdSchedule: vship.AdSchedule,
+                    TotalAvailableSeconds: vship.Count,
+                });
+
+                return new Promise(async (resolve, reject) => {
+                    new_ad_sch.save((err, saved) => {
+                        if (err) {
+                            return reject({
+                                code: 500,
+                                error: err,
+                            });
+                        }
+                        resolve(saved);
+                    });
+                });
             });
+
+            Promise.all(channel_adschedules)
+                .then(() => {
+                    resolve({
+                        code: 200,
+                        data: new_ch,
+                    });
+                })
+                .catch((err) => {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                });
         });
     });
 };
@@ -57,27 +82,27 @@ const getChannels = (projection) => {
     return new Promise(async (resolve, reject) => {
         const query = {
             Status: {
-                $in: ['LIVE', 'PROSPECTS']
-            }
+                $in: ['LIVE', 'PROSPECTS'],
+            },
         };
         const project = projection || {
-            'Name': 1,
-            'Description': 1,
-            'Status': 1,
+            Name: 1,
+            Description: 1,
+            Status: 1,
             'Address.Location': 1,
-            'Viewerships': 1
+            Viewerships: 1,
         };
 
         Channel.find(query, project).exec((err, channels) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             resolve({
                 code: 200,
-                data: channels
+                data: channels,
             });
         });
     });
@@ -89,26 +114,28 @@ const getChannel = (channel_id) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const query = {
-                _id: channel_id
+                _id: channel_id,
             };
-            Channel.findOne(query).populate('Viewerships.AdSchedule').exec((err, channels) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err
-                    });
-                }
+            Channel.findOne(query)
+                .populate('Viewerships.AdSchedule')
+                .exec((err, channels) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err,
+                        });
+                    }
 
-                resolve({
-                    code: 200,
-                    data: channels
+                    resolve({
+                        code: 200,
+                        data: channels,
+                    });
                 });
-            });
         }
     });
 };
@@ -126,8 +153,8 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         seconds = parseInt(seconds);
@@ -137,68 +164,74 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
         const endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
         let query = {
             Channel: channel,
-            IsActive: true
+            IsActive: true,
         };
         const project = {
-            ChannelAdSchedule: 1
+            ChannelAdSchedule: 1,
         };
-        ChannelPlan.find(query, project).distinct('ChannelAdSchedule').exec((err, channelPlans) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            }
-            const channelAdScheduleIds = channelPlans.map(cp => cp);
-            query = {
-                $and: [{
-                    DateTime: {
-                        $gte: startDate
-                    }
-                },
-                {
-                    DateTime: {
-                        $lte: endDate
-                    }
-                }
-                ],
-                ChannelAdSchedule: {
-                    $in: channelAdScheduleIds
-                }
-            };
-            const project = {
-                DateTime: 1,
-                TotalSeconds: 1
-            };
-            ChannelAdLengthCounter.find(query, project).populate('ChannelAdSchedule', 'TotalAvailableSeconds').sort({
-                DateTime: 1
-            }).exec((err, countsByDate) => {
+        ChannelPlan.find(query, project)
+            .distinct('ChannelAdSchedule')
+            .exec((err, channelPlans) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 }
-                const result = {};
+                const channelAdScheduleIds = channelPlans.map((cp) => cp);
+                query = {
+                    $and: [
+                        {
+                            DateTime: {
+                                $gte: startDate,
+                            },
+                        },
+                        {
+                            DateTime: {
+                                $lte: endDate,
+                            },
+                        },
+                    ],
+                    ChannelAdSchedule: {
+                        $in: channelAdScheduleIds,
+                    },
+                };
+                const project = {
+                    DateTime: 1,
+                    TotalSeconds: 1,
+                };
+                ChannelAdLengthCounter.find(query, project)
+                    .populate('ChannelAdSchedule', 'TotalAvailableSeconds')
+                    .sort({
+                        DateTime: 1,
+                    })
+                    .exec((err, countsByDate) => {
+                        if (err) {
+                            return reject({
+                                code: 500,
+                                error: err,
+                            });
+                        }
+                        const result = {};
 
-                for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
-                    result[_formatDate(i)] = [];
-                }
-                for (let i = 0; i < countsByDate.length; i++) {
-                    const key = _formatDate(countsByDate[i].DateTime);
-                    if (countsByDate[i].ChannelAdSchedule && countsByDate[i].ChannelAdSchedule.TotalAvailableSeconds < seconds + countsByDate[i].TotalSeconds) {
-                        result[key].push(false);
-                    }
-                }
-                resolve({
-                    code: 200,
-                    data: {
-                        dates: result,
-                        totalActiveSchedules: channelAdScheduleIds.length
-                    }
-                });
+                        for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
+                            result[_formatDate(i)] = [];
+                        }
+                        for (let i = 0; i < countsByDate.length; i++) {
+                            const key = _formatDate(countsByDate[i].DateTime);
+                            if (countsByDate[i].ChannelAdSchedule && countsByDate[i].ChannelAdSchedule.TotalAvailableSeconds < seconds + countsByDate[i].TotalSeconds) {
+                                result[key].push(false);
+                            }
+                        }
+                        resolve({
+                            code: 200,
+                            data: {
+                                dates: result,
+                                totalActiveSchedules: channelAdScheduleIds.length,
+                            },
+                        });
+                    });
             });
-        });
     });
 };
 
@@ -212,32 +245,34 @@ const getSecondsByChannel = (channel) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-            Channel: channel
+            Channel: channel,
         };
 
         const project = {
             _id: 0,
             Seconds: 1,
-            ExpectedAdViews: 1
+            ExpectedAdViews: 1,
         };
-        ChannelPlan.find(query, project).distinct('Seconds').exec((err, channels) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else {
-                resolve({
-                    code: 200,
-                    data: channels
-                });
-            }
-        });
+        ChannelPlan.find(query, project)
+            .distinct('Seconds')
+            .exec((err, channels) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                } else {
+                    resolve({
+                        code: 200,
+                        data: channels,
+                    });
+                }
+            });
     });
 };
 
@@ -254,8 +289,8 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         seconds = parseInt(seconds);
@@ -267,187 +302,198 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
         const adScheduleMapping = {};
         const adScheduleViewershipMapping = {};
         try {
-            const channelModel = await Channel.findOne({
-                _id: channel
-            }, {
-                Viewerships: 1
-            });
+            const channelModel = await Channel.findOne(
+                {
+                    _id: channel,
+                },
+                {
+                    Viewerships: 1,
+                }
+            );
             if (!channelModel) {
                 return reject({
                     code: 404,
-                    error: 'Channel' + utilities.ErrorMessages.NOT_FOUND
+                    error: 'Channel' + utilities.ErrorMessages.NOT_FOUND,
                 });
             }
-            channelModel.Viewerships.map(views => adScheduleViewershipMapping[views.AdSchedule.toString()] = views.Count);
+            channelModel.Viewerships.map((views) => adScheduleViewershipMapping[views.AdSchedule.toString()] = views.Count);
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
         let query = {
             Channel: channel,
             Seconds: seconds,
-            IsActive: true
+            IsActive: true,
         };
         const project = {
             _id: 1,
             ChannelAdSchedule: 1,
             Seconds: 1,
-            BaseAmount: 1
+            BaseAmount: 1,
         };
         const populateOptions = {
             path: 'ChannelAdSchedule',
             select: {
                 TotalAvailableSeconds: 1,
-                AdSchedule: 1
+                AdSchedule: 1,
             },
-            populate: [{
-                path: 'AdSchedule',
-                model: 'AdSchedule',
-                select: {
-                    _id: 1,
-                    Name: 1,
-                    Description: 1,
-                    StartTime: 1,
-                    EndTime: 1
-                }
-            }]
-        };
-        ChannelPlan.find(query, project).populate(populateOptions).sort({
-            'BaseAmount': 1
-        }).exec((err, channelPlans) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else {
-                const channelAdScheduleIds = channelPlans.map(c => {
-                    adScheduleMapping[c.ChannelAdSchedule._id.toString()] = {
-                        AdSchedule: c.ChannelAdSchedule.AdSchedule,
-                        ChannelAdSchedule: c.ChannelAdSchedule
-                    };
-                    return c.ChannelAdSchedule._id;
-                });
-                query = {
-                    $and: [{
-                        DateTime: {
-                            $gte: startDate
-                        }
+            populate: [
+                {
+                    path: 'AdSchedule',
+                    model: 'AdSchedule',
+                    select: {
+                        _id: 1,
+                        Name: 1,
+                        Description: 1,
+                        StartTime: 1,
+                        EndTime: 1,
                     },
-                    {
-                        DateTime: {
-                            $lte: endDate
-                        }
-                    }
-                    ],
-                    ChannelAdSchedule: {
-                        $in: channelAdScheduleIds
-                    }
-                };
-                const project = {
-                    DateTime: 1,
-                    TotalSeconds: 1,
-                    ChannelAdSchedule: 1
-                };
-                ChannelAdLengthCounter.find(query, project).sort({
-                    DateTime: 1
-                }).exec(async (err, countsByDate) => {
-                    if (err) {
-                        return reject({
-                            code: 500,
-                            error: err
-                        });
-                    }
-                    const result = {};
-                    let taxes;
-                    try {
-                        const taxResult = await getTaxes();
-                        taxes = taxResult.taxes;
-                    } catch (ex) {
-                        return reject({
-                            code: ex.code || 500,
-                            error: ex.error
-                        });
-                    }
-
-                    let offers;
-                    const project = {
-                        'Name': 1,
-                        'Amount': 1,
-                        'AmountType': 1,
-                        'AdSchedules': 1,
-                        'DaysOfWeek': 1,
-                        'StartDate': 1,
-                        'EndDate': 1
-                    };
-                    try {
-                        const result = await getApplicableOffers(channel, undefined, startDate, project);
-                        offers = result.data;
-                    } catch (ex) {
-                        return reject({
-                            code: ex.code,
-                            error: ex.error
-                        });
-                    }
-
-                    for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
-                        const key = _formatDate(i);
-                        result[key] = {};
-                        channelPlans.forEach((p) => {
-                            if (p.ChannelAdSchedule && adScheduleMapping[p.ChannelAdSchedule._id.toString()]) {
-                                let offerDiscount = 0;
-                                const appliedOffers = offers.filter(offer => {
-                                    offerDiscount += calculateOffer(p.BaseAmount, offer, adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule._id, key);
-                                    return offerDiscount;
-                                });
-                                const subTotal = p.BaseAmount - offerDiscount;
-                                const totalAmount = subTotal + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * subTotal * 0.01 : accumulator + tax.Value, 0);
-                                const totalAmountWithoutDiscount = p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * p.BaseAmount * 0.01 : accumulator + tax.Value, 0);
-                                result[key][adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule.Name] = {
-                                    Plan: p._id,
-                                    Name: p.Name,
-                                    Description: p.Description,
-                                    AdSchedule: p.ChannelAdSchedule.AdSchedule,
-                                    Seconds: p.Seconds,
-                                    TotalAmount: totalAmount,
-                                    TotalAmountWithoutDiscount: totalAmountWithoutDiscount,
-                                    OfferDiscount: offerDiscount,
-                                    Offers: appliedOffers,
-                                    BaseAmount: p.BaseAmount,
-                                    ViewershipCount: adScheduleViewershipMapping[p.ChannelAdSchedule.AdSchedule._id.toString()]
-                                };
-                            }
-                        });
-                    }
-
-                    for (let i = 0; i < countsByDate.length; i++) {
-                        const key = _formatDate(countsByDate[i].DateTime);
-                        if (adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()] && adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule) {
-                            const totalAvailableSeconds = adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule.TotalAvailableSeconds;
-                            if (totalAvailableSeconds < seconds + countsByDate[i].TotalSeconds) {
-                                result[key][adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].AdSchedule.Name] = undefined;
-                            }
-                        } else {
-                            return reject({
-                                code: 500,
-                                error: {
-                                    message: utilities.ErrorMessages.INACTIVE_PLAN
-                                }
-                            });
-                        }
-                    }
-                    resolve({
-                        code: 200,
-                        data: {
-                            plans: result,
-                            taxes: taxes
-                        }
+                },
+            ],
+        };
+        ChannelPlan.find(query, project)
+            .populate(populateOptions)
+            .sort({
+                BaseAmount: 1,
+            })
+            .exec((err, channelPlans) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
                     });
-                });
-            }
-        });
+                } else {
+                    const channelAdScheduleIds = channelPlans.map((c) => {
+                        adScheduleMapping[c.ChannelAdSchedule._id.toString()] = {
+                            AdSchedule: c.ChannelAdSchedule.AdSchedule,
+                            ChannelAdSchedule: c.ChannelAdSchedule,
+                        };
+                        return c.ChannelAdSchedule._id;
+                    });
+                    query = {
+                        $and: [
+                            {
+                                DateTime: {
+                                    $gte: startDate,
+                                },
+                            },
+                            {
+                                DateTime: {
+                                    $lte: endDate,
+                                },
+                            },
+                        ],
+                        ChannelAdSchedule: {
+                            $in: channelAdScheduleIds,
+                        },
+                    };
+                    const project = {
+                        DateTime: 1,
+                        TotalSeconds: 1,
+                        ChannelAdSchedule: 1,
+                    };
+                    ChannelAdLengthCounter.find(query, project)
+                        .sort({
+                            DateTime: 1,
+                        })
+                        .exec(async (err, countsByDate) => {
+                            if (err) {
+                                return reject({
+                                    code: 500,
+                                    error: err,
+                                });
+                            }
+                            const result = {};
+                            let taxes;
+                            try {
+                                const taxResult = await getTaxes();
+                                taxes = taxResult.taxes;
+                            } catch (ex) {
+                                return reject({
+                                    code: ex.code || 500,
+                                    error: ex.error,
+                                });
+                            }
+
+                            let offers;
+                            const project = {
+                                Name: 1,
+                                Amount: 1,
+                                AmountType: 1,
+                                AdSchedules: 1,
+                                DaysOfWeek: 1,
+                                StartDate: 1,
+                                EndDate: 1,
+                            };
+                            try {
+                                const result = await getApplicableOffers(channel, undefined, startDate, project);
+                                offers = result.data;
+                            } catch (ex) {
+                                return reject({
+                                    code: ex.code,
+                                    error: ex.error,
+                                });
+                            }
+
+                            for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
+                                const key = _formatDate(i);
+                                result[key] = {};
+                                channelPlans.forEach((p) => {
+                                    if (p.ChannelAdSchedule && adScheduleMapping[p.ChannelAdSchedule._id.toString()]) {
+                                        let offerDiscount = 0;
+                                        const appliedOffers = offers.filter((offer) => {
+                                            offerDiscount += calculateOffer(p.BaseAmount, offer, adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule._id, key);
+                                            return offerDiscount;
+                                        });
+                                        const subTotal = p.BaseAmount - offerDiscount;
+                                        const totalAmount = subTotal + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * subTotal * 0.01 : accumulator + tax.Value, 0);
+                                        const totalAmountWithoutDiscount = p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * p.BaseAmount * 0.01 : accumulator + tax.Value, 0);
+                                        result[key][adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule.Name] = {
+                                            Plan: p._id,
+                                            Name: p.Name,
+                                            Description: p.Description,
+                                            AdSchedule: p.ChannelAdSchedule.AdSchedule,
+                                            Seconds: p.Seconds,
+                                            TotalAmount: totalAmount,
+                                            TotalAmountWithoutDiscount: totalAmountWithoutDiscount,
+                                            OfferDiscount: offerDiscount,
+                                            Offers: appliedOffers,
+                                            BaseAmount: p.BaseAmount,
+                                            ViewershipCount: adScheduleViewershipMapping[p.ChannelAdSchedule.AdSchedule._id.toString()],
+                                        };
+                                    }
+                                });
+                            }
+
+                            for (let i = 0; i < countsByDate.length; i++) {
+                                const key = _formatDate(countsByDate[i].DateTime);
+                                if (adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()] && adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule) {
+                                    const totalAvailableSeconds = adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule.TotalAvailableSeconds;
+                                    if (totalAvailableSeconds < seconds + countsByDate[i].TotalSeconds) {
+                                        result[key][adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].AdSchedule.Name] = undefined;
+                                    }
+                                } else {
+                                    return reject({
+                                        code: 500,
+                                        error: {
+                                            message: utilities.ErrorMessages.INACTIVE_PLAN,
+                                        },
+                                    });
+                                }
+                            }
+                            resolve({
+                                code: 200,
+                                data: {
+                                    plans: result,
+                                    taxes: taxes,
+                                },
+                            });
+                        });
+                }
+            });
     });
 };
 
@@ -461,14 +507,14 @@ const updateChannelAdLengthCounter = (clientAdPlan) => {
         for (let i = clientAdPlan.StartDate; i <= clientAdPlan.EndDate; i = moment(i).add(7, 'days').toDate()) {
             dates.push(i);
         }
-        const queue = dates.map(d => _updateChannelAdLengthByDate(clientAdPlan, d));
+        const queue = dates.map((d) => _updateChannelAdLengthByDate(clientAdPlan, d));
         try {
             await Promise.all(queue);
             resolve();
         } catch (err) {
             return reject({
                 code: err.code,
-                error: err.error
+                error: err.error,
             });
         }
     });
@@ -479,30 +525,34 @@ const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
         const query = {
             Channel: clientAdPlan.ChannelPlan.Plan.Channel,
             ChannelAdSchedule: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule,
-            DateTime: dateTime
+            DateTime: dateTime,
         };
         const value = {
             Channel: clientAdPlan.ChannelPlan.Plan.Channel,
             ChannelAdSchedule: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule,
             DateTime: dateTime,
             $inc: {
-                TotalSeconds: clientAdPlan.ChannelPlan.Plan.Seconds
-            }
+                TotalSeconds: clientAdPlan.ChannelPlan.Plan.Seconds,
+            },
         };
-        ChannelAdLengthCounter.findOneAndUpdate(query, value, {
-            upsert: true
-        }, (err) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
+        ChannelAdLengthCounter.findOneAndUpdate(
+            query,
+            value,
+            {
+                upsert: true,
+            },
+            (err) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+                resolve();
             }
-            resolve();
-        });
+        );
     });
 };
-
 
 const updateChannel = (channel_id) => {
     return new Promise(async (resolve, reject) => {
@@ -510,22 +560,21 @@ const updateChannel = (channel_id) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const query = {
-                _id: channel_id
+                _id: channel_id,
             };
             Channel.findOne(query, (err, ch) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 }
                 ch;
-
             });
         }
     });
@@ -552,5 +601,5 @@ module.exports = {
     getPlansByChannel,
     updateChannelAdLengthCounter,
     getChannelScheduleAvailability,
-    updateChannel
+    updateChannel,
 };

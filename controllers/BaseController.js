@@ -7,21 +7,25 @@ module.exports = (def) => {
     Model.schema.plugin(deepPopulate);
 
     const getAll = (req, res) => {
-        const Channels = req.user.Channels || [];
+        //const Channels = req.user.Channels || [];
         //query string that filters just the records with the selected Brands or no brand all together
-        const querystring = [{
-            Channel: {
-                $in: Channels
-            }
-        }, {
-            Channel: {
-                $exists: false
-            }
-        }, {
-            Channel: {
-                $eq: null
-            }
-        }];
+        /* const querystring = [
+            {
+                Channel: {
+                    $in: Channels,
+                },
+            },
+            {
+                Channel: {
+                    $exists: false,
+                },
+            },
+            {
+                Channel: {
+                    $eq: null,
+                },
+            },
+        ]; */
         let query = Model.find();
 
         if (req.query.$select || req.query.$expand) {
@@ -43,8 +47,6 @@ module.exports = (def) => {
         if (req.query.$orderBy) {
             query = odata.orderByParser(query, req.query.$orderBy);
         }
-        query = query.or(querystring);
-
 
         query.exec((err, models) => {
             if (err) {
@@ -58,19 +60,23 @@ module.exports = (def) => {
     const count = (req, res) => {
         const Channels = req.user.Channels || [];
         //query string that filters just the records with the selected Brands or no brand all together
-        const querystring = [{
-            Channel: {
-                $in: Channels
-            }
-        }, {
-            Channel: {
-                $exists: false
-            }
-        }, {
-            Channel: {
-                $eq: null
-            }
-        }];
+        const querystring = [
+            {
+                Channel: {
+                    $in: Channels,
+                },
+            },
+            {
+                Channel: {
+                    $exists: false,
+                },
+            },
+            {
+                Channel: {
+                    $eq: null,
+                },
+            },
+        ];
         let query = Model.count();
 
         query = odata.selectExpandParser(query, '_id', null);
@@ -84,7 +90,7 @@ module.exports = (def) => {
                 return res.status(500).send(err);
             }
             res.status(200).json({
-                Count: count
+                Count: count,
             });
         });
     };
@@ -95,23 +101,30 @@ module.exports = (def) => {
         //query string that filters just the records with the requested Id, selected brands or no brand all together
 
         const querystring = {
-            $and: [{
-                _id: req.params._id
-            }, {
-                $or: [{
-                    Channel: {
-                        $in: Channels
-                    }
-                }, {
-                    Channel: {
-                        $exists: false
-                    }
-                }, {
-                    Channel: {
-                        $eq: null
-                    }
-                }]
-            }]
+            $and: [
+                {
+                    _id: req.params._id,
+                },
+                {
+                    $or: [
+                        {
+                            Channel: {
+                                $in: Channels,
+                            },
+                        },
+                        {
+                            Channel: {
+                                $exists: false,
+                            },
+                        },
+                        {
+                            Channel: {
+                                $eq: null,
+                            },
+                        },
+                    ],
+                },
+            ],
         };
 
         Model.findOne(querystring, (err, model) => {
@@ -122,7 +135,7 @@ module.exports = (def) => {
                     res.json(model);
                 } else {
                     res.status(404).json({
-                        error: 'Not Found'
+                        error: 'Not Found',
                     });
                 }
             }
@@ -131,7 +144,7 @@ module.exports = (def) => {
 
     const putUpdate = (req, res) => {
         const querystring = {
-            _id: req.params._id
+            _id: req.params._id,
         };
         Model.findOne(querystring, function (err, data) {
             if (err) {
@@ -157,7 +170,7 @@ module.exports = (def) => {
                     });
                 } else {
                     res.status(404).json({
-                        error: 'Not Found'
+                        error: 'Not Found',
                     });
                 }
             }
@@ -168,6 +181,6 @@ module.exports = (def) => {
         get: getAll,
         count: count,
         getById: getOne,
-        put: putUpdate
+        put: putUpdate,
     };
 };
