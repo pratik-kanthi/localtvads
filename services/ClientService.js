@@ -3,6 +3,7 @@ const Channel = require.main.require('./models/Channel').model;
 const Client = require.main.require('./models/Client').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
+const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 
 const moment = require('moment');
 const email = require('../email');
@@ -10,7 +11,7 @@ const pdf = require('html-pdf');
 const path = require('path');
 const fs = require('fs');
 const config = require.main.require('./config');
-
+const mongoose = require('mongoose');
 const { saveCustomer, saveNewCardToCustomer, deleteCardFromStripe } = require.main.require('./services/PaymentService');
 const { uploadFile } = require.main.require('./services/FileService');
 
@@ -25,12 +26,12 @@ const addCard = (clientId, stripeToken) => {
             return reject({
                 code: 500,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-            Client: clientId
+            Client: clientId,
         };
 
         let newClientPaymentMethod;
@@ -40,33 +41,33 @@ const addCard = (clientId, stripeToken) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else if (!clientPaymentMethod) {
                 try {
                     const client = await _getClient(clientId, { Email: 1 });
                     const csToken = await saveCustomer(stripeToken, client.Email);
                     newClientPaymentMethod = new ClientPaymentMethod({
-                        StripeCusToken: csToken.id
+                        StripeCusToken: csToken.id,
                     });
                     cardToken = csToken.sources.data[0];
                     newClientPaymentMethod.IsPreferred = true;
                 } catch (err) {
                     return reject({
                         code: err.code,
-                        error: err.error
+                        error: err.error,
                     });
                 }
             } else {
                 try {
                     cardToken = await saveNewCardToCustomer(stripeToken, clientPaymentMethod.StripeCusToken);
                     newClientPaymentMethod = new ClientPaymentMethod({
-                        StripeCusToken: clientPaymentMethod.StripeCusToken
+                        StripeCusToken: clientPaymentMethod.StripeCusToken,
                     });
                 } catch (ex) {
                     return reject({
                         code: ex.code,
-                        error: ex.error
+                        error: ex.error,
                     });
                 }
             }
@@ -77,19 +78,19 @@ const addCard = (clientId, stripeToken) => {
                 Name: cardToken.name,
                 ExpiryMonth: cardToken.exp_month,
                 ExpiryYear: cardToken.exp_year,
-                LastFour: cardToken.last4
+                LastFour: cardToken.last4,
             };
             newClientPaymentMethod.Client = clientId;
             newClientPaymentMethod.save((err) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 }
                 resolve({
                     code: 200,
-                    data: newClientPaymentMethod
+                    data: newClientPaymentMethod,
                 });
             });
         });
@@ -106,12 +107,12 @@ const getSavedCards = (clientId) => {
             return reject({
                 code: 500,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-            Client: clientId
+            Client: clientId,
         };
         const project = {
             _id: 1,
@@ -120,20 +121,22 @@ const getSavedCards = (clientId) => {
             'Card.Name': 1,
             'Card.ExpiryMonth': 1,
             'Card.ExpiryYear': 1,
-            'Card.LastFour': 1
+            'Card.LastFour': 1,
         };
-        ClientPaymentMethod.find(query, project).sort({ IsPreferred: -1 }).exec((err, cards) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
+        ClientPaymentMethod.find(query, project)
+            .sort({ IsPreferred: -1 })
+            .exec((err, cards) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+                resolve({
+                    code: 200,
+                    data: cards,
                 });
-            }
-            resolve({
-                code: 200,
-                data: cards
             });
-        });
     });
 };
 
@@ -148,14 +151,14 @@ const getPreferredCard = (clientId, cardId) => {
             return reject({
                 code: 500,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
             Client: clientId,
             _id: cardId,
-            IsPreferred: true
+            IsPreferred: true,
         };
         try {
             const card = await ClientPaymentMethod.findOne(query, { CardToken: 1, CustomerToken: 1 });
@@ -163,15 +166,15 @@ const getPreferredCard = (clientId, cardId) => {
                 return reject({
                     code: 404,
                     error: {
-                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND
-                    }
+                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND,
+                    },
                 });
             }
             resolve(card);
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
     });
@@ -188,20 +191,21 @@ const setPreferredCard = (clientId, cardId) => {
             return reject({
                 code: 500,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         let query = {
                 Client: clientId,
-                IsPreferred: true
-            }, card;
+                IsPreferred: true,
+            },
+            card;
         try {
             card = await ClientPaymentMethod.findOne(query);
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
         if (card) {
@@ -211,7 +215,7 @@ const setPreferredCard = (clientId, cardId) => {
             } catch (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             card = undefined;
@@ -219,14 +223,14 @@ const setPreferredCard = (clientId, cardId) => {
 
         query = {
             Client: clientId,
-            _id: cardId
+            _id: cardId,
         };
         try {
             card = await ClientPaymentMethod.findOne(query);
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
         if (card) {
@@ -235,20 +239,20 @@ const setPreferredCard = (clientId, cardId) => {
                 await card.save();
                 resolve({
                     code: 200,
-                    data: undefined
+                    data: undefined,
                 });
             } catch (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
         } else {
             return reject({
                 code: 404,
                 error: {
-                    message: 'Card' + utilities.ErrorMessages.NOT_FOUND
-                }
+                    message: 'Card' + utilities.ErrorMessages.NOT_FOUND,
+                },
             });
         }
     });
@@ -260,49 +264,49 @@ const deleteCard = (clientId, cardId) => {
             return reject({
                 code: 500,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
-        let count = 0, query = {
-            Client: clientId
-        };
+        let count = 0,
+            query = {
+                Client: clientId,
+            };
         try {
             count = await ClientPaymentMethod.countDocuments(query);
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
-
         }
         if (count < 2) {
             return reject({
                 code: 500,
                 error: {
-                    message: utilities.ErrorMessages.DELETE_CARD_NOT_ALLOWED
-                }
+                    message: utilities.ErrorMessages.DELETE_CARD_NOT_ALLOWED,
+                },
             });
         }
         try {
             query = {
                 Client: clientId,
-                _id: cardId
+                _id: cardId,
             };
             const card = await ClientPaymentMethod.findOne(query);
             if (!card) {
                 return reject({
                     code: 404,
                     error: {
-                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND
-                    }
+                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND,
+                    },
                 });
             } else if (card && card.IsPreferred) {
                 return reject({
                     code: 404,
                     error: {
-                        message: 'Card' + utilities.ErrorMessages.DELETE_CARD_NOT_ALLOWED
-                    }
+                        message: 'Card' + utilities.ErrorMessages.DELETE_CARD_NOT_ALLOWED,
+                    },
                 });
             } else {
                 try {
@@ -310,19 +314,19 @@ const deleteCard = (clientId, cardId) => {
                 } catch (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 }
                 await deleteCardFromStripe(card.StripeCusToken, card.Card.StripeCardToken);
                 resolve({
                     code: 200,
-                    data: undefined
+                    data: undefined,
                 });
             }
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
     });
@@ -334,13 +338,14 @@ const getTransactions = (clientId) => {
             return reject({
                 code: 500,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-                Client: clientId
-            }, project = {
+                Client: clientId,
+            },
+            project = {
                 ChannelPlan: 1,
                 TotalAmount: 1,
                 DateTime: 1,
@@ -348,38 +353,48 @@ const getTransactions = (clientId) => {
                 ReferenceId: 1,
                 ClientAdPlan: 1,
                 ServiceAddOn: 1,
-                ClientServiceAddOn: 1
+                ClientServiceAddOn: 1,
             };
         const populateOptions = [
             {
                 path: 'ChannelPlan.Channel',
                 model: Channel,
                 select: {
-                    'Name': 1,
-                    _id: 0
-                }
+                    Name: 1,
+                    _id: 0,
+                },
             },
             {
                 path: 'ChannelPlan.AdSchedule',
                 model: AdSchedule,
                 select: {
-                    'Name': 1,
-                    _id: 0
-                }
-            }
+                    Name: 1,
+                    _id: 0,
+                },
+            },
         ];
-        Transaction.find(query, project).populate(populateOptions).sort({ DateTime: -1 }).exec((err, transactions) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
+        Transaction.find(query, project)
+            .populate(populateOptions)
+            .sort({ DateTime: -1 })
+            .exec((err, transactions) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+
+                const val = mongoose.Types.ObjectId('5e9718e793cf171b28356c12');
+                ClientAdPlan.updateMany({}, { $set: { 'ChannelPlan.Plan.ChannelAdSchedule': val } }).exec((err, updated) => {
+                    err;
+                    updated;
+
+                    resolve({
+                        code: 200,
+                        data: transactions,
+                    });
                 });
-            }
-            resolve({
-                code: 200,
-                data: transactions
             });
-        });
     });
 };
 
@@ -389,12 +404,12 @@ const generateReceipt = (transaction_id) => {
             return reject({
                 code: 500,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const query = {
-                ReferenceId: transaction_id
+                ReferenceId: transaction_id,
             };
             const project = {
                 Client: 1,
@@ -407,104 +422,102 @@ const generateReceipt = (transaction_id) => {
                 ServiceAddOn: 1,
                 ClientServiceAddOn: 1,
                 TaxBreakdown: 1,
-                ReceiptUrl: 1
+                ReceiptUrl: 1,
             };
             const populateOptions = [
                 {
                     path: 'Client',
                     model: Client,
                     select: {
-                        'Name': 1,
-                        'Email': 1,
-                        'Phone': 1
-                    }
+                        Name: 1,
+                        Email: 1,
+                        Phone: 1,
+                    },
                 },
                 {
                     path: 'ChannelPlan.Channel',
                     model: Channel,
                     select: {
-                        'Name': 1,
-                        _id: 0
-                    }
+                        Name: 1,
+                        _id: 0,
+                    },
                 },
                 {
                     path: 'ChannelPlan.AdSchedule',
                     model: AdSchedule,
                     select: {
-                        'Name': 1,
-                        _id: 0
-                    }
-                }
+                        Name: 1,
+                        _id: 0,
+                    },
+                },
             ];
 
-            Transaction.findOne(query, project).populate(populateOptions).exec((err, transaction) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err
-                    });
-                }
-                if (transaction.ReceiptUrl) {
-                    resolve({
-                        code: 200,
-                        data: transaction.ReceiptUrl
-                    });
-                } else {
+            Transaction.findOne(query, project)
+                .populate(populateOptions)
+                .exec((err, transaction) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err,
+                        });
+                    }
+                    if (transaction.ReceiptUrl) {
+                        resolve({
+                            code: 200,
+                            data: transaction.ReceiptUrl,
+                        });
+                    } else {
+                        const receipt = {
+                            InvoiceNo: transaction_id,
+                            Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
+                            Type: transaction.ServiceAddOn ? 'Add On' : 'Ad Slot',
+                            Name: transaction.ServiceAddOn ? transaction.ServiceAddOn.Name : transaction.ChannelPlan.Channel.Name,
+                            TotalAmount: transaction.TotalAmount,
+                            SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal : transaction.ChannelPlan.SubTotal,
+                            TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount : transaction.ChannelPlan.TaxAmount,
+                            TaxBreakdown: transaction.TaxBreakdown[0],
+                        };
 
+                        receipt.User = {};
+                        receipt.User.Name = transaction.Client.Name;
+                        receipt.User.Email = transaction.Client.Email;
+                        receipt.User.Phone = transaction.Client.Phone;
 
-                    const receipt = {
-                        InvoiceNo: transaction_id,
-                        Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
-                        Type: transaction.ServiceAddOn ? 'Add On' : 'Ad Slot',
-                        Name: transaction.ServiceAddOn ? transaction.ServiceAddOn.Name : transaction.ChannelPlan.Channel.Name,
-                        TotalAmount: transaction.TotalAmount,
-                        SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal : transaction.ChannelPlan.SubTotal,
-                        TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount : transaction.ChannelPlan.TaxAmount,
-                        TaxBreakdown: transaction.TaxBreakdown[0]
+                        const message = email.helper.downloadReceipt(receipt);
+                        const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
+                        const options = {
+                            height: '8.27in',
+                            width: '5.83in',
+                        };
 
-                    };
-
-                    receipt.User = {};
-                    receipt.User.Name = transaction.Client.Name;
-                    receipt.User.Email = transaction.Client.Email;
-                    receipt.User.Phone = transaction.Client.Phone;
-
-                    const message = email.helper.downloadReceipt(receipt);
-                    const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
-                    const options = {
-                        height: '8.27in',
-                        width: '5.83in',
-                    };
-
-                    pdf.create(message, options).toFile(filePath, (err) => {
-                        if (err) {
-                            return reject({
-                                code: 500,
-                                error: err
-                            });
-                        }
-                        const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY') + '_' + transaction_id + '.pdf';
-                        uploadFile(filePath, bucket_file_path);
-                        fs.unlinkSync(filePath);
-                        const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
-                        transaction.ReceiptUrl = receipt_bucket_url;
-                        transaction.save((err, tr) => {
+                        pdf.create(message, options).toFile(filePath, (err) => {
                             if (err) {
                                 return reject({
                                     code: 500,
-                                    error: err
+                                    error: err,
                                 });
                             }
+                            const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY') + '_' + transaction_id + '.pdf';
+                            uploadFile(filePath, bucket_file_path);
+                            fs.unlinkSync(filePath);
+                            const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
+                            transaction.ReceiptUrl = receipt_bucket_url;
+                            transaction.save((err, tr) => {
+                                if (err) {
+                                    return reject({
+                                        code: 500,
+                                        error: err,
+                                    });
+                                }
 
-                            resolve({
-                                code: 200,
-                                data: tr.ReceiptUrl,
+                                resolve({
+                                    code: 200,
+                                    data: tr.ReceiptUrl,
+                                });
                             });
                         });
-                    });
-                }
-
-            });
+                    }
+                });
         }
     });
 };
@@ -515,7 +528,7 @@ const _getClient = (client, projection) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else {
                 resolve(client);
@@ -528,19 +541,23 @@ const fetchClientsByPage = (page, size, sortby) => {
     return new Promise(async (resolve, reject) => {
         page = page - 1;
 
-        Client.find({}).skip(page * size).limit(size).sort(sortby).exec((err, client) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else {
-                resolve({
-                    code: 200,
-                    data: client
-                });
-            }
-        });
+        Client.find({})
+            .skip(page * size)
+            .limit(size)
+            .sort(sortby)
+            .exec((err, client) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                } else {
+                    resolve({
+                        code: 200,
+                        data: client,
+                    });
+                }
+            });
     });
 };
 
@@ -552,5 +569,5 @@ module.exports = {
     setPreferredCard,
     getTransactions,
     generateReceipt,
-    fetchClientsByPage
+    fetchClientsByPage,
 };

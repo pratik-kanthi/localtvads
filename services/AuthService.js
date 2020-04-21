@@ -7,10 +7,8 @@ const Client = require.main.require('./models/Client').model;
 const User = require.main.require('./models/User').model;
 const UserClaim = require.main.require('./models/UserClaim').model;
 const UserLogin = require.main.require('./models/UserLogin').model;
-const {
-    uploadImage
-} = require.main.require('./services/FileService');
-
+const { uploadImage } = require.main.require('./services/FileService');
+const { standardRegisterEmail } = require.main.require('./email/helper');
 /**
  * Social Registration through Facebook and Google+
  * @param {Object} profile - Profile object returned by respective OAuth 2.0 social login
@@ -21,27 +19,27 @@ const socialRegister = (profile) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             let count;
             try {
                 count = await _isExists(Client, {
-                    Email: profile.Email
+                    Email: profile.Email,
                 });
             } catch (ex) {
                 return reject({
                     code: ex.code,
-                    error: ex.error
+                    error: ex.error,
                 });
             }
             if (count) {
                 return reject({
                     code: 409,
                     error: {
-                        message: utilities.ErrorMessages.USER_ALREADY_EXISTS
-                    }
+                        message: utilities.ErrorMessages.USER_ALREADY_EXISTS,
+                    },
                 });
             }
             const client = new Client({
@@ -49,7 +47,7 @@ const socialRegister = (profile) => {
                 Email: profile.Email,
                 Phone: profile.Phone,
                 IsActive: true,
-                ImageUrl: undefined
+                ImageUrl: undefined,
             });
             if (profile.ImageUrl) {
                 try {
@@ -57,7 +55,7 @@ const socialRegister = (profile) => {
                 } catch (ex) {
                     return reject({
                         code: ex.code || 500,
-                        error: ex.error || ex
+                        error: ex.error || ex,
                     });
                 }
             }
@@ -65,7 +63,7 @@ const socialRegister = (profile) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 } else {
                     const user = new User({
@@ -80,26 +78,26 @@ const socialRegister = (profile) => {
                             _id: client._id.toString(),
                             Title: profile.Name,
                             Email: profile.Email,
-                            ImageUrl: client.ImageUrl
-                        }
+                            ImageUrl: client.ImageUrl,
+                        },
                     });
                     user.save((err) => {
                         if (err) {
                             return reject({
                                 code: 500,
-                                error: err
+                                error: err,
                             });
                         }
                         const claim = new UserClaim({
                             UserId: user._id,
                             ClaimType: 'Client',
-                            ClaimValue: client._id
+                            ClaimValue: client._id,
                         });
                         claim.save((err) => {
                             if (err) {
                                 return reject({
                                     code: 500,
-                                    error: err
+                                    error: err,
                                 });
                             }
                             const accessToken = new AccessToken({
@@ -108,27 +106,32 @@ const socialRegister = (profile) => {
                                 AuthorisationScheme: user.AuthorisationScheme,
                                 Owner: user.Owner,
                                 iat: Math.floor(Date.now() / 1000) + config.token.ttl,
-                                Claims: claim.ClaimType + ':' + claim.ClaimValue
+                                Claims: claim.ClaimType + ':' + claim.ClaimValue,
                             }).toObject();
 
                             email.helper.socialRegisterEmail(user.Email, user.AuthorisationScheme);
 
-                            jwt.sign(accessToken, config.token.secret, {
-                                algorithm: 'HS256'
-                            }, (err, token) => {
-                                if (err) {
-                                    return reject({
-                                        code: 500,
-                                        error: err
-                                    });
-                                } else {
-                                    accessToken.TokenString = token;
-                                    resolve({
-                                        code: 200,
-                                        data: accessToken
-                                    });
+                            jwt.sign(
+                                accessToken,
+                                config.token.secret,
+                                {
+                                    algorithm: 'HS256',
+                                },
+                                (err, token) => {
+                                    if (err) {
+                                        return reject({
+                                            code: 500,
+                                            error: err,
+                                        });
+                                    } else {
+                                        accessToken.TokenString = token;
+                                        resolve({
+                                            code: 200,
+                                            data: accessToken,
+                                        });
+                                    }
                                 }
-                            });
+                            );
                         });
                     });
                 }
@@ -147,34 +150,34 @@ const standardRegister = (profile) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else if (!/^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.{8,})/.test(profile.Password)) {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.WEAK_PASSWORD
-                }
+                    message: utilities.ErrorMessages.WEAK_PASSWORD,
+                },
             });
         }
         let result;
         try {
             result = await _isExists(Client, {
-                Email: profile.Email
+                Email: profile.Email,
             });
         } catch (ex) {
             return reject({
                 code: ex.code,
-                error: ex.error
+                error: ex.error,
             });
         }
         if (result) {
             return reject({
                 code: 409,
                 error: {
-                    message: utilities.ErrorMessages.USER_ALREADY_EXISTS
-                }
+                    message: utilities.ErrorMessages.USER_ALREADY_EXISTS,
+                },
             });
         }
 
@@ -182,13 +185,13 @@ const standardRegister = (profile) => {
             Name: profile.Name,
             Email: profile.Email,
             Phone: profile.Phone,
-            IsActive: true
+            IsActive: true,
         });
         client.save((err) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else {
                 const user = new User({
@@ -202,27 +205,27 @@ const standardRegister = (profile) => {
                         Type: 'Client',
                         _id: client._id.toString(),
                         Title: profile.Name,
-                        Email: profile.Email
-                    }
+                        Email: profile.Email,
+                    },
                 });
                 user.PasswordHash = user.EncryptPassword(profile.Password);
                 user.save((err) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
                     }
                     const claim = new UserClaim({
                         UserId: user._id,
                         ClaimType: 'Client',
-                        ClaimValue: client._id
+                        ClaimValue: client._id,
                     });
                     claim.save((err) => {
                         if (err) {
                             return reject({
                                 code: 500,
-                                error: err
+                                error: err,
                             });
                         }
 
@@ -231,7 +234,7 @@ const standardRegister = (profile) => {
 
                         resolve({
                             code: 200,
-                            data: user
+                            data: user,
                         });
                     });
                 });
@@ -251,43 +254,43 @@ const socialLogin = (profile, req) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const query = {
-                UserName: profile.Email
+                UserName: profile.Email,
             };
             User.findOne(query, async (err, user) => {
                 if (err) {
                     _logLogin(profile.Email, req, 'API_ERROR');
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 } else if (!user) {
                     _logLogin(profile.Email, req, 'FAILED_LOGIN');
                     return reject({
                         code: 404,
                         error: {
-                            message: utilities.ErrorMessages.USERNAME_NOT_FOUND
-                        }
+                            message: utilities.ErrorMessages.USERNAME_NOT_FOUND,
+                        },
                     });
                 } else if (user && user.IsLockoutEnabled) {
                     _logLogin(profile.Email, req, 'FAILED_LOGIN');
                     return reject({
                         code: 401,
                         error: {
-                            message: utilities.ErrorMessages.USER_LOCKED_OUT
-                        }
+                            message: utilities.ErrorMessages.USER_LOCKED_OUT,
+                        },
                     });
                 } else if (user && user.PasswordHash) {
                     _logLogin(profile.Email, req, 'FAILED_LOGIN');
                     return reject({
                         code: 409,
                         error: {
-                            message: utilities.ErrorMessages.INVALID_AUTHORISATION_TYPE
-                        }
+                            message: utilities.ErrorMessages.INVALID_AUTHORISATION_TYPE,
+                        },
                     });
                 }
                 let claims;
@@ -297,7 +300,7 @@ const socialLogin = (profile, req) => {
                     _logLogin(profile.Email, req, 'FAILED_LOGIN');
                     return reject({
                         code: ex.code || 500,
-                        error: ex.error
+                        error: ex.error,
                     });
                 }
                 const claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join('|');
@@ -308,25 +311,30 @@ const socialLogin = (profile, req) => {
                     AuthorisationScheme: user.AuthorisationScheme,
                     Owner: user.Owner,
                     iat: Math.floor(Date.now() / 1000) + config.token.ttl,
-                    Claims: claimsValue
+                    Claims: claimsValue,
                 }).toObject();
 
-                jwt.sign(accessToken, config.token.secret, {
-                    algorithm: 'HS256'
-                }, (err, token) => {
-                    if (err) {
-                        return reject({
-                            code: 500,
-                            error: err
-                        });
-                    } else {
-                        accessToken.TokenString = token;
-                        resolve({
-                            code: 200,
-                            data: accessToken
-                        });
+                jwt.sign(
+                    accessToken,
+                    config.token.secret,
+                    {
+                        algorithm: 'HS256',
+                    },
+                    (err, token) => {
+                        if (err) {
+                            return reject({
+                                code: 500,
+                                error: err,
+                            });
+                        } else {
+                            accessToken.TokenString = token;
+                            resolve({
+                                code: 200,
+                                data: accessToken,
+                            });
+                        }
                     }
-                });
+                );
             });
         }
     });
@@ -344,45 +352,45 @@ const standardLogin = (email, password, req) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
             UserName: email,
-            AuthorisationScheme: 'Standard'
+            AuthorisationScheme: 'Standard',
         };
         User.findOne(query, async (err, user) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else if (!user) {
                 _logLogin(email, req, 'FAILED_LOGIN');
                 return reject({
                     code: 404,
                     error: {
-                        message: utilities.ErrorMessages.USERNAME_NOT_FOUND
-                    }
+                        message: utilities.ErrorMessages.USERNAME_NOT_FOUND,
+                    },
                 });
             } else {
                 if (user.ValidatePassword(password, user.PasswordHash)) {
                     if (user && !user.IsEmailConfirmed) {
                         _logLogin(email, req, 'EMAIL_UNVERIFIED');
                         return reject({
-                            code: 401,
+                            code: 403,
                             error: {
-                                message: utilities.ErrorMessages.EMAIL_NOT_CONFIRMED
-                            }
+                                message: utilities.ErrorMessages.EMAIL_NOT_CONFIRMED,
+                            },
                         });
                     } else if (user && user.IsLockoutEnabled) {
                         _logLogin(email, req, 'FAILED_LOGIN');
                         return reject({
                             code: 401,
                             error: {
-                                message: utilities.ErrorMessages.USER_LOCKED_OUT
-                            }
+                                message: utilities.ErrorMessages.USER_LOCKED_OUT,
+                            },
                         });
                     } else {
                         let claims;
@@ -392,7 +400,7 @@ const standardLogin = (email, password, req) => {
                             _logLogin(email, req, 'FAILED_LOGIN');
                             return reject({
                                 code: ex.code || 500,
-                                error: ex.error
+                                error: ex.error,
                             });
                         }
                         const claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join('|');
@@ -404,25 +412,30 @@ const standardLogin = (email, password, req) => {
                             Owner: user.Owner,
                             Phone: user.Phone,
                             iat: Math.floor(Date.now() / 1000) + config.token.ttl,
-                            Claims: claimsValue
+                            Claims: claimsValue,
                         }).toObject();
 
-                        jwt.sign(accessToken, config.token.secret, {
-                            algorithm: 'HS256'
-                        }, (err, token) => {
-                            if (err) {
-                                return reject({
-                                    code: 500,
-                                    error: err
-                                });
-                            } else {
-                                accessToken.TokenString = token;
-                                resolve({
-                                    code: 200,
-                                    data: accessToken
-                                });
+                        jwt.sign(
+                            accessToken,
+                            config.token.secret,
+                            {
+                                algorithm: 'HS256',
+                            },
+                            (err, token) => {
+                                if (err) {
+                                    return reject({
+                                        code: 500,
+                                        error: err,
+                                    });
+                                } else {
+                                    accessToken.TokenString = token;
+                                    resolve({
+                                        code: 200,
+                                        data: accessToken,
+                                    });
+                                }
                             }
-                        });
+                        );
                         _logLogin(email, req, 'SUCCESS');
                     }
                 } else {
@@ -430,8 +443,8 @@ const standardLogin = (email, password, req) => {
                     return reject({
                         code: 401,
                         error: {
-                            message: utilities.ErrorMessages.PASSWORD_INCORRECT
-                        }
+                            message: utilities.ErrorMessages.PASSWORD_INCORRECT,
+                        },
                     });
                 }
             }
@@ -451,27 +464,27 @@ const portalLogin = (email, password, req) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
             UserName: email,
-            AuthorisationScheme: 'Standard'
+            AuthorisationScheme: 'Standard',
         };
         User.findOne(query, async (err, user) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else if (!user) {
                 _logLogin(email, req, 'FAILED_LOGIN');
                 return reject({
                     code: 404,
                     error: {
-                        message: utilities.ErrorMessages.USERNAME_NOT_FOUND
-                    }
+                        message: utilities.ErrorMessages.USERNAME_NOT_FOUND,
+                    },
                 });
             } else {
                 if (user.ValidatePassword(password, user.PasswordHash)) {
@@ -480,16 +493,16 @@ const portalLogin = (email, password, req) => {
                         return reject({
                             code: 401,
                             error: {
-                                message: utilities.ErrorMessages.EMAIL_NOT_CONFIRMED
-                            }
+                                message: utilities.ErrorMessages.EMAIL_NOT_CONFIRMED,
+                            },
                         });
                     } else if (user && user.IsLockoutEnabled) {
                         _logLogin(email, req, 'FAILED_LOGIN');
                         return reject({
                             code: 401,
                             error: {
-                                message: utilities.ErrorMessages.USER_LOCKED_OUT
-                            }
+                                message: utilities.ErrorMessages.USER_LOCKED_OUT,
+                            },
                         });
                     } else {
                         let claims;
@@ -499,7 +512,7 @@ const portalLogin = (email, password, req) => {
                             _logLogin(email, req, 'FAILED_LOGIN');
                             return reject({
                                 code: ex.code || 500,
-                                error: ex.error
+                                error: ex.error,
                             });
                         }
                         const claimsValue = claims.map((i) => i.ClaimType + ':' + i.ClaimValue).join('|');
@@ -507,8 +520,8 @@ const portalLogin = (email, password, req) => {
                             return reject({
                                 code: 400,
                                 error: {
-                                    message: utilities.ErrorMessages.BAD_REQUEST
-                                }
+                                    message: utilities.ErrorMessages.BAD_REQUEST,
+                                },
                             });
                         }
                         const accessToken = new AccessToken({
@@ -518,25 +531,30 @@ const portalLogin = (email, password, req) => {
                             Owner: user.Owner,
                             Phone: user.Phone,
                             iat: Math.floor(Date.now() / 1000) + config.token.ttl,
-                            Claims: claimsValue
+                            Claims: claimsValue,
                         }).toObject();
 
-                        jwt.sign(accessToken, config.token.secret, {
-                            algorithm: 'HS256'
-                        }, (err, token) => {
-                            if (err) {
-                                return reject({
-                                    code: 500,
-                                    error: err
-                                });
-                            } else {
-                                accessToken.TokenString = token;
-                                resolve({
-                                    code: 200,
-                                    data: accessToken
-                                });
+                        jwt.sign(
+                            accessToken,
+                            config.token.secret,
+                            {
+                                algorithm: 'HS256',
+                            },
+                            (err, token) => {
+                                if (err) {
+                                    return reject({
+                                        code: 500,
+                                        error: err,
+                                    });
+                                } else {
+                                    accessToken.TokenString = token;
+                                    resolve({
+                                        code: 200,
+                                        data: accessToken,
+                                    });
+                                }
                             }
-                        });
+                        );
                         _logLogin(email, req, 'SUCCESS');
                     }
                 } else {
@@ -544,8 +562,8 @@ const portalLogin = (email, password, req) => {
                     return reject({
                         code: 401,
                         error: {
-                            message: utilities.ErrorMessages.PASSWORD_INCORRECT
-                        }
+                            message: utilities.ErrorMessages.PASSWORD_INCORRECT,
+                        },
                     });
                 }
             }
@@ -563,19 +581,19 @@ const verifyUserEmail = (userid) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const query = {
-                _id: userid
+                _id: userid,
             };
 
             User.findOne(query, async (err, user) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 } else {
                     user.IsEmailConfirmed = true;
@@ -583,12 +601,12 @@ const verifyUserEmail = (userid) => {
                         if (err) {
                             return reject({
                                 code: 500,
-                                error: err
+                                error: err,
                             });
                         } else {
                             resolve({
                                 code: 200,
-                                data: user
+                                data: user,
                             });
                         }
                     });
@@ -598,34 +616,32 @@ const verifyUserEmail = (userid) => {
     });
 };
 
-
-
 const sendPasswordResetLink = (userEmail) => {
     return new Promise(async (resolve, reject) => {
         if (!userEmail) {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const query = {
-                Email: userEmail
+                Email: userEmail,
             };
 
             User.findOne(query, async (err, user) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 } else if (!user || user.AuthorisationScheme !== 'Standard') {
                     return reject({
                         code: 401,
                         error: {
-                            message: utilities.ErrorMessages.EMAIL_NOT_REGISTERED
-                        }
+                            message: utilities.ErrorMessages.EMAIL_NOT_REGISTERED,
+                        },
                     });
                 } else {
                     const utcstamp = Date.parse(new Date());
@@ -635,7 +651,7 @@ const sendPasswordResetLink = (userEmail) => {
 
                     resolve({
                         code: 200,
-                        data: true
+                        data: true,
                     });
                 }
             });
@@ -643,15 +659,14 @@ const sendPasswordResetLink = (userEmail) => {
     });
 };
 
-
 const resetPassword = (hash, newpassword) => {
     return new Promise(async (resolve, reject) => {
         if (!hash) {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             let hashstring = Buffer.from(hash, 'base64').toString();
@@ -664,18 +679,18 @@ const resetPassword = (hash, newpassword) => {
                 return reject({
                     code: 401,
                     error: {
-                        message: utilities.ErrorMessages.PASSWORD_LINK_EXPIRED
-                    }
+                        message: utilities.ErrorMessages.PASSWORD_LINK_EXPIRED,
+                    },
                 });
             } else {
                 const query = {
-                    _id: userid
+                    _id: userid,
                 };
                 User.findOne(query, async (err, user) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
                     } else if (user) {
                         user.PasswordHash = user.EncryptPassword(newpassword);
@@ -683,12 +698,12 @@ const resetPassword = (hash, newpassword) => {
                             if (err) {
                                 return reject({
                                     code: 500,
-                                    error: err
+                                    error: err,
                                 });
                             } else {
                                 resolve({
                                     code: 200,
-                                    data: true
+                                    data: true,
                                 });
                             }
                         });
@@ -699,13 +714,91 @@ const resetPassword = (hash, newpassword) => {
     });
 };
 
+const changePassword = (password, user) => {
+    return new Promise(async (resolve, reject) => {
+        if (!password || !user._id) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
+            });
+        }
+
+        User.findOne({ _id: user._id }).exec((err, user) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            }
+
+            if (!user) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.USERNAME_NOT_FOUND,
+                    },
+                });
+            }
+
+            user.PasswordHash = user.EncryptPassword(password);
+            user.save((err) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                } else {
+                    resolve({
+                        code: 200,
+                        data: true,
+                    });
+                }
+            });
+        });
+    });
+};
+
+const sendVerificationEmail = (email) => {
+    return new Promise(async (resolve, reject) => {
+        if (!email) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
+            });
+        }
+        const query = {
+            UserName: email,
+        };
+        User.findOne(query, async (err, user) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            } else {
+                const verification_link = process.env.APP + 'api/auth/confirmation/' + user._id.toString();
+                standardRegisterEmail(user.Email, verification_link);
+
+                resolve({
+                    code: 200,
+                    data: 'Verification link sent, please check your email',
+                });
+            }
+        });
+    });
+};
+
 const _isExists = (Model, query) => {
     return new Promise(async (resolve, reject) => {
         Model.countDocuments(query, (err, user) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             resolve(user);
@@ -719,19 +812,18 @@ const _logLogin = (email, req, status) => {
     _userLogin.UserIP = req.ip;
     _userLogin.Status = status;
     _userLogin.save();
-
 };
 
 const _fetchClaim = (userId) => {
     return new Promise(async (resolve, reject) => {
         const query = {
-            UserId: userId
+            UserId: userId,
         };
         UserClaim.find(query, (err, claims) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             resolve(claims);
@@ -746,30 +838,34 @@ const _fetchProfileImage = (client, profile) => {
         const options = {
             url: profile.ImageUrl,
             method: 'GET',
-            encoding: null
+            encoding: null,
         };
         request(options, (err, res, body) => {
             if (err || res.statusCode !== 200) {
                 return reject({
                     code: res.statusCode,
-                    error: err
+                    error: err,
                 });
             }
-            uploadImage({
-                buffer: body
-            }, dst).then(() => {
-                resolve(dst);
-            }, (err) => {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            });
+            uploadImage(
+                {
+                    buffer: body,
+                },
+                dst
+            ).then(
+                () => {
+                    resolve(dst);
+                },
+                (err) => {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+            );
         });
     });
 };
-
-
 
 module.exports = {
     portalLogin,
@@ -779,5 +875,7 @@ module.exports = {
     standardRegister,
     verifyUserEmail,
     sendPasswordResetLink,
-    resetPassword
+    resetPassword,
+    changePassword,
+    sendVerificationEmail,
 };

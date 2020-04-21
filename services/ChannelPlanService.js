@@ -151,8 +151,36 @@ const updateChannelPlan = (channelPlan) => {
     });
 };
 
+const deleteChannelPlan = (channelplanid) => {
+    return new Promise(async (resolve, reject) => {
+        if (!channelplanid) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
+            });
+        }
+
+        ChannelPlan.findOneAndDelete({ _id: channelplanid }).exec((err) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            }
+
+            resolve({
+                code: 200,
+                data: true,
+            });
+        });
+    });
+};
+
 module.exports = {
     fetchChannelPlans,
     saveChannelPlan,
     updateChannelPlan,
+    deleteChannelPlan,
 };
