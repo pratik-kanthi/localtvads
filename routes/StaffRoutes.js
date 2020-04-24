@@ -1,26 +1,14 @@
-const {
-    getAllAds,
-    getAd,
-    approveAd,
-    rejectAd,
-    getAllClients,
-    getClient,
-    addStaff,
-    getAllStaff
-} = require.main.require('./services/StaffService');
-
+const { getAllAds, getAd, approveAd, rejectAd, getAllClients, getClient, addStaff, getAllStaff } = require.main.require('./services/StaffService');
 
 module.exports = (app) => {
-
     app.get('/api/staff/ads', async (req, res) => {
         try {
-            const result = await getAllAds(req.query.page, req.query.size);
+            const result = await getAllAds(req.query.page, req.query.size, req.query.sortBy);
             return res.status(result.code).send(result.data);
         } catch (err) {
             return res.status(err.code).send(err.error);
         }
     });
-
 
     app.get('/api/staff/ad/:id', async (req, res) => {
         try {
@@ -31,7 +19,6 @@ module.exports = (app) => {
         }
     });
 
-
     app.get('/api/staff/getclients', async (req, res) => {
         try {
             const result = await getAllClients();
@@ -40,7 +27,6 @@ module.exports = (app) => {
             return res.status(err.code).send(err.error);
         }
     });
-
 
     app.get('/api/staff/getclient/:clientid', async (req, res) => {
         try {
@@ -51,7 +37,6 @@ module.exports = (app) => {
         }
     });
 
-
     app.post('/api/staff/add', async (req, res) => {
         try {
             const result = await addStaff(req.body);
@@ -61,7 +46,6 @@ module.exports = (app) => {
         }
     });
 
-
     app.get('/api/staff/all', async (req, res) => {
         try {
             const result = await getAllStaff(req.body);
@@ -70,7 +54,6 @@ module.exports = (app) => {
             return res.status(err.code).send(err.error);
         }
     });
-
 
     // Approve ad
     app.post('/api/staff/ad/approve/:id', async (req, res) => {

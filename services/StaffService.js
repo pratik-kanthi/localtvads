@@ -8,27 +8,26 @@ const UserClaim = require.main.require('./models/UserClaim').model;
 
 const approveAd = (id) => {
     return new Promise(async (resolve, reject) => {
-
         if (!id) {
             return reject({
                 code: 400,
-                error: utilities.ErrorMessages.BAD_REQUEST
+                error: utilities.ErrorMessages.BAD_REQUEST,
             });
         } else {
             const query = {
-                _id: id
+                _id: id,
             };
             ClientAd.findOne(query, (err, clientad) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 }
                 if (!clientad) {
                     return reject({
                         code: 400,
-                        error: utilities.ErrorMessages.BAD_REQUEST
+                        error: utilities.ErrorMessages.BAD_REQUEST,
                     });
                 } else {
                     clientad.Status = 'APPROVED';
@@ -36,12 +35,12 @@ const approveAd = (id) => {
                         if (err) {
                             return reject({
                                 code: 500,
-                                error: err
+                                error: err,
                             });
                         }
                         resolve({
                             code: 200,
-                            data: cad
+                            data: cad,
                         });
                     });
                 }
@@ -50,7 +49,7 @@ const approveAd = (id) => {
     });
 };
 
-const getAllAds = (skip, limit, sortBy) => {
+const getAllAds = (skip, limit) => {
     return new Promise(async (resolve, reject) => {
         const projection = {
             Name: 1,
@@ -60,68 +59,77 @@ const getAllAds = (skip, limit, sortBy) => {
             DayOfWeek: 1,
             ChannelPlan: 1,
             Status: 1,
-            BookedDate: 1
+            BookedDate: 1,
         };
 
-        const populateOptions = [{
-            path: 'Client',
-            select: {
-                Name: 1,
-            }
-        },
-        {
-            path: 'ClientAd',
-            select: {
-                Status: 1,
-                Length: 1
+        const populateOptions = [
+            {
+                path: 'Client',
+                select: {
+                    Name: 1,
+                },
             },
-
-        },
-        {
-            path: 'ChannelPlan.Plan.Channel',
-            model: 'Channel',
-            select: {
-                Name: 1,
-                Description: 1
-            }
-        },
-        {
-            path: 'ChannelPlan.Plan.ChannelAdSchedule',
-            model: 'ChannelAdSchedule',
-            select: {
-                _id: 1
+            {
+                path: 'ClientAd',
+                select: {
+                    Status: 1,
+                    Length: 1,
+                },
             },
-            populate: [{
-                path: 'AdSchedule',
-                model: 'AdSchedule',
+            {
+                path: 'ChannelPlan.Plan.Channel',
+                model: 'Channel',
                 select: {
                     Name: 1,
                     Description: 1,
-                    StartTime: 1,
-                    EndTime: 1
-                }
-            }]
-        }
+                },
+            },
+            {
+                path: 'ChannelPlan.Plan.ChannelAdSchedule',
+                model: 'ChannelAdSchedule',
+                select: {
+                    _id: 1,
+                },
+                populate: [
+                    {
+                        path: 'AdSchedule',
+                        model: 'AdSchedule',
+                        select: {
+                            Name: 1,
+                            Description: 1,
+                            StartTime: 1,
+                            EndTime: 1,
+                        },
+                    },
+                ],
+            },
         ];
 
+        ClientAdPlan.find(
+            {
+                ClientAd: {
+                    $ne: null,
+                },
+            },
+            projection
+        )
+            .sort('-BookedDate')
+            .skip(parseInt(skip))
+            .limit(parseInt(limit))
+            .populate(populateOptions)
+            .exec((err, caps) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
 
-        ClientAdPlan.find({
-            ClientAd: {
-                $ne: null
-            }
-        }, projection).skip(parseInt(skip)).limit(parseInt(limit)).sort(sortBy).populate(populateOptions).exec((err, caps) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
+                resolve({
+                    code: 200,
+                    data: caps,
                 });
-            }
-
-            resolve({
-                code: 200,
-                data: caps
             });
-        });
     });
 };
 
@@ -133,10 +141,9 @@ const getAllClients = () => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else {
-
                 const date = new Date();
                 clients.map((c) => {
                     c.DateCreated = date;
@@ -145,10 +152,9 @@ const getAllClients = () => {
                     return c;
                 });
 
-
                 resolve({
                     code: 200,
-                    data: clients
+                    data: clients,
                 });
             }
         });
@@ -160,170 +166,171 @@ const getClient = (clientid) => {
         if (!clientid) {
             return reject({
                 code: 400,
-                data: utilities.ErrorMessages.BAD_REQUEST
+                data: utilities.ErrorMessages.BAD_REQUEST,
             });
         } else {
             const query = {
-                _id: clientid
+                _id: clientid,
             };
-            const populateOptions = [{
-                path: 'Client',
-                select: {
-                    Name: 1,
-                }
-            },
-            {
-                path: 'ClientAd',
-                select: {
-                    Status: 1,
-                    Length: 1
+            const populateOptions = [
+                {
+                    path: 'Client',
+                    select: {
+                        Name: 1,
+                    },
                 },
-
-            },
-            {
-                path: 'ChannelPlan.Plan.Channel',
-                model: 'Channel',
-                select: {
-                    Name: 1,
-                    Description: 1
-                }
-            },
-            {
-                path: 'ChannelPlan.Plan.ChannelAdSchedule',
-                model: 'ChannelAdSchedule',
-                select: {
-                    _id: 1
+                {
+                    path: 'ClientAd',
+                    select: {
+                        Status: 1,
+                        Length: 1,
+                    },
                 },
-                populate: [{
-                    path: 'AdSchedule',
-                    model: 'AdSchedule',
+                {
+                    path: 'ChannelPlan.Plan.Channel',
+                    model: 'Channel',
                     select: {
                         Name: 1,
                         Description: 1,
-                        StartTime: 1,
-                        EndTime: 1
-                    }
-                }]
-            }
+                    },
+                },
+                {
+                    path: 'ChannelPlan.Plan.ChannelAdSchedule',
+                    model: 'ChannelAdSchedule',
+                    select: {
+                        _id: 1,
+                    },
+                    populate: [
+                        {
+                            path: 'AdSchedule',
+                            model: 'AdSchedule',
+                            select: {
+                                Name: 1,
+                                Description: 1,
+                                StartTime: 1,
+                                EndTime: 1,
+                            },
+                        },
+                    ],
+                },
             ];
             ClientAdPlan.find({
-                Client: clientid
-            }).populate(populateOptions).exec((err, cad) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err
-                    });
-
-                } else {
-                    Client.findOne(query, (err, client) => {
-                        if (err) {
-                            return reject({
-                                code: 500,
-                                error: err
-                            });
-                        }
-                        if (!client) {
-                            return reject({
-                                code: 404,
-                                error: {
-                                    message: utilities.ErrorMessages.CLIENT_NOT_FOUND
-                                }
-                            });
-                        }
-
-                        const c = {};
-                        c.clientads = cad;
-                        c.clientinfo = client;
-
-                        resolve({
-                            code: 200,
-                            data: c
+                Client: clientid,
+            })
+                .populate(populateOptions)
+                .exec((err, cad) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err,
                         });
-                    });
-                }
-            });
+                    } else {
+                        Client.findOne(query, (err, client) => {
+                            if (err) {
+                                return reject({
+                                    code: 500,
+                                    error: err,
+                                });
+                            }
+                            if (!client) {
+                                return reject({
+                                    code: 404,
+                                    error: {
+                                        message: utilities.ErrorMessages.CLIENT_NOT_FOUND,
+                                    },
+                                });
+                            }
 
+                            const c = {};
+                            c.clientads = cad;
+                            c.clientinfo = client;
 
+                            resolve({
+                                code: 200,
+                                data: c,
+                            });
+                        });
+                    }
+                });
         }
     });
 };
 
 const getAd = (id) => {
     return new Promise(async (resolve, reject) => {
-
         const query = {
-            ClientAd: id
+            ClientAd: id,
         };
 
-
-        const populateOptions = [{
-            path: 'Client',
-            model: 'Client'
-        },
-        {
-            path: 'ClientAd',
-            model: 'ClientAd'
-        },
-        {
-            path: 'ChannelPlan.Plan.Channel',
-            model: 'Channel',
-
-        },
-        {
-            path: 'ChannelPlan.Plan.ChannelAdSchedule',
-            model: 'ChannelAdSchedule',
-            select: {
-                ChannelAdSchedule: 1
+        const populateOptions = [
+            {
+                path: 'Client',
+                model: 'Client',
             },
-            populate: [{
-                path: 'AdSchedule',
-                model: 'AdSchedule',
+            {
+                path: 'ClientAd',
+                model: 'ClientAd',
+            },
+            {
+                path: 'ChannelPlan.Plan.Channel',
+                model: 'Channel',
+            },
+            {
+                path: 'ChannelPlan.Plan.ChannelAdSchedule',
+                model: 'ChannelAdSchedule',
                 select: {
-                    Name: 1,
-                    Description: 1,
-                    StartTime: 1,
-                    EndTime: 1
-                }
-            }]
-        }
+                    ChannelAdSchedule: 1,
+                },
+                populate: [
+                    {
+                        path: 'AdSchedule',
+                        model: 'AdSchedule',
+                        select: {
+                            Name: 1,
+                            Description: 1,
+                            StartTime: 1,
+                            EndTime: 1,
+                        },
+                    },
+                ],
+            },
         ];
 
-        ClientAdPlan.findOne(query).populate(populateOptions).exec((err, ad) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-
-            } else {
-                resolve({
-                    code: 200,
-                    data: ad
-                });
-            }
-        });
+        ClientAdPlan.findOne(query)
+            .populate(populateOptions)
+            .exec((err, ad) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                } else {
+                    resolve({
+                        code: 200,
+                        data: ad,
+                    });
+                }
+            });
     });
 };
 
 const rejectAd = (id) => {
     return new Promise(async (resolve, reject) => {
-
         const query = {
-            _id: id
+            _id: id,
         };
 
         ClientAd.findOne(query, (err, clientad) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             if (!clientad) {
                 return reject({
                     code: 400,
-                    error: utilities.ErrorMessages.BAD_REQUEST
+                    error: utilities.ErrorMessages.BAD_REQUEST,
                 });
             } else {
                 clientad.Status = 'REJECTED';
@@ -331,18 +338,17 @@ const rejectAd = (id) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
                     }
 
                     resolve({
                         code: 200,
-                        data: cad
+                        data: cad,
                     });
                 });
             }
         });
-
     });
 };
 
@@ -352,21 +358,20 @@ const addStaff = (new_staff) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
 
         let result = null;
         try {
             result = await _isExists(Staff, {
-                Email: new_staff.Email
+                Email: new_staff.Email,
             });
-
         } catch (ex) {
             return reject({
                 code: ex.code,
-                error: ex.error
+                error: ex.error,
             });
         }
 
@@ -374,8 +379,8 @@ const addStaff = (new_staff) => {
             return reject({
                 code: 409,
                 error: {
-                    message: utilities.ErrorMessages.USER_ALREADY_EXISTS
-                }
+                    message: utilities.ErrorMessages.USER_ALREADY_EXISTS,
+                },
             });
         }
 
@@ -383,14 +388,14 @@ const addStaff = (new_staff) => {
             Name: new_staff.Name,
             Email: new_staff.Email,
             Phone: new_staff.Phone,
-            IsActive: true
+            IsActive: true,
         });
 
         staff.save((err) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else {
                 const user = new User({
@@ -404,8 +409,8 @@ const addStaff = (new_staff) => {
                         Type: 'Staff',
                         _id: staff._id.toString(),
                         Title: new_staff.Name,
-                        Email: new_staff.Email
-                    }
+                        Email: new_staff.Email,
+                    },
                 });
 
                 const userPass = _generatePassword(8);
@@ -414,19 +419,19 @@ const addStaff = (new_staff) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
                     }
                     const claim = new UserClaim({
                         UserId: user._id,
                         ClaimType: 'Staff',
-                        ClaimValue: staff._id
+                        ClaimValue: staff._id,
                     });
                     claim.save((err) => {
                         if (err) {
                             return reject({
                                 code: 500,
-                                error: err
+                                error: err,
                             });
                         }
 
@@ -435,11 +440,10 @@ const addStaff = (new_staff) => {
 
                         resolve({
                             code: 200,
-                            data: user
+                            data: user,
                         });
                     });
                 });
-
             }
         });
     });
@@ -452,12 +456,12 @@ const getAllStaff = () => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else {
                 resolve({
                     code: 200,
-                    data: staff
+                    data: staff,
                 });
             }
         });
@@ -469,14 +473,13 @@ const _isExists = (Model, query) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             resolve(user);
         });
     });
 };
-
 
 const _generatePassword = (length) => {
     const chars = 'abcdefghijklmnopqrstuvwxyz!@#$%^&*()-+<>ABCDEFGHIJKLMNOP1234567890';
@@ -486,26 +489,29 @@ const _generatePassword = (length) => {
         pass += chars.charAt(i);
     }
     return pass;
-
 };
 
 const fetchStaffsByPage = (page, size, sortby) => {
     return new Promise(async (resolve, reject) => {
         page = page - 1;
 
-        Staff.find({}).skip(page * size).limit(size).sort(sortby).exec((err, staffs) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else {
-                resolve({
-                    code: 200,
-                    data: staffs
-                });
-            }
-        });
+        Staff.find({})
+            .skip(page * size)
+            .limit(size)
+            .sort(sortby)
+            .exec((err, staffs) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                } else {
+                    resolve({
+                        code: 200,
+                        data: staffs,
+                    });
+                }
+            });
     });
 };
 
@@ -518,5 +524,5 @@ module.exports = {
     rejectAd,
     addStaff,
     getAllStaff,
-    fetchStaffsByPage
+    fetchStaffsByPage,
 };

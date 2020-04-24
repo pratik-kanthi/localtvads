@@ -117,7 +117,6 @@ const fetchInsights = (startDate, endDate) => {
                 },
                 BookedDate: {
                     $gte: startDate,
-                    $lte: endDate,
                 },
             });
             countQuery = ClientAdPlan.countDocuments({
@@ -168,7 +167,6 @@ const fetchInsights = (startDate, endDate) => {
             query = Transaction.countDocuments({
                 DateTime: {
                     $gte: startDate,
-                    $lte: endDate,
                 },
             });
             countQuery = Transaction.countDocuments();
