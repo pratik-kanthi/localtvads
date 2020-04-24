@@ -476,6 +476,8 @@ const generateReceipt = (transaction_id) => {
                             SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal.toFixed(2) : transaction.ChannelPlan.SubTotal.toFixed(2),
                             TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount.toFixed(2) : transaction.ChannelPlan.TaxAmount.toFixed(2),
                             TaxBreakdown: transaction.TaxBreakdown[0],
+                            Offer: transaction.ChannelPlan.Offers ? transaction.ChannelPlan.Offers[0].Name : '',
+                            Offer_Value: transaction.ChannelPlan.Offers ? transaction.ChannelPlan.Offers[0].Amount : '',
                         };
 
                         receipt.User = {};

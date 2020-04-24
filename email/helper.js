@@ -168,8 +168,10 @@ const addOnpaymentInvoiceEmail = (to, emailinfo) => {
 };
 
 const downloadReceipt = (receipt) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/payment-invoice.ejs'), 'utf-8'), {
         receipt: receipt,
+        year: date.getFullYear(),
     });
     return message;
 };
