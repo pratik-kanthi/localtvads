@@ -9,7 +9,6 @@ const moment = require('moment');
 const email = require('../email');
 const pdf = require('html-pdf');
 const path = require('path');
-const fs = require('fs');
 const config = require.main.require('./config');
 const mongoose = require('mongoose');
 const { saveCustomer, saveNewCardToCustomer, deleteCardFromStripe } = require.main.require('./services/PaymentService');
@@ -472,9 +471,9 @@ const generateReceipt = (transaction_id) => {
                             Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
                             Type: transaction.ServiceAddOn ? 'Add On' : 'Ad Slot',
                             Name: transaction.ServiceAddOn ? transaction.ServiceAddOn.Name : transaction.ChannelPlan.Channel.Name,
-                            TotalAmount: transaction.TotalAmount,
-                            SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal : transaction.ChannelPlan.SubTotal,
-                            TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount : transaction.ChannelPlan.TaxAmount,
+                            TotalAmount: transaction.TotalAmount.toFixed(2),
+                            SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal.toFixed(2) : transaction.ChannelPlan.SubTotal.toFixed(2),
+                            TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount.toFixed(2) : transaction.ChannelPlan.TaxAmount.toFixed(2),
                             TaxBreakdown: transaction.TaxBreakdown[0],
                         };
 
@@ -499,7 +498,6 @@ const generateReceipt = (transaction_id) => {
                             }
                             const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY') + '_' + transaction_id + '.pdf';
                             uploadFile(filePath, bucket_file_path);
-                            fs.unlinkSync(filePath);
                             const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
                             transaction.ReceiptUrl = receipt_bucket_url;
                             transaction.save((err, tr) => {

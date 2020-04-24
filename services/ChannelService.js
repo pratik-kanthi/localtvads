@@ -91,6 +91,7 @@ const getChannels = (projection) => {
             Status: 1,
             'Address.Location': 1,
             Viewerships: 1,
+            ExpectedAdViews: 1,
         };
 
         Channel.find(query, project).exec((err, channels) => {

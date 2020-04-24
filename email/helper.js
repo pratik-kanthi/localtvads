@@ -12,16 +12,16 @@ const path = require('path');
 const socialRegisterEmail = (to, socialclient) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/socialaccount_createdemail.ejs'), 'utf-8'), {
         social: socialclient,
-        email: to
+        email: to,
     });
 
     const data = {
         from: config.mailgun.fromemail,
         to: to,
         subject: 'Your Local TV Ads account has been created',
-        html: message
+        html: message,
     };
-    mailgun.api.server.send(data, err => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
             throw err;
         }
@@ -35,17 +35,17 @@ const socialRegisterEmail = (to, socialclient) => {
  */
 const standardRegisterEmail = (to, verificationlink) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/standardaccount-createdemail.ejs'), 'utf-8'), {
-        verificationlink: verificationlink
+        verificationlink: verificationlink,
     });
 
     const data = {
         from: config.mailgun.fromemail,
         to: to,
         subject: 'Verify your Local TV Ads account',
-        html: message
+        html: message,
     };
 
-    mailgun.api.server.send(data, err => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
             throw err;
         }
@@ -60,17 +60,17 @@ const standardRegisterEmail = (to, verificationlink) => {
 const staffRegisterEmail = (to, verificationlink, password) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/staff-createdemail.ejs'), 'utf-8'), {
         verificationlink: verificationlink,
-        password: password
+        password: password,
     });
 
     const data = {
         from: config.mailgun.fromemail,
         to: to,
         subject: 'Verify your Local TV Ads account',
-        html: message
+        html: message,
     };
 
-    mailgun.api.server.send(data, err => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
             throw err;
         }
@@ -79,17 +79,17 @@ const staffRegisterEmail = (to, verificationlink, password) => {
 
 const emailChangeVerification = (to, verificationlink) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/emailchangeverification-email.ejs'), 'utf-8'), {
-        verificationlink: verificationlink
+        verificationlink: verificationlink,
     });
 
     const data = {
         from: config.mailgun.fromemail,
         to: to,
         subject: 'Verify your new email address',
-        html: message
+        html: message,
     };
 
-    mailgun.api.server.send(data, err => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
             throw err;
         }
@@ -98,17 +98,17 @@ const emailChangeVerification = (to, verificationlink) => {
 
 const passwordResetEmail = (to, verificationlink) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/forgotpassword-email.ejs'), 'utf-8'), {
-        verificationlink: verificationlink
+        verificationlink: verificationlink,
     });
 
     const data = {
         from: config.mailgun.fromemail,
         to: to,
         subject: 'Password Reset Link',
-        html: message
+        html: message,
     };
 
-    mailgun.api.server.send(data, err => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
             throw err;
         }
@@ -119,17 +119,17 @@ const paymentInvoiceEmail = (to, emailinfo) => {
     const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/paymentinvoice-email.ejs'), 'utf-8'), {
         emailinfo: emailinfo,
-        year: date.getFullYear()
+        year: date.getFullYear(),
     });
 
     const data = {
         from: config.mailgun.fromemail,
         to: to,
         subject: 'Payment Invoice For Your Ad Booking',
-        html: message
+        html: message,
     };
 
-    mailgun.api.server.send(data, err => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
             throw err;
         }
@@ -138,26 +138,26 @@ const paymentInvoiceEmail = (to, emailinfo) => {
 
 const addOnpaymentInvoiceEmail = (to, emailinfo) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/addon-paymentinvoice-email.ejs'), 'utf-8'), {
-        emailinfo: emailinfo
+        emailinfo: emailinfo,
     });
 
     const data = {
         from: config.mailgun.fromemail,
         to: to,
         subject: 'Payment Invoice For Your Add On Purchase',
-        html: message
+        html: message,
     };
 
-    mailgun.api.server.send(data, err => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
             throw err;
         }
     });
 };
 
-const downloadReceipt = receipt => {
+const downloadReceipt = (receipt) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/payment-invoice.ejs'), 'utf-8'), {
-        receipt: receipt
+        receipt: receipt,
     });
     return message;
 };
@@ -172,39 +172,39 @@ const updateClientAdEmail = (to, videolink, emailinfo) => {
         start_date: emailinfo.start_date,
         end_date: emailinfo.end_date,
         ad_length: emailinfo.ad_length,
-        videolink: videolink
+        videolink: videolink,
     });
 
     const data = {
         from: config.mailgun.fromemail,
         to: config.mailgun.adminEmail,
         subject: 'New ad booking',
-        html: message
+        html: message,
     };
 
-    mailgun.api.server.send(data, err => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
             throw err;
         }
     });
 };
 
-const enquiryAdminEmail = enquiry => {
+const enquiryAdminEmail = (enquiry) => {
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/enquiryadmin-email.ejs'), 'utf-8'), {
         client_name: enquiry.Name,
         client_email: enquiry.Email,
         client_message: enquiry.Message,
-        client_subject: enquiry.Subject
+        client_subject: enquiry.Subject,
     });
 
     const data = {
         from: config.mailgun.fromemail,
         to: config.mailgun.adminEmail,
         subject: '<Enquiry From:' + enquiry.Email + ' >' + enquiry.Subject,
-        html: message
+        html: message,
     };
 
-    mailgun.api.server.send(data, err => {
+    mailgun.api.server.send(data, (err) => {
         if (err) {
             throw err;
         }
@@ -221,5 +221,5 @@ module.exports = {
     enquiryAdminEmail,
     paymentInvoiceEmail,
     addOnpaymentInvoiceEmail,
-    downloadReceipt
+    downloadReceipt,
 };

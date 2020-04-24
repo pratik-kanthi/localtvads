@@ -30,13 +30,13 @@ const checkCouponApplicable = (clientId, channel, adSchedule, startDate, couponC
         if (!clientId || !couponCode || !startDate) {
             return reject({
                 code: 400,
-                message: utilities.ErrorMessages.BAD_REQUEST
+                message: utilities.ErrorMessages.BAD_REQUEST,
             });
         }
         let query = _generateDiscountQuery(clientId, channel, adSchedule, startDate);
         if (couponCode) {
             query.$and.push({
-                CouponCode: couponCode
+                CouponCode: couponCode,
             });
         }
         const project = {
@@ -47,40 +47,40 @@ const checkCouponApplicable = (clientId, channel, adSchedule, startDate, couponC
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else if (!coupon) {
                 return reject({
                     code: 409,
                     error: {
-                        message: utilities.ErrorMessages.COUPON_NOT_APPLICABLE
-                    }
+                        message: utilities.ErrorMessages.COUPON_NOT_APPLICABLE,
+                    },
                 });
             }
             query = {
                 Coupon: coupon._id,
                 Client: clientId,
                 Status: {
-                    $in: ['succeeded', 'pending']
-                }
+                    $in: ['succeeded', 'pending'],
+                },
             };
             Transaction.countDocuments(query, (err, count) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 } else if (count >= coupon.PermittedUsageCount && coupon.CouponCode) {
                     return reject({
                         code: 409,
                         error: {
-                            message: utilities.ErrorMessages.COUPON_ALREADY_USED
-                        }
+                            message: utilities.ErrorMessages.COUPON_ALREADY_USED,
+                        },
                     });
                 }
                 resolve({
                     code: 200,
-                    data: coupon
+                    data: coupon,
                 });
             });
         });
@@ -100,8 +100,8 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         let query = _generateDiscountQuery(clientId, channel, channelPlan, startDate);
@@ -111,28 +111,28 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
         const couponsUsage = {};
-        const couponIds = coupons.map(coupon => {
+        const couponIds = coupons.map((coupon) => {
             couponsUsage[coupon._id.toString()] = 0;
             return coupon._id;
         });
         query = {
             Coupon: {
-                $in: couponIds
+                $in: couponIds,
             },
-            Status: 'succeeded'
+            Status: 'succeeded',
         };
         const project = {
-            Coupon: 1
+            Coupon: 1,
         };
         Transaction.find(query, project, (err, transactions) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else {
                 for (let i = 0; i < transactions.length; i++) {
@@ -146,7 +146,7 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
                 }
                 resolve({
                     code: 200,
-                    data: availableCoupons
+                    data: availableCoupons,
                 });
             }
         });
@@ -163,31 +163,31 @@ const getClientAd = (id) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const query = {
-                _id: id
+                _id: id,
             };
             ClientAd.findOne(query, (err, clientAd) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 } else if (!clientAd) {
                     return reject({
                         code: 400,
                         error: {
-                            message: 'Ad Video' + utilities.ErrorMessages.NOT_FOUND
-                        }
+                            message: 'Ad Video' + utilities.ErrorMessages.NOT_FOUND,
+                        },
                     });
                 } else {
                     const clientAdObj = clientAd.toObject();
                     resolve({
                         code: 200,
-                        data: clientAdObj
+                        data: clientAdObj,
                     });
                 }
             });
@@ -205,33 +205,35 @@ const getClientAdPlan = (id) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         } else {
             const query = {
-                _id: id
+                _id: id,
             };
-            ClientAdPlan.findOne(query).populate('ClientAd').exec((err, clientAdPlan) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err
-                    });
-                } else if (!clientAdPlan) {
-                    return reject({
-                        code: 400,
-                        error: {
-                            message: 'Ad Video' + utilities.ErrorMessages.NOT_FOUND
-                        }
-                    });
-                } else {
-                    resolve({
-                        code: 200,
-                        data: clientAdPlan
-                    });
-                }
-            });
+            ClientAdPlan.findOne(query)
+                .populate('ClientAd')
+                .exec((err, clientAdPlan) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err,
+                        });
+                    } else if (!clientAdPlan) {
+                        return reject({
+                            code: 400,
+                            error: {
+                                message: 'Ad Video' + utilities.ErrorMessages.NOT_FOUND,
+                            },
+                        });
+                    } else {
+                        resolve({
+                            code: 200,
+                            data: clientAdPlan,
+                        });
+                    }
+                });
         }
     });
 };
@@ -248,65 +250,74 @@ const getClientAdPlans = (clientId, top, skip) => {
             return reject({
                 code: 500,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-            Client: clientId
+            Client: clientId,
         };
         const project = {
             'ChannelPlan.Plan.ChannelAdSchedule.AdSchedule': 1,
             'ChannelPlan.Plan.Seconds': 1,
             'ChannelPlanPlan.Channel': 1,
-            'Name': 1,
-            'StartDate': 1,
-            'EndDate': 1,
-            'ClientAd': 1
+            Name: 1,
+            StartDate: 1,
+            EndDate: 1,
+            ClientAd: 1,
         };
-        const populateOptions = [{
-            path: 'ClientAd',
-            select: {
-                VideoUrl: 1
-            }
-        }, {
-            path: 'ChannelPlan.Plan.Channel',
-            model: 'Channel',
-            select: {
-                Name: 1,
-                Description: 1
-            }
-        }, {
-            path: 'ChannelPlan.Plan.ChannelAdSchedule',
-            model: 'ChannelAdSchedule',
-            select: {
-                _id: 1
+        const populateOptions = [
+            {
+                path: 'ClientAd',
+                select: {
+                    VideoUrl: 1,
+                },
             },
-            populate: [
-                {
-                    path: 'AdSchedule',
-                    model: 'AdSchedule',
-                    select: {
-                        Name: 1,
-                        Description: 1,
-                        StartTime: 1,
-                        EndTime: 1
-                    }
+            {
+                path: 'ChannelPlan.Plan.Channel',
+                model: 'Channel',
+                select: {
+                    Name: 1,
+                    Description: 1,
+                },
+            },
+            {
+                path: 'ChannelPlan.Plan.ChannelAdSchedule',
+                model: 'ChannelAdSchedule',
+                select: {
+                    _id: 1,
+                },
+                populate: [
+                    {
+                        path: 'AdSchedule',
+                        model: 'AdSchedule',
+                        select: {
+                            Name: 1,
+                            Description: 1,
+                            StartTime: 1,
+                            EndTime: 1,
+                        },
+                    },
+                ],
+            },
+        ];
+        ClientAdPlan.find(query, project)
+            .skip(parseInt(skip))
+            .limit(parseInt(top))
+            .populate(populateOptions)
+            .sort('-BookedDate')
+            .exec((err, clientAdPlans) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
                 }
-            ]
-        }];
-        ClientAdPlan.find(query, project).skip(parseInt(skip)).limit(parseInt(top)).populate(populateOptions).exec((err, clientAdPlans) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
+                resolve({
+                    code: 200,
+                    data: clientAdPlans,
                 });
-            }
-            resolve({
-                code: 200,
-                data: clientAdPlans
             });
-        });
     });
 };
 
@@ -321,26 +332,26 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-            _id: clientAdPlan
+            _id: clientAdPlan,
         };
         ClientAdPlan.findOne(query, async (err, cAdPlan) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else if (!cAdPlan) {
                 if (err) {
                     return reject({
                         code: 404,
                         error: {
-                            message: 'Ad Plan' + utilities.ErrorMessages.NOT_FOUND
-                        }
+                            message: 'Ad Plan' + utilities.ErrorMessages.NOT_FOUND,
+                        },
                     });
                 }
             }
@@ -352,7 +363,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
                 } catch (err) {
                     return reject({
                         code: err.code,
-                        error: err.error
+                        error: err.error,
                     });
                 }
             }
@@ -367,7 +378,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
             } catch (err) {
                 return reject({
                     code: err.code,
-                    error: err.error
+                    error: err.error,
                 });
             }
 
@@ -379,13 +390,13 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
                 Status: 'succeeded',
                 ReferenceId: charge.id,
                 StripeResponse: charge,
-                TaxBreakdown: taxes
+                TaxBreakdown: taxes,
             });
             transaction.save((err) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 }
 
@@ -393,12 +404,12 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
                     }
                     resolve({
                         code: 200,
-                        data: cAdPlan
+                        data: cAdPlan,
                     });
                 });
             });
@@ -422,8 +433,8 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
 
@@ -433,7 +444,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else if (!count) {
                 isNewUser = true;
@@ -442,7 +453,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
             clientAdPlan.EndDate = moment().add(config.channels.plans.duration, 'days');
 
             const query = {
-                _id: channelPlan
+                _id: channelPlan,
             };
 
             const project = {
@@ -450,202 +461,210 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                 ChannelAdSchedule: 1,
                 Channel: 1,
                 Seconds: 1,
-                BaseAmount: 1
+                BaseAmount: 1,
             };
 
-
-            ChannelPlan.findOne(query, project).populate('Channel ChannelAdSchedule AdSchedule').exec(async (err, chPlan) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err
-                    });
-                } else if (!chPlan) {
-                    return reject({
-                        code: 404,
-                        error: {
-                            message: 'The chosen plan' + utilities.ErrorMessages.NOT_FOUND
+            ChannelPlan.findOne(query, project)
+                .populate('Channel ChannelAdSchedule AdSchedule')
+                .exec(async (err, chPlan) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err,
+                        });
+                    } else if (!chPlan) {
+                        return reject({
+                            code: 404,
+                            error: {
+                                message: 'The chosen plan' + utilities.ErrorMessages.NOT_FOUND,
+                            },
+                        });
+                    } else {
+                        let card;
+                        if (cardId) {
+                            const query = {
+                                Client: clientAdPlan.Client,
+                                _id: cardId,
+                            };
+                            try {
+                                card = await ClientPaymentMethod.findOne(query, {
+                                    'Card.StripeCardToken': 1,
+                                    StripeCusToken: 1,
+                                });
+                            } catch (err) {
+                                return reject({
+                                    code: 500,
+                                    error: err,
+                                });
+                            }
+                            if (!card) {
+                                return reject({
+                                    code: 404,
+                                    error: {
+                                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND,
+                                    },
+                                });
+                            }
                         }
-                    });
-                } else {
-                    let card;
-                    if (cardId) {
-                        const query = {
-                            Client: clientAdPlan.Client,
-                            _id: cardId
+
+                        let offers;
+                        const project = {
+                            Name: 1,
+                            Amount: 1,
+                            AmountType: 1,
+                            AdSchedules: 1,
+                            DaysOfWeek: 1,
                         };
                         try {
-                            card = await ClientPaymentMethod.findOne(query, {
-                                'Card.StripeCardToken': 1,
-                                StripeCusToken: 1
+                            const result = await getApplicableOffers(chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, project);
+                            offers = result.data;
+                            offers = offers.filter((offer) => {
+                                return offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(clientAdPlan.StartDate).isoWeekday()) > -1;
                             });
-                        } catch (err) {
+                        } catch (ex) {
                             return reject({
-                                code: 500,
-                                error: err
+                                code: ex.code,
+                                error: ex.error,
                             });
                         }
-                        if (!card) {
-                            return reject({
-                                code: 404,
-                                error: {
-                                    message: 'Card' + utilities.ErrorMessages.NOT_FOUND
-                                }
-                            });
+
+                        let taxAmount,
+                            taxes,
+                            discount,
+                            finalAmount = chPlan.BaseAmount,
+                            discountAmount = 0,
+                            offerDiscountAmount = 0;
+                        offers.forEach((offer) => {
+                            offerDiscountAmount += calculateOffer(chPlan.BaseAmount, offer, chPlan.ChannelAdSchedule.AdSchedule);
+                        });
+                        finalAmount = finalAmount - offerDiscountAmount;
+                        if (couponCode) {
+                            try {
+                                const result = await checkCouponApplicable(clientAdPlan.Client, chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, couponCode);
+                                discount = result.data;
+                                discountAmount = discount.AmountType === 'PERCENTAGE' ? finalAmount * discount.Amount / 100 : discount.Amount;
+                                finalAmount -= discountAmount;
+                            } catch (ex) {
+                                return reject({
+                                    code: ex.code || 500,
+                                    error: ex.error,
+                                });
+                            }
                         }
-                    }
-
-                    let offers;
-                    const project = {
-                        'Name': 1,
-                        'Amount': 1,
-                        'AmountType': 1,
-                        'AdSchedules': 1,
-                        'DaysOfWeek': 1
-                    };
-                    try {
-                        const result = await getApplicableOffers(chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, project);
-                        offers = result.data;
-                        offers = offers.filter(offer => {
-                            return offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(clientAdPlan.StartDate).isoWeekday()) > -1;
-                        });
-                    } catch (ex) {
-                        return reject({
-                            code: ex.code,
-                            error: ex.error
-                        });
-                    }
-
-                    let taxAmount, taxes, discount, finalAmount = chPlan.BaseAmount, discountAmount = 0, offerDiscountAmount = 0;
-                    offers.forEach(offer => {
-                        offerDiscountAmount += calculateOffer(chPlan.BaseAmount, offer, chPlan.ChannelAdSchedule.AdSchedule);
-                    });
-                    finalAmount = finalAmount - offerDiscountAmount;
-                    if (couponCode) {
                         try {
-                            const result = await checkCouponApplicable(clientAdPlan.Client, chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, couponCode);
-                            discount = result.data;
-                            discountAmount = discount.AmountType === 'PERCENTAGE' ? finalAmount * discount.Amount / 100 : discount.Amount;
-                            finalAmount -= discountAmount;
+                            const taxResult = await getTaxes(finalAmount);
+                            taxes = taxResult.taxes;
+                            taxAmount = taxResult.totalTax;
                         } catch (ex) {
                             return reject({
                                 code: ex.code || 500,
-                                error: ex.error
+                                error: ex.error,
                             });
                         }
-                    }
-                    try {
-                        const taxResult = await getTaxes(finalAmount);
-                        taxes = taxResult.taxes;
-                        taxAmount = taxResult.totalTax;
-                    } catch (ex) {
-                        return reject({
-                            code: ex.code || 500,
-                            error: ex.error
-                        });
-                    }
 
-                    const cAdPlan = new ClientAdPlan({
-                        Name: clientAdPlan.Name,
-                        Description: isNewUser ? 'First Free Ad' + clientAdPlan.Description : clientAdPlan.Description,
-                        Client: clientAdPlan.Client,
-                        StartDate: new Date(clientAdPlan.StartDate),
-                        EndDate: clientAdPlan.EndDate,
-                        IsRenewal: clientAdPlan.IsRenewal,
-                        Status: 'ACTIVE',
-                        DayOfWeek: moment(clientAdPlan.StartDate).isoWeekday(),
-                        ChannelPlan: {
-                            Plan: chPlan,
-                            Extras: extras || [],
-                            Discount: discountAmount + offerDiscountAmount,
-                            Offers: offers,
-                            Surge: 0,
-                            SubTotal: chPlan.BaseAmount,
-                            TaxAmount: taxAmount,
-                            TotalAmount: finalAmount + taxAmount
+                        const cAdPlan = new ClientAdPlan({
+                            Name: clientAdPlan.Name,
+                            Description: isNewUser ? 'First Free Ad' + clientAdPlan.Description : clientAdPlan.Description,
+                            Client: clientAdPlan.Client,
+                            StartDate: new Date(clientAdPlan.StartDate),
+                            EndDate: clientAdPlan.EndDate,
+                            IsRenewal: clientAdPlan.IsRenewal,
+                            Status: 'ACTIVE',
+                            DayOfWeek: moment(clientAdPlan.StartDate).isoWeekday(),
+                            ChannelPlan: {
+                                Plan: chPlan,
+                                Extras: extras || [],
+                                Discount: discountAmount + offerDiscountAmount,
+                                Offers: offers,
+                                Surge: 0,
+                                SubTotal: chPlan.BaseAmount,
+                                TaxAmount: taxAmount,
+                                TotalAmount: finalAmount + taxAmount,
+                            },
+                        });
+
+                        let charge, func;
+                        if (card) {
+                            func = chargeByExistingCard(cAdPlan.ChannelPlan.TotalAmount, card.StripeCusToken, card.Card.StripeCardToken);
+                        } else {
+                            func = chargeByCard(cAdPlan.ChannelPlan.TotalAmount, token);
                         }
-                    });
-
-                    let charge, func;
-                    if (card) {
-                        func = chargeByExistingCard(cAdPlan.ChannelPlan.TotalAmount, card.StripeCusToken, card.Card.StripeCardToken);
-                    } else {
-                        func = chargeByCard(cAdPlan.ChannelPlan.TotalAmount, token);
-                    }
-                    try {
-                        charge = await func;
-                    } catch (err) {
-                        return reject({
-                            code: err.code,
-                            error: err.error
-                        });
-                    }
-
-                    const transaction = new Transaction({
-                        ChannelPlan: {
-                            Channel: chPlan.Channel,
-                            AdSchedule: chPlan.ChannelAdSchedule.AdSchedule,
-                            Seconds: chPlan.Seconds,
-                            Extras: extras || [],
-                            Discount: discountAmount + offerDiscountAmount,
-                            Offers: offers,
-                            Surge: 0,
-                            SubTotal: chPlan.BaseAmount,
-                            TaxAmount: taxAmount
-                        },
-                        Client: clientAdPlan.Client,
-                        ClientAdPlan: cAdPlan._id,
-                        TotalAmount: cAdPlan.ChannelPlan.TotalAmount,
-                        Status: 'succeeded',
-                        StripeResponse: charge,
-                        TaxBreakdown: taxes,
-                        ReferenceId: charge.id,
-                        Coupon: discount ? discount._id : undefined
-                    });
-                    transaction.save((err) => {
-                        if (err) {
+                        try {
+                            charge = await func;
+                        } catch (err) {
                             return reject({
-                                code: 500,
-                                error: err
+                                code: err.code,
+                                error: err.error,
                             });
                         }
-                        cAdPlan.save((err) => {
+
+                        const transaction = new Transaction({
+                            ChannelPlan: {
+                                Channel: chPlan.Channel,
+                                AdSchedule: chPlan.ChannelAdSchedule.AdSchedule,
+                                Seconds: chPlan.Seconds,
+                                Extras: extras || [],
+                                Discount: discountAmount + offerDiscountAmount,
+                                Offers: offers,
+                                Surge: 0,
+                                SubTotal: chPlan.BaseAmount,
+                                TaxAmount: taxAmount,
+                            },
+                            Client: clientAdPlan.Client,
+                            ClientAdPlan: cAdPlan._id,
+                            TotalAmount: cAdPlan.ChannelPlan.TotalAmount,
+                            Status: 'succeeded',
+                            StripeResponse: charge,
+                            TaxBreakdown: taxes,
+                            ReferenceId: charge.id,
+                            Coupon: discount ? discount._id : undefined,
+                        });
+                        transaction.save((err) => {
                             if (err) {
                                 return reject({
                                     code: 500,
-                                    error: err
+                                    error: err,
                                 });
                             }
+                            cAdPlan.save((err) => {
+                                if (err) {
+                                    return reject({
+                                        code: 500,
+                                        error: err,
+                                    });
+                                }
 
-                            ClientAdPlan.findOne({ _id: cAdPlan.id }).populate('Client ClientAd').exec((err, cap) => {
-                                //invoice email
-                                const adEmailInfo = {
-                                    invoice_number: transaction.ReferenceId,
-                                    invoice_date: moment().format('DD/MM/YYYY'),
-                                    region: chPlan.Channel.Name,
-                                    ad_length: chPlan.Seconds,
-                                    start_date: moment(cAdPlan.StartDate).format('DD/MM/YYYY'),
-                                    end_date: moment(cAdPlan.EndDate).format('DD/MM/YYYY'),
-                                    client_name: cap.Client.Name,
-                                    total: transaction.TotalAmount,
-                                    subtotal: transaction.ChannelPlan.SubTotal,
-                                    tax_value: transaction.ChannelPlan.TaxAmount,
-                                    tax_type: transaction.TaxBreakdown[0].Name,
-                                    tax_rate: transaction.TaxBreakdown[0].Value
-                                };
+                                ClientAdPlan.findOne({ _id: cAdPlan.id })
+                                    .populate('Client ClientAd')
+                                    .exec((err, cap) => {
+                                        //invoice email
+                                        const adEmailInfo = {
+                                            invoice_number: transaction.ReferenceId,
+                                            invoice_date: moment().format('DD/MM/YYYY'),
+                                            region: chPlan.Channel.Name,
+                                            ad_length: chPlan.Seconds,
+                                            start_date: moment(cAdPlan.StartDate).format('DD/MM/YYYY'),
+                                            end_date: moment(cAdPlan.EndDate).format('DD/MM/YYYY'),
+                                            client_name: cap.Client.Name,
+                                            total: transaction.TotalAmount,
+                                            subtotal: transaction.ChannelPlan.SubTotal,
+                                            tax_value: transaction.ChannelPlan.TaxAmount,
+                                            tax_type: transaction.TaxBreakdown[0].Name,
+                                            tax_rate: transaction.TaxBreakdown[0].Value,
+                                        };
 
-                                email.helper.paymentInvoiceEmail(cap.Client.Email, adEmailInfo);
+                                        email.helper.paymentInvoiceEmail(cap.Client.Email, adEmailInfo);
 
-                                resolve({
-                                    code: 200,
-                                    data: cAdPlan
-                                });
-                                updateChannelAdLengthCounter(cAdPlan);
+                                        resolve({
+                                            code: 200,
+                                            data: cAdPlan,
+                                        });
+                                        updateChannelAdLengthCounter(cAdPlan);
+                                    });
                             });
                         });
-                    });
-                }
-            });
+                    }
+                });
         });
     });
 };
@@ -660,112 +679,118 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
 const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
     return new Promise(async (resolve, reject) => {
         const query = {
-            _id: clientAdPlan
+            _id: clientAdPlan,
         };
-        const populateOptions = [{
-            path: 'Client',
-            model: 'Client',
-            select: {
-                Name: 1,
-                Email: 1
-            }
-        }, {
-            path: 'ChannelPlan.Plan.Channel',
-            model: 'Channel',
-            select: {
-                Name: 1,
-                Description: 1
-            }
-        }, {
-            path: 'ChannelPlan.Plan.ChannelAdSchedule',
-            model: 'ChannelAdSchedule',
-            select: {
-                _id: 1
+        const populateOptions = [
+            {
+                path: 'Client',
+                model: 'Client',
+                select: {
+                    Name: 1,
+                    Email: 1,
+                },
             },
-            populate: [
-                {
-                    path: 'AdSchedule',
-                    model: 'AdSchedule',
-                    select: {
-                        Name: 1,
-                        Description: 1,
-                        StartTime: 1,
-                        EndTime: 1
-                    }
-                }
-            ]
-        }];
+            {
+                path: 'ChannelPlan.Plan.Channel',
+                model: 'Channel',
+                select: {
+                    Name: 1,
+                    Description: 1,
+                },
+            },
+            {
+                path: 'ChannelPlan.Plan.ChannelAdSchedule',
+                model: 'ChannelAdSchedule',
+                select: {
+                    _id: 1,
+                },
+                populate: [
+                    {
+                        path: 'AdSchedule',
+                        model: 'AdSchedule',
+                        select: {
+                            Name: 1,
+                            Description: 1,
+                            StartTime: 1,
+                            EndTime: 1,
+                        },
+                    },
+                ],
+            },
+        ];
 
-        ClientAdPlan.findOne(query).populate(populateOptions).exec((err, clientAdPlan) => {
-            if (err) {
-                deletePreviewFile();
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else if (!clientAdPlan) {
-                deletePreviewFile();
-                return reject({
-                    code: 404,
-                    error: {
-                        message: 'Ad ' + utilities.ErrorMessages.NOT_FOUND
-                    }
-                });
-            }
-            // uploadVideo
-            const dst = 'uploads/Client/' + clientAdPlan.Client.id + '/ClientAdPlans/' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
-            try {
-                uploadFile(previewPath, dst);
-            } catch (ex) {
-                deletePreviewFile();
-                return reject({
-                    code: 500,
-                    error: ex
-                });
-            }
-
-            const clientAd = new ClientAd({
-                Client: clientAdPlan.Client,
-                VideoUrl: dst,
-                Status: 'UNDERREVIEW'
-            });
-            clientAd.save(err => {
+        ClientAdPlan.findOne(query)
+            .populate(populateOptions)
+            .exec((err, clientAdPlan) => {
                 if (err) {
                     deletePreviewFile();
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
+                    });
+                } else if (!clientAdPlan) {
+                    deletePreviewFile();
+                    return reject({
+                        code: 404,
+                        error: {
+                            message: 'Ad ' + utilities.ErrorMessages.NOT_FOUND,
+                        },
                     });
                 }
-                clientAdPlan.ClientAd = clientAd._id;
-                clientAdPlan.save(err => {
+                // uploadVideo
+                const dst = 'uploads/Client/' + clientAdPlan.Client.id + '/ClientAdPlans/' + clientAdPlan._id.toString() + '/Ads/' + Date.now() + extension;
+                try {
+                    uploadFile(previewPath, dst);
+                } catch (ex) {
+                    deletePreviewFile();
+                    return reject({
+                        code: 500,
+                        error: ex,
+                    });
+                }
+
+                const clientAd = new ClientAd({
+                    Client: clientAdPlan.Client,
+                    VideoUrl: dst,
+                    Status: 'UNDERREVIEW',
+                });
+                clientAd.save((err) => {
                     if (err) {
                         deletePreviewFile();
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
                     }
-                    deletePreviewFile();
-                    socket.emit('PROCESS_FINISHED');
-                    const adEmailInfo = {
-                        client_name: clientAdPlan.Client.Name,
-                        client_email: clientAdPlan.Client.Email,
-                        booking_date: moment().format('DD/MM/YYYY'),
-                        channel: clientAdPlan.ChannelPlan.Plan.Channel.Name,
-                        slot: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule.AdSchedule.Name,
-                        start_time: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule.AdSchedule.StartTime,
-                        end_time: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule.AdSchedule.EndTime,
-                        start_date: moment(clientAdPlan.StartDate).format('DD/MM/YYYY'),
-                        end_date: moment(clientAdPlan.EndDate).format('DD/MM/YYYY'),
-                        ad_length: clientAdPlan.ChannelPlan.Plan.Seconds
-                    };
-                    const videolink = config.google_bucket.bucket_url + clientAd.VideoUrl;
-                    email.helper.updateClientAdEmail(config.mailgun.adminEmail, videolink, adEmailInfo);
-                    resolve(clientAd);
+                    clientAdPlan.ClientAd = clientAd._id;
+                    clientAdPlan.save((err) => {
+                        if (err) {
+                            deletePreviewFile();
+                            return reject({
+                                code: 500,
+                                error: err,
+                            });
+                        }
+                        deletePreviewFile();
+                        socket.emit('PROCESS_FINISHED');
+                        const adEmailInfo = {
+                            client_name: clientAdPlan.Client.Name,
+                            client_email: clientAdPlan.Client.Email,
+                            booking_date: moment().format('DD/MM/YYYY'),
+                            channel: clientAdPlan.ChannelPlan.Plan.Channel.Name,
+                            slot: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule.AdSchedule.Name,
+                            start_time: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule.AdSchedule.StartTime,
+                            end_time: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule.AdSchedule.EndTime,
+                            start_date: moment(clientAdPlan.StartDate).format('DD/MM/YYYY'),
+                            end_date: moment(clientAdPlan.EndDate).format('DD/MM/YYYY'),
+                            ad_length: clientAdPlan.ChannelPlan.Plan.Seconds,
+                        };
+                        const videolink = config.google_bucket.bucket_url + clientAd.VideoUrl;
+                        email.helper.updateClientAdEmail(config.mailgun.adminEmail, videolink, adEmailInfo);
+                        resolve(clientAd);
+                    });
                 });
             });
-        });
 
         const deletePreviewFile = () => {
             try {
@@ -773,7 +798,7 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
             } catch (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
         };
@@ -782,20 +807,20 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
 
 const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
     const query = {
-        $and: []
+        $and: [],
     };
     if (clientId) {
         query.$and.push({
             $or: [
                 {
-                    Clients: clientId
+                    Clients: clientId,
                 },
                 {
                     Clients: {
-                        $exists: false
-                    }
-                }
-            ]
+                        $exists: false,
+                    },
+                },
+            ],
         });
     }
     if (channel) {
@@ -803,18 +828,18 @@ const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
             $or: [
                 {
                     Channels: {
-                        $in: [channel]
-                    }
+                        $in: [channel],
+                    },
                 },
                 {
                     Channels: {
-                        $exists: false
-                    }
+                        $exists: false,
+                    },
                 },
                 {
-                    Channels: []
-                }
-            ]
+                    Channels: [],
+                },
+            ],
         });
     }
     if (adSchedule) {
@@ -822,31 +847,34 @@ const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
             $or: [
                 {
                     AdSchedules: {
-                        $in: [adSchedule]
-                    }
+                        $in: [adSchedule],
+                    },
                 },
                 {
                     AdSchedules: {
-                        $exists: false
-                    }
+                        $exists: false,
+                    },
                 },
                 {
-                    AdSchedules: []
-                }
-            ]
+                    AdSchedules: [],
+                },
+            ],
         });
     }
     if (startDate) {
         query.$and.push({
-            $and: [{
-                StartDate: {
-                    $lte: new Date(startDate)
-                }
-            }, {
-                EndDate: {
-                    $gte: new Date(startDate)
-                }
-            }]
+            $and: [
+                {
+                    StartDate: {
+                        $lte: new Date(startDate),
+                    },
+                },
+                {
+                    EndDate: {
+                        $gte: new Date(startDate),
+                    },
+                },
+            ],
         });
     }
     return query;
@@ -864,5 +892,5 @@ module.exports = {
     saveClientAdPlan,
     renewClientAdPlan,
     updateClientAd,
-    checkCouponApplicable
+    checkCouponApplicable,
 };

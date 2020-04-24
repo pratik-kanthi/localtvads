@@ -6,7 +6,7 @@
     <meta http-equiv="content-type" content="text/html; charset=utf-8">
     <meta http-equiv="x-ua-compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://fonts.googleapis.com/css?family=Noto+Sans&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
     <style type="text/css">
         body {
             margin: 0;
@@ -66,7 +66,7 @@
             height: 40px;
             width: 220px;
             text-align: center;
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Sans', sans-serif;
             color: #FFFFFF;
             padding: 4px;
         }
@@ -79,7 +79,7 @@
         }
 
         .text {
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Sans', sans-serif;
             text-align: center;
             color: #9E9E9E;
             font-size: 14px;
@@ -99,7 +99,7 @@
         }
 
         .nav a {
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Sans', sans-serif;
             color: #9E9E9E;
             font-size: 14px;
             text-decoration: none;
@@ -132,7 +132,7 @@
         }
 
         .text-label {
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Sans', sans-serif;
             font-size: 14px;
             color: #868C9D;
             line-height: 22px;
@@ -141,12 +141,12 @@
         .text-value {
             color: #576381;
             font-size: 14px;
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Sans', sans-serif;
             line-height: 22px;
         }
 
         .text-title {
-            font-family: Arial, sans-serif;
+            font-family: 'Noto Sans', sans-serif;
             font-size: 14px;
             color: #525F7F;
             line-height: 22px;
@@ -217,18 +217,21 @@
 
         table.payment-data-table td {
             border-bottom: 2px solid #E6EBF1;
+            padding:8px;
         }
 
         table.payment-bill-table td {
             border-bottom: 2px solid #E6EBF1;
-            padding: 0 24px;
+            padding: 0 8px;
         }
 
         table.payment-total-table td {
-            padding: 0 24px;
+            padding: 0 8px;
         }
 
-
+        .bold{
+            font-weight: 700;
+        }
 
         @media only screen and (max-width: 767px) {
             .mobileOff {
@@ -391,11 +394,6 @@
                                                 <td class="content-box-single">
                                                     <table cellpadding="0" cellspacing="0" width="100%">
                                                         <tr>
-                                                            <td align="center" class="logo-wrapper">
-                                                                <img src="https://storage.googleapis.com/localtvads-dev-bucket/logo/logo.png" alt="img" width="60" class="logo-img">
-                                                            </td>
-                                                        </tr>
-                                                        <tr>
                                                             <td height="16"></td>
                                                         </tr>
                                                         <tr>
@@ -405,9 +403,10 @@
                                                                         <td width="70%" align="left" class="payment-details">
                                                                             <span class="invoice-headings">Invoice
                                                                                 Number</span><br>
-                                                                            <b class="invoice-details"><%= receipt.InvoiceNo %></b>
+                                                                            <b class="invoice-details bold"><%= receipt.InvoiceNo %></b>
                                                                         </td>
                                                                         <td width="30%" align="right">
+                                                                            <span class="invoice-headings">Paid by:</span><br>
                                                                             <b class="invoice-details"><%= receipt.User.Name %> </b><br>
                                                                             <b class="invoice-details"><%= receipt.User.Email %> </b><br>
                                                                             <b class="invoice-details"><%= receipt.User.Phone %> </b><br>
@@ -417,7 +416,7 @@
                                                                         <td width="70%" align="left" class="payment-details">
                                                                             <span class="invoice-headings">Invoice
                                                                                 Date</span><br>
-                                                                            <b class="invoice-details"><%= receipt.Date %><b>
+                                                                            <b class="invoice-details bold"><%= receipt.Date %><b>
                                                                         </td>
 
                                                                     </tr>
@@ -431,7 +430,7 @@
                                                             <td>
                                                                 <table cellpadding="0" cellspacing="0" width="100%" class="payment-heading-table">
                                                                     <tr>
-                                                                        <td align="left"> Description </td>
+                                                                        <td align="left">Invoice Breakdown </td>
                                                                     </tr>
                                                                 </table>
                                                             </td>
@@ -443,7 +442,7 @@
                                                             <td>
                                                                 <table cellpadding="0" cellspacing="0" width="100%" class="payment-data-table">
                                                                     <tr>
-                                                                        <td class="ad-description">
+                                                                        <td class="ad-description bold">
                                                                             <span>
                                                                                 <%= receipt.Type %> -
                                                                             </span>
@@ -451,6 +450,7 @@
                                                                                 <%= receipt.Name %>
                                                                             </span>
                                                                         </td>
+                                                                        <td height="16"></td>
                                                                     </tr>
                                                                 </table>
                                                             </td>
