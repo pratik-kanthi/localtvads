@@ -11,6 +11,7 @@ const pdf = require('html-pdf');
 const path = require('path');
 const config = require.main.require('./config');
 const mongoose = require('mongoose');
+const fs = require('fs');
 const { saveCustomer, saveNewCardToCustomer, deleteCardFromStripe } = require.main.require('./services/PaymentService');
 const { uploadFile } = require.main.require('./services/FileService');
 
@@ -497,22 +498,32 @@ const generateReceipt = (transaction_id) => {
                                 });
                             }
                             const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY') + '_' + transaction_id + '.pdf';
-                            uploadFile(filePath, bucket_file_path);
+                            const uploadPromise = uploadFile(filePath, bucket_file_path);
                             const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
-                            transaction.ReceiptUrl = receipt_bucket_url;
-                            transaction.save((err, tr) => {
-                                if (err) {
+
+                            Promise.all([uploadPromise])
+                                .then(() => {
+                                    transaction.ReceiptUrl = receipt_bucket_url;
+                                    transaction.save((err, tr) => {
+                                        if (err) {
+                                            return reject({
+                                                code: 500,
+                                                error: err,
+                                            });
+                                        }
+                                        fs.unlinkSync(filePath);
+                                        resolve({
+                                            code: 200,
+                                            data: tr.ReceiptUrl,
+                                        });
+                                    });
+                                })
+                                .catch((err) => {
                                     return reject({
                                         code: 500,
                                         error: err,
                                     });
-                                }
-
-                                resolve({
-                                    code: 200,
-                                    data: tr.ReceiptUrl,
                                 });
-                            });
                         });
                     }
                 });

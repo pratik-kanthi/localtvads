@@ -647,6 +647,8 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                                             end_date: moment(cAdPlan.EndDate).format('DD/MM/YYYY'),
                                             client_name: cap.Client.Name,
                                             total: transaction.TotalAmount,
+                                            offer: transaction.ChannelPlan.Offers[0].Name,
+                                            offer_value: transaction.ChannelPlan.Offers[0].Amount,
                                             subtotal: transaction.ChannelPlan.SubTotal,
                                             tax_value: transaction.ChannelPlan.TaxAmount,
                                             tax_type: transaction.TaxBreakdown[0].Name,

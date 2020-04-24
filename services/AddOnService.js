@@ -20,51 +20,53 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
             IsActive: true,
-            _id: addon
+            _id: addon,
         };
         ServiceAddOn.findOne(query, async (err, addOn) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else if (!addOn) {
                 return reject({
                     code: 404,
                     error: {
-                        message: 'Service Add On' + utilities.ErrorMessages.NOT_FOUND
-                    }
+                        message: 'Service Add On' + utilities.ErrorMessages.NOT_FOUND,
+                    },
                 });
             } else {
-                let card, taxes, taxAmount = 0;
+                let card,
+                    taxes,
+                    taxAmount = 0;
                 if (cardId) {
                     const query = {
                         Client: clientId,
-                        _id: cardId
+                        _id: cardId,
                     };
                     try {
                         card = await ClientPaymentMethod.findOne(query, {
                             'Card.StripeCardToken': 1,
-                            StripeCusToken: 1
+                            StripeCusToken: 1,
                         });
                     } catch (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
                     }
                     if (!card) {
                         return reject({
                             code: 404,
                             error: {
-                                message: 'Card' + utilities.ErrorMessages.NOT_FOUND
-                            }
+                                message: 'Card' + utilities.ErrorMessages.NOT_FOUND,
+                            },
                         });
                     }
                 }
@@ -75,7 +77,7 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                 } catch (ex) {
                     return reject({
                         code: ex.code || 500,
-                        error: ex.error
+                        error: ex.error,
                     });
                 }
 
@@ -90,7 +92,7 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                 } catch (err) {
                     return reject({
                         code: err.code,
-                        error: err.error
+                        error: err.error,
                     });
                 }
 
@@ -98,13 +100,13 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                     Client: clientId,
                     ServiceAddOn: addOn._id,
                     Images: [],
-                    Videos: []
+                    Videos: [],
                 });
-                clientServiceAddOn.save(err => {
+                clientServiceAddOn.save((err) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
                     }
                     clientServiceAddOn = clientServiceAddOn.toObject();
@@ -114,43 +116,45 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                         ServiceAddOn: {
                             ...addOn.toObject(),
                             SubTotal: addOn.Amount,
-                            TaxAmount: taxAmount
+                            TaxAmount: taxAmount,
                         },
                         ClientServiceAddOn: clientServiceAddOn._id,
                         TotalAmount: addOn.Amount + taxAmount,
                         Status: 'succeeded',
                         StripeResponse: charge,
                         ReferenceId: charge.id,
-                        TaxBreakdown: taxes
+                        TaxBreakdown: taxes,
                     });
                     transaction.save((err, t) => {
                         if (err) {
                             return reject({
                                 code: 500,
-                                error: err
+                                error: err,
                             });
                         }
 
-                        Transaction.findOne({ _id: t.id }).populate('ChannelPlan Client ClientAdPlan').exec((err, trans) => {
-                            const adEmailInfo = {
-                                invoice_number: transaction.ReferenceId,
-                                invoice_date: moment().format('DD/MM/YYYY'),
-                                client_name: trans.Client.Name,
-                                total: transaction.ServiceAddOn.TotalAmount,
-                                add_on: addOn.Name,
-                                subtotal: transaction.ServiceAddOn.SubTotal,
-                                tax_value: transaction.ServiceAddOn.TaxAmount,
-                                tax_type: transaction.TaxBreakdown[0].Name,
-                                tax_rate: transaction.TaxBreakdown[0].Value
-                            };
+                        Transaction.findOne({ _id: t.id })
+                            .populate('ChannelPlan Client ClientAdPlan')
+                            .exec((err, trans) => {
+                                const adEmailInfo = {
+                                    invoice_number: transaction.ReferenceId,
+                                    invoice_date: moment().format('DD/MM/YYYY'),
+                                    client_name: trans.Client.Name,
+                                    total: transaction.TotalAmount,
+                                    add_on: addOn.Name,
+                                    add_on_desc: addOn.Description,
+                                    subtotal: transaction.ServiceAddOn.SubTotal,
+                                    tax_value: transaction.ServiceAddOn.TaxAmount,
+                                    tax_type: transaction.TaxBreakdown[0].Name,
+                                    tax_rate: transaction.TaxBreakdown[0].Value,
+                                };
 
-                            email.helper.addOnpaymentInvoiceEmail(trans.Client.Email, adEmailInfo);
-                            resolve({
-                                code: 200,
-                                data: clientServiceAddOn
+                                email.helper.addOnpaymentInvoiceEmail(trans.Client.Email, adEmailInfo);
+                                resolve({
+                                    code: 200,
+                                    data: clientServiceAddOn,
+                                });
                             });
-                        });
-
                     });
                 });
             }
@@ -160,61 +164,63 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
 
 const getActiveAddOns = () => {
     return new Promise(async (resolve, reject) => {
-        await async.parallel({
-            addOns: (callback) => {
-                const query = {
-                    IsActive: true
-                };
-                ServiceAddOn.find(query, (err, addOns) => {
-                    if (err) {
-                        return callback(err, null);
-                    }
-                    callback(null, addOns);
-                });
+        await async.parallel(
+            {
+                addOns: (callback) => {
+                    const query = {
+                        IsActive: true,
+                    };
+                    ServiceAddOn.find(query, (err, addOns) => {
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        callback(null, addOns);
+                    });
+                },
+                taxes: (callback) => {
+                    const query = {
+                        Active: true,
+                    };
+                    Tax.find(query, (err, taxes) => {
+                        if (err) {
+                            return callback(err, null);
+                        }
+                        callback(null, taxes);
+                    });
+                },
             },
-            taxes: (callback) => {
-                const query = {
-                    Active: true
-                };
-                Tax.find(query, (err, taxes) => {
-                    if (err) {
-                        return callback(err, null);
-                    }
-                    callback(null, taxes);
-                });
-            }
-        }, (err, result) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else {
-                const responseObj = {
-                    addOns: [],
-                    taxes: result.taxes
-                };
-                if (result.taxes && result.addOns) {
-                    result.addOns.forEach(addOn => {
-                        addOn = addOn.toObject();
-                        let taxAmount = 0;
-                        result.taxes.forEach(tax => {
-                            if (tax.Type === 'FIXED') {
-                                taxAmount += tax.Value;
-                            } else {
-                                taxAmount += tax.Value * 0.01 * addOn.Amount;
-                            }
+            (err, result) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                } else {
+                    const responseObj = {
+                        addOns: [],
+                        taxes: result.taxes,
+                    };
+                    if (result.taxes && result.addOns) {
+                        result.addOns.forEach((addOn) => {
+                            addOn = addOn.toObject();
+                            let taxAmount = 0;
+                            result.taxes.forEach((tax) => {
+                                if (tax.Type === 'FIXED') {
+                                    taxAmount += tax.Value;
+                                } else {
+                                    taxAmount += tax.Value * 0.01 * addOn.Amount;
+                                }
+                            });
+                            responseObj.addOns.push({ ...addOn, TaxAmount: taxAmount, TotalAmount: addOn.Amount + taxAmount });
                         });
-                        responseObj.addOns.push({...addOn, TaxAmount: taxAmount, TotalAmount: addOn.Amount + taxAmount});
+                    }
+                    resolve({
+                        code: 200,
+                        data: responseObj,
                     });
                 }
-                resolve({
-                    code: 200,
-                    data: responseObj
-                });
             }
-        });
-
+        );
     });
 };
 
@@ -224,33 +230,35 @@ const getClientServiceAddOn = (clientServiceAddOnId) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-            _id: clientServiceAddOnId
+            _id: clientServiceAddOnId,
         };
-        ClientServiceAddOn.findOne(query).populate('ServiceAddOn').exec((err, clientServiceAddOn) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else if (!clientServiceAddOn) {
-                return reject({
-                    code: 404,
-                    error: {
-                        message: 'Client Add On' + utilities.ErrorMessages.NOT_FOUND
-                    }
-                });
-            } else {
-                resolve({
-                    code: 200,
-                    data: clientServiceAddOn
-                });
-            }
-        });
+        ClientServiceAddOn.findOne(query)
+            .populate('ServiceAddOn')
+            .exec((err, clientServiceAddOn) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                } else if (!clientServiceAddOn) {
+                    return reject({
+                        code: 404,
+                        error: {
+                            message: 'Client Add On' + utilities.ErrorMessages.NOT_FOUND,
+                        },
+                    });
+                } else {
+                    resolve({
+                        code: 200,
+                        data: clientServiceAddOn,
+                    });
+                }
+            });
     });
 };
 
@@ -260,38 +268,40 @@ const getClientServiceAddOns = (clientid) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-            Client: clientid
+            Client: clientid,
         };
         const project = {
             _id: 1,
             ServiceAddOn: 1,
-            DateTime: 1
+            DateTime: 1,
         };
-        ClientServiceAddOn.find(query, project).populate('ServiceAddOn', 'Name Description').exec((err, clientServiceAddOns) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else if (!clientServiceAddOns) {
-                return reject({
-                    code: 404,
-                    error: {
-                        message: 'Client Add On' + utilities.ErrorMessages.NOT_FOUND
-                    }
-                });
-            } else {
-                resolve({
-                    code: 200,
-                    data: clientServiceAddOns
-                });
-            }
-        });
+        ClientServiceAddOn.find(query, project)
+            .populate('ServiceAddOn', 'Name Description')
+            .exec((err, clientServiceAddOns) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                } else if (!clientServiceAddOns) {
+                    return reject({
+                        code: 404,
+                        error: {
+                            message: 'Client Add On' + utilities.ErrorMessages.NOT_FOUND,
+                        },
+                    });
+                } else {
+                    resolve({
+                        code: 200,
+                        data: clientServiceAddOns,
+                    });
+                }
+            });
     });
 };
 
@@ -301,40 +311,40 @@ const updateClientServiceAddOn = (id, images, videos, text) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-            _id: id
+            _id: id,
         };
         ClientServiceAddOn.findOne(query, (err, clientServiceAddOn) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             } else if (!clientServiceAddOn) {
                 return reject({
                     code: 404,
                     error: {
-                        message: 'Client Add-On' + utilities.ErrorMessages.NOT_FOUND
-                    }
+                        message: 'Client Add-On' + utilities.ErrorMessages.NOT_FOUND,
+                    },
                 });
             } else {
                 clientServiceAddOn.Images = images;
                 clientServiceAddOn.Videos = videos;
                 clientServiceAddOn.Text = text;
-                clientServiceAddOn.save(err => {
+                clientServiceAddOn.save((err) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
                     }
                     resolve({
                         code: 200,
-                        data: clientServiceAddOn
+                        data: clientServiceAddOn,
                     });
                 });
             }
@@ -357,7 +367,7 @@ const uploadVideoForAddOns = (data, previewPath, extension, socket) => {
             } catch (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
         };
@@ -370,16 +380,16 @@ const uploadVideoForAddOns = (data, previewPath, extension, socket) => {
             deletePreviewFile();
             return reject({
                 code: 500,
-                error: ex
+                error: ex,
             });
         }
         const clientResource = new ClientResource({
             Name: data.name.replace(extension, ''),
             Client: data.client,
             Type: 'VIDEO',
-            ResourceUrl: dst
+            ResourceUrl: dst,
         });
-        clientResource.save(async err => {
+        clientResource.save(async (err) => {
             if (err) {
                 return reject(err);
             }
@@ -399,26 +409,25 @@ const saveServiceAddOn = (serviceAddonObj) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const serviceAddOn = new ServiceAddOn(serviceAddonObj);
-        serviceAddOn.save(err => {
+        serviceAddOn.save((err) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             resolve({
                 code: 200,
-                data: serviceAddOn
+                data: serviceAddOn,
             });
         });
     });
 };
-
 
 module.exports = {
     getActiveAddOns,
@@ -427,5 +436,5 @@ module.exports = {
     saveClientServiceAddOn,
     saveServiceAddOn,
     updateClientServiceAddOn,
-    uploadVideoForAddOns
+    uploadVideoForAddOns,
 };

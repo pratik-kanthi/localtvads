@@ -10,9 +10,11 @@ const path = require('path');
  * @param {String} socialclient - AuthorisationScheme value from AccessToken model
  */
 const socialRegisterEmail = (to, socialclient) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/socialaccount_createdemail.ejs'), 'utf-8'), {
         social: socialclient,
         email: to,
+        year: date.getFullYear(),
     });
 
     const data = {
@@ -34,8 +36,10 @@ const socialRegisterEmail = (to, socialclient) => {
  * @param {String} verificationlink - verification link to mailed to the user to verify his/her account
  */
 const standardRegisterEmail = (to, verificationlink) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/standardaccount-createdemail.ejs'), 'utf-8'), {
         verificationlink: verificationlink,
+        year: date.getFullYear(),
     });
 
     const data = {
@@ -58,9 +62,11 @@ const standardRegisterEmail = (to, verificationlink) => {
  * @param {String} verificationlink - verification link to mailed to the user to verify his/her account
  */
 const staffRegisterEmail = (to, verificationlink, password) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/staff-createdemail.ejs'), 'utf-8'), {
         verificationlink: verificationlink,
         password: password,
+        year: date.getFullYear(),
     });
 
     const data = {
@@ -78,8 +84,10 @@ const staffRegisterEmail = (to, verificationlink, password) => {
 };
 
 const emailChangeVerification = (to, verificationlink) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/emailchangeverification-email.ejs'), 'utf-8'), {
         verificationlink: verificationlink,
+        year: date.getFullYear(),
     });
 
     const data = {
@@ -97,8 +105,10 @@ const emailChangeVerification = (to, verificationlink) => {
 };
 
 const passwordResetEmail = (to, verificationlink) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/forgotpassword-email.ejs'), 'utf-8'), {
         verificationlink: verificationlink,
+        year: date.getFullYear(),
     });
 
     const data = {
@@ -137,8 +147,10 @@ const paymentInvoiceEmail = (to, emailinfo) => {
 };
 
 const addOnpaymentInvoiceEmail = (to, emailinfo) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/addon-paymentinvoice-email.ejs'), 'utf-8'), {
         emailinfo: emailinfo,
+        year: date.getFullYear(),
     });
 
     const data = {
@@ -163,6 +175,7 @@ const downloadReceipt = (receipt) => {
 };
 
 const updateClientAdEmail = (to, videolink, emailinfo) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/updateclientad-email.ejs'), 'utf-8'), {
         client_name: emailinfo.client_name,
         client_email: emailinfo.client_email,
@@ -173,6 +186,7 @@ const updateClientAdEmail = (to, videolink, emailinfo) => {
         end_date: emailinfo.end_date,
         ad_length: emailinfo.ad_length,
         videolink: videolink,
+        year: date.getFullYear(),
     });
 
     const data = {
@@ -190,11 +204,13 @@ const updateClientAdEmail = (to, videolink, emailinfo) => {
 };
 
 const enquiryAdminEmail = (enquiry) => {
+    const date = new Date();
     const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/enquiryadmin-email.ejs'), 'utf-8'), {
         client_name: enquiry.Name,
         client_email: enquiry.Email,
         client_message: enquiry.Message,
         client_subject: enquiry.Subject,
+        year: date.getFullYear(),
     });
 
     const data = {

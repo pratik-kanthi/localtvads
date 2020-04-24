@@ -446,7 +446,7 @@
                                                             <td>
                                                                 <table cellpadding="0" cellspacing="0" width="100%" class="payment-data-table">
                                                                     <tr>
-                                                                        <td align="left" class="ad-description"><%= emailinfo.add_on %></td>
+                                                                        <td align="left" class="ad-description"><%= emailinfo.add_on %> - <%= emailinfo.add_on_desc%></td>
                                                                     </tr>
                                                                 </table>
                                                             </td>
@@ -459,17 +459,17 @@
                                                                 <table cellpadding="0" cellspacing="0" width="100%" class="payment-bill-table">
                                                                     <tr>
                                                                         <td width="70%" align="left" class="payment-details">
-                                                                            <strong class="invoice-details">Sub
-                                                                                Total</strong><br>
+                                                                           
+                                                                            <strong class="invoice-details">Sub Total</strong><br>
                                                                             <strong class="invoice-details">Taxes</strong><br />
-                                                                            <strong><%= emailinfo.tax_type%>(<%= emailinfo.tax_rate %>)</strong>
+                                                                            <strong><%= emailinfo.tax_type%>(<%= emailinfo.tax_rate %> %)</strong>
                                                                         <td>
                                                                         <td></td>
                                                             </td>
                                                 </td>
                                                 <td width="30%" align="right">
-                                                    <strong class="invoice-details">£<%= emailinfo.subtotal %></strong><br>
-                                                    <strong class="invoice-details">£<%= emailinfo.tax_value %></strong><br>
+                                                    <strong class="invoice-details">£<%= emailinfo.subtotal.toFixed(2) %></strong><br>
+                                                    <strong class="invoice-details">£<%= emailinfo.tax_value.toFixed(2) %></strong><br>
                                                 </td>
                                             </tr>
                                         </table>
@@ -486,7 +486,7 @@
                                                     <strong class="invoice-details-total">Total</strong>
                                                 </td>
                                                 <td width="30%" align="right">
-                                                    <strong class="invoice-details-total">£<%= emailinfo.total %></strong>
+                                                    <strong class="invoice-details-total">£<%= emailinfo.total.toFixed(2) %></strong>
                                                 </td>
                                             </tr>
                                         </table>
@@ -567,7 +567,7 @@ color: #FFFFFF;">
             <table cellspacing="0" cellpadding="0" width="552" class="table-inner">
                 <tr>
                     <td class="footer-text">
-                        &copy;2019 LOCAL TV ADS. All Rights Reserved
+                        &copy;<%= year %> LOCAL TV ADS. All Rights Reserved
                     </td>
                 </tr>
                 <tr>
