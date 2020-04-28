@@ -163,6 +163,18 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
         const splitEndDate = endDateString.split('-');
         const startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
         const endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
+
+        const nextAvailableDate = new Date(new Date().setDate(new Date().getDate() + 7));
+
+        if (startDate >= nextAvailableDate) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
+            });
+        }
+
         let query = {
             Channel: channel,
             IsActive: true,
