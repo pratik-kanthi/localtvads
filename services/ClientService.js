@@ -476,8 +476,8 @@ const generateReceipt = (transaction_id) => {
                             SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal.toFixed(2) : transaction.ChannelPlan.SubTotal.toFixed(2),
                             TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount.toFixed(2) : transaction.ChannelPlan.TaxAmount.toFixed(2),
                             TaxBreakdown: transaction.TaxBreakdown[0],
-                            Offer: transaction.ChannelPlan.Offers ? transaction.ChannelPlan.Offers[0].Name : '',
-                            Offer_Value: transaction.ChannelPlan.Offers ? transaction.ChannelPlan.Offers[0].Amount : '',
+                            Offer: transaction.ChannelPlan && transaction.ChannelPlan.Offers.length > 0 ? transaction.ChannelPlan.Offers[0].Name : null,
+                            Offer_Value: transaction.ChannelPlan && transaction.ChannelPlan.Offers.length > 0 ? transaction.ChannelPlan.Offers[0].Amount : null,
                         };
 
                         receipt.User = {};
@@ -488,8 +488,8 @@ const generateReceipt = (transaction_id) => {
                         const message = email.helper.downloadReceipt(receipt);
                         const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
                         const options = {
-                            height: '8.27in',
-                            width: '5.83in',
+                            format: 'A4',
+                            orientation: 'portrait',
                         };
 
                         pdf.create(message, options).toFile(filePath, (err) => {

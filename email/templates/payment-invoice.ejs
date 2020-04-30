@@ -466,8 +466,9 @@
                                                                             <br>
                                                                             <strong class="invoice-details">Sub Total</strong>
                                                                             <br>
+                                                                            <% if(receipt.Offer){ %>
                                                                             <strong class="invoice-details">Offer - <%= receipt.Offer %></strong><br>
-                                                                           
+                                                                            <% } %>
                                                                             <strong class="invoice-details">Taxes</strong><br>
                                                                             <strong class="invoice-details"><%= receipt.TaxBreakdown.Name %> (<%= receipt.TaxBreakdown.Value %> %)</strong>
                                                                         </td>
@@ -476,7 +477,9 @@
                                                 <td width="30%" align="right">
                                                     <strong class="invoice-details">£<%= receipt.SubTotal %></strong>
                                                     <br>
+                                                    <% if(receipt.Offer){ %>
                                                     <strong class="invoice-details"> - £<%= receipt.Offer_Value.toFixed(2) %></strong><br>
+                                                    <% } %>
                                                     <strong class="invoice-details">£<%= receipt.TaxAmount %></strong><br>
                                                 </td>
                                             </tr>

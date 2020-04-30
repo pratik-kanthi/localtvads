@@ -461,7 +461,9 @@
                                                                         <td width="70%" align="left" class="payment-details">
                                                                             <strong class="invoice-details">Sub
                                                                                 Total</strong><br>
+                                                                                <% if(emailinfo.offer){ %>
                                                                                 <strong class="invoice-details">Offer - <%= emailinfo.offer %></strong><br>
+                                                                                <% } %>
                                                                             <strong class="invoice-details">Taxes</strong><br />
                                                                             <strong class="invoice-details"><%= emailinfo.tax_type%>(<%= emailinfo.tax_rate %> %)</strong>
                                                                         <td>
@@ -470,7 +472,9 @@
                                                 </td>
                                                 <td width="30%" align="right">
                                                     <strong class="invoice-details">£<%= emailinfo.subtotal.toFixed(2) %></strong><br>
+                                                    <% if(emailinfo.offer_value){ %>
                                                     <strong class="invoice-details"> - £<%= emailinfo.offer_value.toFixed(2) %></strong><br>
+                                                    <% } %>
                                                     <strong class="invoice-details">£<%= emailinfo.tax_value.toFixed(2) %></strong><br>
                                                 </td>
                                             </tr>
