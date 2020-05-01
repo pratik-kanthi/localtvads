@@ -1,6 +1,7 @@
 const Subscriber = require.main.require('./models/Subscriber').model;
 const Enquiry = require.main.require('./models/Enquiry').model;
 const Email = require.main.require('./email');
+const { addToSubscribers } = require.main.require('./services/MailChimpService');
 
 /**
  * Creates a new subscriber
@@ -20,7 +21,7 @@ const subscribeUser = (email, ip) => {
             const query = {
                 Email: email,
             };
-            Subscriber.findOne(query, (err, subscriber) => {
+            Subscriber.findOne(query, async (err, subscriber) => {
                 if (err) {
                     return reject({
                         code: 500,
@@ -56,6 +57,9 @@ const subscribeUser = (email, ip) => {
                         IsActive: true,
                         IpAddress: ip,
                     });
+
+                    await addToSubscribers(email);
+
                     subscriber.save((err) => {
                         if (err) {
                             return reject({

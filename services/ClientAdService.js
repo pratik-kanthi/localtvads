@@ -265,6 +265,7 @@ const getClientAdPlans = (clientId, top, skip) => {
             StartDate: 1,
             EndDate: 1,
             ClientAd: 1,
+            Category: 1,
         };
         const populateOptions = [
             {
@@ -886,6 +887,48 @@ const calculateOffer = (amount, offer) => {
     return offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount / 100 : offer.Amount;
 };
 
+const populateCategories = () => {
+    return new Promise(async (resolve, reject) => {
+        const catergories = ['AUTOMOTIVE', 'BANKING', 'CONSTRUCTION & BUILDING', 'CONSUMER GOODS', 'ELECTRONICS AND GAGDGETS', 'ENERGY', 'BOOKS & PUBLISHING', 'FOOD & BEVERAGE', 'HEALTHCARE & PHARMACEUTICALS', 'HIGH TECH INDUSTRIES', 'HOTELS, RESORTS & SPA', 'INSURANCE', 'MEDIA', 'REAL ESTATE', 'RETAIL', 'SERVICES', 'SOFTWARE PRODUCTS & SERVICES', 'TELECOM', 'TRANSPORTATION', 'TRAVEL', 'UTILITIES', 'WHOLESALE'];
+
+        ClientAdPlan.find({}).exec((err, plans) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            }
+
+            const promises = plans.map((plan) => {
+                return new Promise(async (resolve, reject) => {
+                    const val = catergories[Math.floor(Math.random() * catergories.length)];
+                    plan.Category = val;
+                    try {
+                        const result = await plan.save().exec();
+                        resolve(result);
+                    } catch (err) {
+                        reject(err);
+                    }
+                });
+            });
+
+            Promise.all([promises])
+                .then((val) => {
+                    resolve({
+                        code: 200,
+                        data: val,
+                    });
+                })
+                .catch((err) => {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                });
+        });
+    });
+};
+
 module.exports = {
     getClientAd,
     getClientAdPlan,
@@ -895,4 +938,5 @@ module.exports = {
     renewClientAdPlan,
     updateClientAd,
     checkCouponApplicable,
+    populateCategories,
 };
