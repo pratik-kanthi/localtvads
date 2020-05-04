@@ -6,21 +6,25 @@ const name = 'Client';
 const schema = new mongoose.Schema({
     Name: {
         type: String,
-        required: true
+        required: true,
     },
     Email: {
         type: String,
-        required: true
+        required: true,
     },
     Phone: {
-        type: String
+        type: String,
     },
     ImageUrl: {
-        type: String
+        type: String,
     },
     IsActive: {
         type: Boolean,
-        default: true
+        default: true,
+    },
+    IsSubscribed: {
+        type: Boolean,
+        default: false,
     },
     Address: commonSchema.addressSchema,
     DateCreated: {
@@ -28,32 +32,29 @@ const schema = new mongoose.Schema({
         required: true,
         default: () => {
             return new Date();
-        }
-    }
+        },
+    },
 });
-
 
 /* eslint-disable */
 schema.post('save', true, function (client, next) {
-
     let User = require('./User').model;
     let query = {
-        Email: client.Email
+        Email: client.Email,
     };
 
     User.findOne(query, function (err, data) {
         if (err) {
             next();
-
         } else if (data) {
             data.Owner = {
-                Type: "Client",
+                Type: 'Client',
                 _id: client._id.toString().valueOf(),
                 Title: client.Name,
                 ImageUrl: client.ImageUrl,
                 Email: client.Email,
                 Phone: data.Phone,
-                Deleted: false
+                Deleted: false,
             };
             data.save(function (err) {
                 if (err) {
@@ -74,5 +75,5 @@ const model = mongoose.model(name, schema);
 module.exports = {
     name: name,
     model: model,
-    schema: schema
+    schema: schema,
 };

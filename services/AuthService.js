@@ -8,6 +8,7 @@ const User = require.main.require('./models/User').model;
 const UserClaim = require.main.require('./models/UserClaim').model;
 const UserLogin = require.main.require('./models/UserLogin').model;
 const { uploadImage } = require.main.require('./services/FileService');
+const { addToSubscribers, addRegisteredUserTag } = require.main.require('./services/MailChimpService');
 const { standardRegisterEmail } = require.main.require('./email/helper');
 /**
  * Social Registration through Facebook and Google+
@@ -186,6 +187,7 @@ const standardRegister = (profile) => {
             Email: profile.Email,
             Phone: profile.Phone,
             IsActive: true,
+            IsSubscribed: profile.IsSubscribed,
         });
         client.save((err) => {
             if (err) {
@@ -221,7 +223,7 @@ const standardRegister = (profile) => {
                         ClaimType: 'Client',
                         ClaimValue: client._id,
                     });
-                    claim.save((err) => {
+                    claim.save(async (err) => {
                         if (err) {
                             return reject({
                                 code: 500,
@@ -231,6 +233,11 @@ const standardRegister = (profile) => {
 
                         const verification_link = process.env.APP + 'api/auth/confirmation/' + user._id;
                         email.helper.standardRegisterEmail(user.Email, verification_link);
+
+                        if (profile.IsSubscribed) {
+                            await addToSubscribers(client.Email);
+                            await addRegisteredUserTag(client.Email);
+                        }
 
                         resolve({
                             code: 200,
