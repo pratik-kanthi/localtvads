@@ -1,77 +1,81 @@
 const mongoose = require('mongoose');
 const channelPlanSchema = require.main.require('./models/ChannelPlan').schema;
-const {
-    auditSchema
-} = require.main.require('./models/CommonSchema');
+const { auditSchema } = require.main.require('./models/CommonSchema');
 
 const name = 'ClientAdPlan';
 
 const schema = new mongoose.Schema({
     Name: {
         type: String,
-        required: true
+        required: true,
     },
     Description: {
-        type: String
+        type: String,
     },
     Client: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client',
-        required: true
+        required: true,
     },
     ClientAd: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ClientAd'
+        ref: 'ClientAd',
+    },
+    Category: {
+        type: String,
+    },
+    Comments: {
+        type: String,
     },
     ChannelPlan: {
         Plan: channelPlanSchema,
         Surge: {
-            type: Number
+            type: Number,
         },
         Discount: {
-            type: Number
+            type: Number,
         },
         Extras: [],
         SubTotal: {
-            type: Number
+            type: Number,
         },
         TaxAmount: {
-            type: Number
+            type: Number,
         },
         TotalAmount: {
-            type: Number
+            type: Number,
         },
     },
     StartDate: {
         type: Date,
         default: () => {
             return new Date();
-        }
+        },
     },
     EndDate: {
         type: Date,
-        required: true
+        required: true,
     },
     DayOfWeek: {
         type: Number,
-        required: true
+        required: true,
     },
     IsRenewal: {
         type: Boolean,
-        default: true
+        default: true,
     },
     Status: {
         type: String,
-        enum: ['ACTIVE', 'INACTIVE', 'EXPIRED']
+        enum: ['ACTIVE', 'INACTIVE', 'EXPIRED'],
     },
     BookedDate: {
         type: Date,
         default: () => {
             return new Date();
         },
-        required: true
+        required: true,
     },
-    AuditInfo: auditSchema
+    AuditInfo: auditSchema,
 });
 
 const model = mongoose.model(name, schema);
@@ -79,5 +83,5 @@ const model = mongoose.model(name, schema);
 module.exports = {
     name: name,
     model: model,
-    schema: schema
+    schema: schema,
 };
