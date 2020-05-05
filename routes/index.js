@@ -1,4 +1,5 @@
 module.exports = (app, models, io) => {
+    require('./HealthCheckRoutes')(app);
     require('./AdScheduleRoutes')(app);
     require('./SliderRoutes')(app);
     require('./TestimonialRoutes')(app);
