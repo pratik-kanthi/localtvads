@@ -272,6 +272,7 @@ const getClientAdPlans = (clientId, top, skip) => {
                 path: 'ClientAd',
                 select: {
                     VideoUrl: 1,
+                    Status: 1,
                 },
             },
             {

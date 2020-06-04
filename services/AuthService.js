@@ -231,7 +231,7 @@ const standardRegister = (profile) => {
                             });
                         }
 
-                        const verification_link = process.env.APP + 'api/auth/confirmation/' + user._id;
+                        const verification_link = process.env.WEBAPP + 'api/auth/confirmation/' + user._id;
                         email.helper.standardRegisterEmail(user.Email, verification_link);
 
                         if (profile.IsSubscribed) {
