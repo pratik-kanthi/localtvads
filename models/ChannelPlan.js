@@ -18,12 +18,17 @@ const schema = new mongoose.Schema({
     ChannelAdSchedule: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ChannelAdSchedule',
-        required: true,
     },
+    ChannelSlot: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'ChannelSlot',
+        },
+    ],
     Seconds: {
         // length of the video
         type: Number,
-        enum: [20, 30],
+        enum: [30],
         required: true,
     },
     BaseAmount: {

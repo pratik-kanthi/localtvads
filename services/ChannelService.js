@@ -141,6 +141,66 @@ const getChannel = (channel_id) => {
     });
 };
 
+const getChannelPlan = (channel) => {
+    return new Promise(async (resolve, reject) => {
+        if (!channel) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
+            });
+        }
+        ChannelPlan.findOne({ Channel: channel, ChannelSlot: { $exists: true } })
+            .populate('ChannelSlot')
+            .exec((err, cplan) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+
+                resolve({
+                    code: 200,
+                    data: cplan,
+                });
+            });
+    });
+};
+
+const getLowestPriceOnChannel = (channel) => {
+    return new Promise(async (resolve, reject) => {
+        if (!channel) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
+            });
+        }
+        ChannelPlan.findOne({ Channel: channel, ChannelSlot: { $exists: true } })
+            .populate('ChannelSlot')
+            .exec((err, cplan) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+
+                const channelPlanPrices = cplan.ChannelSlot.map((slot) => {
+                    return slot.BaseAmount;
+                });
+                const lowest = Math.min(...channelPlanPrices);
+                resolve({
+                    code: 200,
+                    data: lowest.toString(),
+                });
+            });
+    });
+};
+
 /**
  * Get availability of ad to be broadcast on a channel on a particular duration
  * @param {String} channel - _id of the channel
@@ -615,4 +675,6 @@ module.exports = {
     updateChannelAdLengthCounter,
     getChannelScheduleAvailability,
     updateChannel,
+    getLowestPriceOnChannel,
+    getChannelPlan,
 };

@@ -18,5 +18,6 @@ module.exports = () => {
         subscribers: require('./Subscriber'),
         cplans: require('./ChannelPlan'),
         faqs: require('./FAQ'),
+        channelslots: require('./ChannelSlot'),
     };
 };
