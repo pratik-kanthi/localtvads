@@ -389,7 +389,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                     error: 'Channel' + utilities.ErrorMessages.NOT_FOUND,
                 });
             }
-            channelModel.Viewerships.map((views) => (adScheduleViewershipMapping[views.AdSchedule.toString()] = views.Count));
+            channelModel.Viewerships.map((views) => adScheduleViewershipMapping[views.AdSchedule.toString()] = views.Count);
         } catch (err) {
             return reject({
                 code: 500,
@@ -522,8 +522,8 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                                             return offerDiscount;
                                         });
                                         const subTotal = p.BaseAmount - offerDiscount;
-                                        const totalAmount = subTotal + taxes.reduce((accumulator, tax) => (tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * subTotal * 0.01 : accumulator + tax.Value), 0);
-                                        const totalAmountWithoutDiscount = p.BaseAmount + taxes.reduce((accumulator, tax) => (tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * p.BaseAmount * 0.01 : accumulator + tax.Value), 0);
+                                        const totalAmount = subTotal + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * subTotal * 0.01 : accumulator + tax.Value, 0);
+                                        const totalAmountWithoutDiscount = p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * p.BaseAmount * 0.01 : accumulator + tax.Value, 0);
                                         result[key][adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule.Name] = {
                                             Plan: p._id,
                                             Name: p.Name,
@@ -655,7 +655,7 @@ const updateChannel = (channel_id) => {
 const calculateOffer = (amount, offer, adSchedule, startDate) => {
     let discountAmount = 0;
     if ((offer.AdSchedules.length === 0 || offer.AdSchedules.indexOf(adSchedule) > -1) && (offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(startDate).isoWeekday()) > -1) && new Date(startDate) <= offer.EndDate && new Date(startDate) >= offer.StartDate) {
-        discountAmount = offer.AmountType === 'PERCENTAGE' ? (amount * offer.Amount) / 100 : offer.Amount;
+        discountAmount = offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount / 100 : offer.Amount;
     }
     return discountAmount;
 };

@@ -574,7 +574,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         });
 
                         const taxAmount = finalAmount * 0.2;
-                        let savedPlan = chPlan.toObject();
+                        const savedPlan = chPlan.toObject();
                         savedPlan.ChannelSlot = selectedSlots;
 
                         const cAdPlan = new ClientAdPlan({
@@ -891,7 +891,7 @@ const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
 };
 
 const calculateOffer = (amount, offer) => {
-    return offer.AmountType === 'PERCENTAGE' ? (amount * offer.Amount) / 100 : offer.Amount;
+    return offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount / 100 : offer.Amount;
 };
 
 const populateCategories = () => {
