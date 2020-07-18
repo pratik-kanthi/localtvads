@@ -33,7 +33,6 @@ const schema = new mongoose.Schema({
     },
     BaseAmount: {
         type: Number,
-        required: true,
     },
     IsActive: {
         type: Boolean,

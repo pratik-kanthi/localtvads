@@ -46,23 +46,9 @@ const schema = new mongoose.Schema({
             type: Number,
         },
     },
-    StartDate: {
-        type: Date,
-        default: () => {
-            return new Date();
-        },
-    },
-    EndDate: {
-        type: Date,
-        required: true,
-    },
-    DayOfWeek: {
+    PlanLength: {
         type: Number,
-        required: true,
-    },
-    IsRenewal: {
-        type: Boolean,
-        default: true,
+        enum: [3, 6],
     },
     Status: {
         type: String,

@@ -256,6 +256,7 @@ const getClientAdPlans = (clientId, top, skip) => {
         }
         const query = {
             Client: clientId,
+            PlanLength: 3,
         };
         const project = {
             'ChannelPlan.Plan.ChannelAdSchedule.AdSchedule': 1,
@@ -303,7 +304,7 @@ const getClientAdPlans = (clientId, top, skip) => {
                 ],
             },
         ];
-        ClientAdPlan.find(query, project)
+        ClientAdPlan.find(query)
             .skip(parseInt(skip))
             .limit(parseInt(top))
             .populate(populateOptions)
@@ -431,7 +432,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
  */
 const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, couponCode, req) => {
     return new Promise(async (resolve, reject) => {
-        if (!channelPlan || !clientAdPlan || !clientAdPlan.Client || !clientAdPlan.Name || !clientAdPlan.StartDate || req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== clientAdPlan.Client) {
+        if (!channelPlan || !clientAdPlan || !clientAdPlan.Client || !clientAdPlan.Name || req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== clientAdPlan.Client) {
             return reject({
                 code: 400,
                 error: {
@@ -452,22 +453,12 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                 isNewUser = true;
             }
 
-            clientAdPlan.EndDate = moment().add(config.channels.plans.duration, 'days');
-
             const query = {
-                _id: channelPlan,
+                _id: channelPlan._id,
             };
 
-            const project = {
-                _id: 1,
-                ChannelAdSchedule: 1,
-                Channel: 1,
-                Seconds: 1,
-                BaseAmount: 1,
-            };
-
-            ChannelPlan.findOne(query, project)
-                .populate('Channel ChannelAdSchedule AdSchedule')
+            ChannelPlan.findOne(query)
+                .populate('Channel ChannelSlot')
                 .exec(async (err, chPlan) => {
                     if (err) {
                         return reject({
@@ -509,7 +500,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                             }
                         }
 
-                        let offers;
+                        /* let offers;
                         const project = {
                             Name: 1,
                             Amount: 1,
@@ -544,7 +535,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                             try {
                                 const result = await checkCouponApplicable(clientAdPlan.Client, chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, couponCode);
                                 discount = result.data;
-                                discountAmount = discount.AmountType === 'PERCENTAGE' ? finalAmount * discount.Amount / 100 : discount.Amount;
+                                discountAmount = discount.AmountType === 'PERCENTAGE' ? (finalAmount * discount.Amount) / 100 : discount.Amount;
                                 finalAmount -= discountAmount;
                             } catch (ex) {
                                 return reject({
@@ -563,23 +554,37 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                                 error: ex.error,
                             });
                         }
+                        */
+
+                        const selectedSlots = [];
+                        channelPlan.slots.map((slot) => {
+                            const _t = chPlan.ChannelSlot.find((cslot) => {
+                                return slot == cslot._id;
+                            });
+                            selectedSlots.push(_t);
+                        });
+
+                        let finalAmount = 0;
+                        selectedSlots.map((slot) => {
+                            if (channelPlan.planLength == 3) {
+                                finalAmount += slot.BaseAmount;
+                            } else {
+                                finalAmount += slot.BaseAmount2;
+                            }
+                        });
+
+                        const taxAmount = finalAmount * 0.2;
+                        let savedPlan = chPlan.toObject();
+                        savedPlan.ChannelSlot = selectedSlots;
 
                         const cAdPlan = new ClientAdPlan({
                             Name: clientAdPlan.Name,
-                            Description: isNewUser ? 'First Free Ad' + clientAdPlan.Description : clientAdPlan.Description,
                             Client: clientAdPlan.Client,
-                            StartDate: new Date(clientAdPlan.StartDate),
-                            EndDate: clientAdPlan.EndDate,
-                            IsRenewal: clientAdPlan.IsRenewal,
                             Status: 'ACTIVE',
-                            DayOfWeek: moment(clientAdPlan.StartDate).isoWeekday(),
+                            PlanLength: channelPlan.planLength,
                             ChannelPlan: {
-                                Plan: chPlan,
-                                Extras: extras || [],
-                                Discount: discountAmount + offerDiscountAmount,
-                                Offers: offers,
-                                Surge: 0,
-                                SubTotal: chPlan.BaseAmount,
+                                Plan: savedPlan,
+                                SubTotal: finalAmount,
                                 TaxAmount: taxAmount,
                                 TotalAmount: finalAmount + taxAmount,
                             },
@@ -591,6 +596,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                         } else {
                             func = chargeByCard(cAdPlan.ChannelPlan.TotalAmount, token);
                         }
+
                         try {
                             charge = await func;
                         } catch (err) {
@@ -602,14 +608,8 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
 
                         const transaction = new Transaction({
                             ChannelPlan: {
-                                Channel: chPlan.Channel,
-                                AdSchedule: chPlan.ChannelAdSchedule.AdSchedule,
-                                Seconds: chPlan.Seconds,
-                                Extras: extras || [],
-                                Discount: discountAmount + offerDiscountAmount,
-                                Offers: offers,
-                                Surge: 0,
-                                SubTotal: chPlan.BaseAmount,
+                                Channel: savedPlan.Channel._id,
+                                SubTotal: finalAmount,
                                 TaxAmount: taxAmount,
                             },
                             Client: clientAdPlan.Client,
@@ -617,9 +617,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                             TotalAmount: cAdPlan.ChannelPlan.TotalAmount,
                             Status: 'succeeded',
                             StripeResponse: charge,
-                            TaxBreakdown: taxes,
                             ReferenceId: charge.id,
-                            Coupon: discount ? discount._id : undefined,
                         });
                         transaction.save((err) => {
                             if (err) {
@@ -628,6 +626,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                                     error: err,
                                 });
                             }
+
                             cAdPlan.save((err) => {
                                 if (err) {
                                     return reject({
@@ -638,9 +637,21 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
 
                                 ClientAdPlan.findOne({ _id: cAdPlan.id })
                                     .populate('Client ClientAd')
-                                    .exec((err, cap) => {
+                                    .exec((err) => {
+                                        if (err) {
+                                            return reject({
+                                                code: 500,
+                                                error: err,
+                                            });
+                                        }
+
+                                        resolve({
+                                            code: 200,
+                                            data: cAdPlan,
+                                        });
+
                                         //invoice email
-                                        const adEmailInfo = {
+                                        /*const adEmailInfo = {
                                             invoice_number: transaction.ReferenceId,
                                             invoice_date: moment().format('DD/MM/YYYY'),
                                             region: chPlan.Channel.Name,
@@ -658,12 +669,7 @@ const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, coup
                                         };
 
                                         email.helper.paymentInvoiceEmail(cap.Client.Email, adEmailInfo);
-
-                                        resolve({
-                                            code: 200,
-                                            data: cAdPlan,
-                                        });
-                                        updateChannelAdLengthCounter(cAdPlan);
+                                        updateChannelAdLengthCounter(cAdPlan);*/
                                     });
                             });
                         });
@@ -885,7 +891,7 @@ const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
 };
 
 const calculateOffer = (amount, offer) => {
-    return offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount / 100 : offer.Amount;
+    return offer.AmountType === 'PERCENTAGE' ? (amount * offer.Amount) / 100 : offer.Amount;
 };
 
 const populateCategories = () => {
