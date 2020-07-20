@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const channelPlanSchema = require.main.require('./models/ChannelPlan').schema;
 const { auditSchema } = require.main.require('./models/CommonSchema');
 
 const name = 'ClientAdPlan';
@@ -27,24 +26,25 @@ const schema = new mongoose.Schema({
     Comments: {
         type: String,
     },
-    ChannelPlan: {
-        Plan: channelPlanSchema,
-        Surge: {
-            type: Number,
+    ChannelProduct: {
+        ProductLength: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'ProductLength',
+            required: true,
         },
-        Discount: {
-            type: Number,
-        },
-        Extras: [],
-        SubTotal: {
-            type: Number,
-        },
-        TaxAmount: {
-            type: Number,
-        },
-        TotalAmount: {
-            type: Number,
-        },
+        ChannelSlots: [{
+            Slot: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'ChannelSlot'
+            },
+            RatePerSecond: {
+                type: Number,
+                required: true
+            },
+            Duration: {
+                type:Number
+            }
+        }]
     },
     PlanLength: {
         type: Number,

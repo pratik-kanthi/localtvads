@@ -17,14 +17,6 @@ const schema = new mongoose.Schema({
     EndTime: {
         type: String,
     },
-    IsActive: {
-        type: Boolean,
-        default: true,
-    },
-    BaseAmount: {
-        type: Number,
-        required: true,
-    },
     AuditInfo: auditSchema,
 });
 

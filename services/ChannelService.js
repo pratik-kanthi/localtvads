@@ -1,11 +1,15 @@
 const moment = require('moment');
 const Channel = require.main.require('./models/Channel').model;
-const ChannelPlan = require.main.require('./models/ChannelPlan').model;
+const ChannelPlan = require.main.require('./models/ChannelProduct').model;
 const ChannelAdSchedule = require.main.require('./models/ChannelAdSchedule').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
 
-const { getApplicableOffers } = require.main.require('./services/OfferService');
-const { getTaxes } = require.main.require('./services/TaxService');
+const {
+    getApplicableOffers
+} = require.main.require('./services/OfferService');
+const {
+    getTaxes
+} = require.main.require('./services/TaxService');
 
 const createChannel = (newchannel) => {
     return new Promise(async (resolve, reject) => {
@@ -151,7 +155,12 @@ const getChannelPlan = (channel) => {
                 },
             });
         }
-        ChannelPlan.findOne({ Channel: channel, ChannelSlot: { $exists: true } })
+        ChannelPlan.findOne({
+            Channel: channel,
+            ChannelSlot: {
+                $exists: true
+            }
+        })
             .populate('Channel ChannelSlot')
             .exec((err, cplan) => {
                 if (err) {
@@ -179,25 +188,46 @@ const getLowestPriceOnChannel = (channel) => {
                 },
             });
         }
-        ChannelPlan.findOne({ Channel: channel, ChannelSlot: { $exists: true } })
-            .populate('ChannelSlot')
-            .exec((err, cplan) => {
+        ChannelPlan.find({
+            Channel: channel
+        }).exec((err, channelProducts) => {
+            try{
                 if (err) {
                     return reject({
                         code: 500,
                         error: err,
                     });
                 }
-
-                const channelPlanPrices = cplan.ChannelSlot.map((slot) => {
-                    return slot.BaseAmount;
-                });
-                const lowest = Math.min(...channelPlanPrices);
+                if (!channelProducts ||channelProducts.length==0) {
+                    return reject({
+                        code: 404,
+                        error: 'No plan found for channel',
+                    });
+                }
+                let lowestRate=0;
+                for (let i = 0, len = channelProducts.length;i < len; i++) {
+                    channelProducts[i].ChannelSlots.map(function(slot) {
+                        const rate=slot.RatePerSecond * slot.Duration;
+                        if(!lowestRate){
+                            lowestRate=rate;
+                        }
+                        if(lowestRate>rate) {
+                            lowestRate=rate;
+                        }
+                        return '';
+                    });
+                }
                 resolve({
                     code: 200,
-                    data: lowest.toString(),
+                    data: lowestRate.toString()
                 });
-            });
+            }catch(err){
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            }
+        });
     });
 };
 
@@ -253,17 +283,16 @@ const getChannelScheduleAvailability = (channel, seconds, startDateString, endDa
                 }
                 const channelAdScheduleIds = channelPlans.map((cp) => cp);
                 query = {
-                    $and: [
-                        {
-                            DateTime: {
-                                $gte: startDate,
-                            },
+                    $and: [{
+                        DateTime: {
+                            $gte: startDate,
                         },
-                        {
-                            DateTime: {
-                                $lte: endDate,
-                            },
+                    },
+                    {
+                        DateTime: {
+                            $lte: endDate,
                         },
+                    },
                     ],
                     ChannelAdSchedule: {
                         $in: channelAdScheduleIds,
@@ -375,14 +404,11 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
         const adScheduleMapping = {};
         const adScheduleViewershipMapping = {};
         try {
-            const channelModel = await Channel.findOne(
-                {
-                    _id: channel,
-                },
-                {
-                    Viewerships: 1,
-                }
-            );
+            const channelModel = await Channel.findOne({
+                _id: channel,
+            }, {
+                Viewerships: 1,
+            });
             if (!channelModel) {
                 return reject({
                     code: 404,
@@ -413,19 +439,17 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                 TotalAvailableSeconds: 1,
                 AdSchedule: 1,
             },
-            populate: [
-                {
-                    path: 'AdSchedule',
-                    model: 'AdSchedule',
-                    select: {
-                        _id: 1,
-                        Name: 1,
-                        Description: 1,
-                        StartTime: 1,
-                        EndTime: 1,
-                    },
+            populate: [{
+                path: 'AdSchedule',
+                model: 'AdSchedule',
+                select: {
+                    _id: 1,
+                    Name: 1,
+                    Description: 1,
+                    StartTime: 1,
+                    EndTime: 1,
                 },
-            ],
+            }, ],
         };
         ChannelPlan.find(query, project)
             .populate(populateOptions)
@@ -447,17 +471,16 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                         return c.ChannelAdSchedule._id;
                     });
                     query = {
-                        $and: [
-                            {
-                                DateTime: {
-                                    $gte: startDate,
-                                },
+                        $and: [{
+                            DateTime: {
+                                $gte: startDate,
                             },
-                            {
-                                DateTime: {
-                                    $lte: endDate,
-                                },
+                        },
+                        {
+                            DateTime: {
+                                $lte: endDate,
                             },
+                        },
                         ],
                         ChannelAdSchedule: {
                             $in: channelAdScheduleIds,
@@ -610,8 +633,7 @@ const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
         };
         ChannelAdLengthCounter.findOneAndUpdate(
             query,
-            value,
-            {
+            value, {
                 upsert: true,
             },
             (err) => {

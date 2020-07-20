@@ -1,4 +1,4 @@
-const ChannelPlan = require.main.require('./models/ChannelPlan').model;
+const ChannelPlan = require.main.require('./models/ChannelProduct').model;
 
 const fetchChannelPlans = (channel) => {
     return new Promise(async (resolve, reject) => {

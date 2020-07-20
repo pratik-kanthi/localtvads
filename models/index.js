@@ -16,8 +16,9 @@ module.exports = () => {
         enquiries: require('./Enquiry'),
         staffs: require('./Staff'),
         subscribers: require('./Subscriber'),
-        cplans: require('./ChannelPlan'),
+        channelproducts: require('./ChannelProduct'),
         faqs: require('./FAQ'),
         channelslots: require('./ChannelSlot'),
+        productlengths: require('./ProductLength'),
     };
 };

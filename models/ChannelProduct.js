@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 const deepPopulate = require('mongoose-deep-populate')(mongoose);
 
-const name = 'ChannelPlan';
+const name = 'ChannelProduct';
 
 const schema = new mongoose.Schema({
     Name: {
@@ -15,29 +15,28 @@ const schema = new mongoose.Schema({
         ref: 'Channel',
         required: true,
     },
-    ChannelAdSchedule: {
+    ProductLength: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ChannelAdSchedule',
-    },
-    ChannelSlot: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'ChannelSlot',
-        },
-    ],
-    Seconds: {
-        // length of the video
-        type: Number,
-        enum: [30],
+        ref: 'ProductLength',
         required: true,
-    },
-    BaseAmount: {
-        type: Number,
     },
     IsActive: {
         type: Boolean,
         default: true,
     },
+    ChannelSlots: [{
+        Slot: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'ChannelSlot'
+        },
+        RatePerSecond: {
+            type: Number,
+            required: true
+        },
+        Duration: {
+            type:Number
+        }
+    }]
 });
 
 schema.plugin(deepPopulate, {

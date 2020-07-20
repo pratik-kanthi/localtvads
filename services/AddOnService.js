@@ -196,10 +196,7 @@ const getActiveAddOns = () => {
                         error: err,
                     });
                 } else {
-                    const responseObj = {
-                        addOns: [],
-                        taxes: result.taxes,
-                    };
+                    const responseObj = [];
                     if (result.taxes && result.addOns) {
                         result.addOns.forEach((addOn) => {
                             addOn = addOn.toObject();
@@ -211,7 +208,7 @@ const getActiveAddOns = () => {
                                     taxAmount += tax.Value * 0.01 * addOn.Amount;
                                 }
                             });
-                            responseObj.addOns.push({ ...addOn, TaxAmount: taxAmount, TotalAmount: addOn.Amount + taxAmount });
+                            responseObj.push({ ...addOn, TaxAmount: taxAmount, TotalAmount: addOn.Amount + taxAmount });
                         });
                     }
                     resolve({

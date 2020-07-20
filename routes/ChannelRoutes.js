@@ -19,9 +19,9 @@ module.exports = (app) => {
         }
     });
 
-    app.get('/api/channel/lowest', async (req, res) => {
+    app.get('/api/channel/lowestprice', async (req, res) => {
         try {
-            const result = await getLowestPriceOnChannel(req.query.channel);
+            const result = await getLowestPriceOnChannel(req.query.id);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

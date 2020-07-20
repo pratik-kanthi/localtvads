@@ -4,18 +4,15 @@ const email = require('../email');
 const config = require.main.require('./config');
 
 const Coupon = require.main.require('./models/Coupon').model;
-const ChannelPlan = require.main.require('./models/ChannelPlan').model;
+const ChannelPlan = require.main.require('./models/ChannelProduct').model;
 const ClientAd = require.main.require('./models/ClientAd').model;
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
 
-const { updateChannelAdLengthCounter } = require.main.require('./services/ChannelService');
 const { getPreferredCard } = require.main.require('./services/ClientAdService');
 const { uploadFile } = require.main.require('./services/FileService');
-const { getApplicableOffers } = require.main.require('./services/OfferService');
 const { chargeByCard, chargeByExistingCard } = require.main.require('./services/PaymentService');
-const { getTaxes } = require.main.require('./services/TaxService');
 
 /**
  * Check for Discount coupon
