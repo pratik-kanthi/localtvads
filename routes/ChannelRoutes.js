@@ -1,4 +1,4 @@
-const { createChannel, getChannels, getChannel, getPlansByChannel, getSecondsByChannel, getChannelScheduleAvailability, updateChannel, getLowestPriceOnChannel, getChannelPlan } = require.main.require('./services/ChannelService');
+const { createChannel, getProductsOfChannel, getChannels, getChannel, getPlansByChannel, getSecondsByChannel, getChannelScheduleAvailability, updateChannel, getLowestPriceOnChannel, getChannelPlan } = require.main.require('./services/ChannelService');
 
 module.exports = (app) => {
     app.get('/api/channel/all', async (req, res) => {
@@ -58,6 +58,14 @@ module.exports = (app) => {
     app.get('/api/channel/:id', async (req, res) => {
         try {
             const result = await getChannel(req.params.id);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.stats(ex.code || 500).send(ex.error);
+        }
+    });
+    app.get('/api/channelproducts/all', async (req, res) => {
+        try {
+            const result = await getProductsOfChannel(req.query.id);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.stats(ex.code || 500).send(ex.error);

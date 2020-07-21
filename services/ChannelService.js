@@ -1,5 +1,6 @@
 const moment = require('moment');
 const Channel = require.main.require('./models/Channel').model;
+const ChannelProduct = require.main.require('./models/ChannelProduct').model;
 const ChannelPlan = require.main.require('./models/ChannelProduct').model;
 const ChannelAdSchedule = require.main.require('./models/ChannelAdSchedule').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
@@ -8,7 +9,7 @@ const {
     getApplicableOffers
 } = require.main.require('./services/OfferService');
 const {
-    getTaxes
+    getTaxAmount
 } = require.main.require('./services/TaxService');
 
 const createChannel = (newchannel) => {
@@ -80,13 +81,31 @@ const createChannel = (newchannel) => {
 };
 
 /**
+ * get Channel Products 
+ */
+const getProductsOfChannel = (channelId) => {
+    return new Promise(async (resolve, reject) => {
+        ChannelProduct.find({Channel:channelId}).deepPopulate('ProductLength ChannelSlots.Slot').exec((err, products) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            }
+            resolve({
+                code: 200,
+                data: products,
+            });
+        });
+    });
+};/**
  * get Channels
  */
 const getChannels = (projection) => {
     return new Promise(async (resolve, reject) => {
         const query = {
             Status: {
-                $in: ['LIVE', 'PROSPECTS'],
+                $in: ['LIVE'],
             },
         };
         const project = projection || {
@@ -505,7 +524,7 @@ const getPlansByChannel = (channel, seconds, startDateString, endDateString) => 
                             const result = {};
                             let taxes;
                             try {
-                                const taxResult = await getTaxes();
+                                const taxResult = await getTaxAmount();
                                 taxes = taxResult.taxes;
                             } catch (ex) {
                                 return reject({
@@ -691,6 +710,7 @@ const _formatDate = (date) => {
 module.exports = {
     createChannel,
     getChannels,
+    getProductsOfChannel,
     getChannel,
     getSecondsByChannel,
     getPlansByChannel,

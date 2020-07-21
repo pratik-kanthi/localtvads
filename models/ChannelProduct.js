@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const deepPopulate = require('mongoose-deep-populate')(mongoose);
 
 const name = 'ChannelProduct';
 
@@ -38,18 +37,6 @@ const schema = new mongoose.Schema({
         }
     }]
 });
-
-schema.plugin(deepPopulate, {
-    populate: {
-        ChannelAdSchedule: {
-            select: 'AdSchedule',
-        },
-        'ChannelAdSchedule.dSchedule': {
-            select: 'Name',
-        },
-    },
-});
-
 const model = mongoose.model(name, schema);
 
 module.exports = {

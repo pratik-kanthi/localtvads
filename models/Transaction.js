@@ -12,19 +12,13 @@ const schema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClientAdPlan'
     },
-    ClientServiceAddOn: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ClientServiceAddOn'
-    },
-    ChannelPlan: {},
-    ServiceAddOn: {},
     TotalAmount: {
         type: Number,
         required: true
     },
     Status: {
         type: String,
-        enum: ['succeeded', 'pending', 'failed'],
+        enum: ['SUCCEEDED', 'PENDING', 'FAILED'],
         required: true
     },
     ReferenceId: {
@@ -43,6 +37,9 @@ const schema = new mongoose.Schema({
     },
     TaxBreakdown: [],
     StripeResponse: {},
+    StripeResponseCode: {
+        type:String
+    },
     ReceiptUrl: String
 });
 

@@ -7,8 +7,8 @@ const getApplicableOffers = (channel, adSchedule, startDate, project = {}) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = _generateOfferQuery(channel, adSchedule, startDate);
@@ -16,59 +16,66 @@ const getApplicableOffers = (channel, adSchedule, startDate, project = {}) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             resolve({
                 code: 200,
-                data: offers
+                data: offers,
             });
         });
     });
 };
 
-const getAllOffers = (startDate, project = {
-    Name: 1,
-    Description: 1,
-    StartDate: 1,
-    EndDate: 1,
-    Amount: 1,
-    AmountType: 1,
-    ImageUrl: 1
-}) => {
+const getAllOffers = (
+    startDate,
+    endDate,
+    project = {
+        Name: 1,
+        Description: 1,
+        StartDate: 1,
+        EndDate: 1,
+        Amount: 1,
+        AmountType: 1,
+        ImageUrl: 1,
+    }
+) => {
     return new Promise(async (resolve, reject) => {
         if (!startDate) {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         const query = {
-            $and: []
+            $and: [],
         };
         query.$and.push({
-            $and: [{
-                StartDate: {
-                    $lte: new Date(startDate)
-                }
-            }, {
-                EndDate: {
-                    $gte: new Date(startDate)
-                }
-            }]
+            $and: [
+                {
+                    StartDate: {
+                        $lte: new Date(startDate),
+                    },
+                },
+                {
+                    EndDate: {
+                        $gte: new Date(endDate),
+                    },
+                },
+            ],
         });
         Offer.find(query, project, (err, offers) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             resolve({
                 code: 200,
-                data: offers
+                data: offers,
             });
         });
     });
@@ -80,20 +87,20 @@ const saveOffer = (offerObj) => {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         new Offer(offerObj).save((err, offer) => {
             if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
             resolve({
                 code: 200,
-                data: offer
+                data: offer,
             });
         });
     });
@@ -102,18 +109,20 @@ const saveOffer = (offerObj) => {
 const getAllOffersForStaff = () => {
     return new Promise(async (resolve, reject) => {
         const query = {};
-        Offer.find(query).populate('Channels AdSchedules').exec((err, offers) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
+        Offer.find(query)
+            .populate('Channels AdSchedules')
+            .exec((err, offers) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+                resolve({
+                    code: 200,
+                    data: offers,
                 });
-            }
-            resolve({
-                code: 200,
-                data: offers
             });
-        });
     });
 };
 
@@ -125,42 +134,45 @@ const getOffersByDuration = (startDate, endDate) => {
                     $and: [
                         {
                             StartDate: {
-                                $lte: new Date(startDate)
-                            }
-                        }, {
+                                $lte: new Date(startDate),
+                            },
+                        },
+                        {
                             EndDate: {
-                                $lte: new Date(startDate)
-                            }
-                        }
-                    ]
+                                $lte: new Date(startDate),
+                            },
+                        },
+                    ],
                 },
                 {
                     $and: [
                         {
                             StartDate: {
-                                $gte: new Date(startDate)
-                            }
-                        }, {
+                                $gte: new Date(startDate),
+                            },
+                        },
+                        {
                             EndDate: {
-                                $lte: new Date(endDate)
-                            }
-                        }
-                    ]
+                                $lte: new Date(endDate),
+                            },
+                        },
+                    ],
                 },
                 {
                     $and: [
                         {
                             StartDate: {
-                                $lte: new Date(endDate)
-                            }
-                        }, {
+                                $lte: new Date(endDate),
+                            },
+                        },
+                        {
                             EndDate: {
-                                $gte: new Date(endDate)
-                            }
-                        }
-                    ]
-                }
-            ]
+                                $gte: new Date(endDate),
+                            },
+                        },
+                    ],
+                },
+            ],
         };
         const projection = {
             _id: 1,
@@ -173,58 +185,60 @@ const getOffersByDuration = (startDate, endDate) => {
             AdSchedules: 1,
             Channels: 1,
             DaysOfWeek: 1,
-            AmountType: 1
+            AmountType: 1,
         };
         const populateOptions = [
             {
                 path: 'AdSchedules',
                 select: {
-                    Name: 1
-                }
+                    Name: 1,
+                },
             },
             {
                 path: 'Channels',
                 select: {
-                    Name: 1
-                }
-            }
+                    Name: 1,
+                },
+            },
         ];
-        Offer.find(query, projection).populate(populateOptions).exec((err, offers) => {
-            if (err) {
-                return reject({
-                    code: 400,
-                    error: err
+        Offer.find(query, projection)
+            .populate(populateOptions)
+            .exec((err, offers) => {
+                if (err) {
+                    return reject({
+                        code: 400,
+                        error: err,
+                    });
+                }
+                resolve({
+                    code: 200,
+                    data: offers,
                 });
-            }
-            resolve({
-                code: 200,
-                data: offers
             });
-        });
     });
 };
 
 const _generateOfferQuery = (channel, adSchedule, startDate) => {
     const query = {
-        $and: []
+        $and: [],
     };
     if (channel) {
         query.$and.push({
             $or: [
                 {
                     Channels: {
-                        $in: [channel]
-                    }
+                        $in: [channel],
+                    },
                 },
                 {
                     Channels: {
-                        $exists: false
-                    }
+                        $exists: false,
+                    },
                 },
                 {
-                    Channels: []
-                }
-            ]
+                    Channels: [],
+                },
+            ],
         });
     }
     if (adSchedule) {
@@ -232,35 +246,38 @@ const _generateOfferQuery = (channel, adSchedule, startDate) => {
             $or: [
                 {
                     AdSchedules: {
-                        $in: [adSchedule]
-                    }
+                        $in: [adSchedule],
+                    },
                 },
                 {
                     AdSchedules: {
-                        $exists: false
-                    }
+                        $exists: false,
+                    },
                 },
                 {
-                    AdSchedules: []
-                }
-            ]
+                    AdSchedules: [],
+                },
+            ],
         });
     }
     if (startDate) {
         query.$and.push({
-            $and: [{
-                StartDate: {
-                    $lte: new Date(startDate)
-                }
-            }, {
-                EndDate: {
-                    $gte: new Date(startDate)
-                }
-            }]
+            $and: [
+                {
+                    StartDate: {
+                        $lte: new Date(startDate),
+                    },
+                },
+                {
+                    EndDate: {
+                        $gte: new Date(startDate),
+                    },
+                },
+            ],
         });
     }
     query.$and.push({
-        ApplyToBooking: true
+        ApplyToBooking: true,
     });
     return query;
 };
@@ -268,28 +285,28 @@ const _generateOfferQuery = (channel, adSchedule, startDate) => {
 const deleteOffer = (offerId) => {
     return new Promise(async (resolve, reject) => {
         const query = {
-            _id: offerId
+            _id: offerId,
         };
         if (!offerId) {
             return reject({
                 code: 400,
                 error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                    message: utilities.ErrorMessages.BAD_REQUEST,
+                },
             });
         }
         Offer.findOneAndDelete(query).exec((err, data) => {
-            if(err) {
+            if (err) {
                 return reject({
                     code: 500,
-                    error: err
+                    error: err,
                 });
             }
-            if(data){
+            if (data) {
                 FileService.deleteBucketFile(data.ImageUrl);
                 resolve({
                     code: 200,
-                    data: 'Deleted'
+                    data: 'Deleted',
                 });
             }
         });
@@ -302,5 +319,5 @@ module.exports = {
     getAllOffersForStaff,
     getOffersByDuration,
     saveOffer,
-    deleteOffer
+    deleteOffer,
 };

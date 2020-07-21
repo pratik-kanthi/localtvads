@@ -1,12 +1,13 @@
 const mongoose = require('mongoose');
-const { auditSchema } = require.main.require('./models/CommonSchema');
+const {
+    auditSchema
+} = require.main.require('./models/CommonSchema');
 
 const name = 'ClientAdPlan';
 
 const schema = new mongoose.Schema({
     Name: {
-        type: String,
-        required: true,
+        type: String
     },
     Description: {
         type: String,
@@ -14,6 +15,11 @@ const schema = new mongoose.Schema({
     Client: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client',
+        required: true,
+    },
+    Channel: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Channel',
         required: true,
     },
     ClientAd: {
@@ -26,6 +32,20 @@ const schema = new mongoose.Schema({
     Comments: {
         type: String,
     },
+    Addons: [{
+        Name: {
+            type: String
+        },
+        Description: {
+            type: String
+        },
+        Benefits: [{
+            type: String
+        }],
+        Amount: {
+            type: Number,
+        }
+    }],
     ChannelProduct: {
         ProductLength: {
             type: mongoose.Schema.Types.ObjectId,
@@ -42,17 +62,27 @@ const schema = new mongoose.Schema({
                 required: true
             },
             Duration: {
-                type:Number
+                type: Number
             }
         }]
     },
-    PlanLength: {
-        type: Number,
-        enum: [3, 6],
+    Days: [],
+    PlanAmount: {
+        type: Number
     },
+    AddonsAmount: {
+        type: Number
+    },
+    TotalAmount: {
+        type: Number
+    },
+    TaxAmount: {
+        type: Number
+    },
+    Taxes: [],
     Status: {
         type: String,
-        enum: ['ACTIVE', 'INACTIVE', 'EXPIRED'],
+        enum: ['PAID', 'LIVE', 'EXPIRED'],
     },
     BookedDate: {
         type: Date,

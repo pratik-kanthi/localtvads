@@ -31,6 +31,28 @@ const chargeByExistingCard = (amount, cusToken, cardToken) => {
     });
 };
 
+
+const getToken = (card) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const token=await stripe.tokens.create(
+                {
+                    card: {
+                        number: card.card_number,
+                        cvc: card.cvv,
+                        exp_month: card.expiry.substring(0, 2),
+                        exp_year: parseInt(card.expiry.substring(card.expiry.indexOf('/') + 1)),
+                    },
+                });
+            resolve(token);
+        } catch (err) {
+            return reject({
+                code: err.statusCode,
+                error: _throwError(err)
+            });
+        }
+    });
+};
 /**
  * Save customer to Stripe
  * @param {String} stripeToken - token of Stripe starting with tok_
@@ -124,6 +146,7 @@ const _throwError = (err) => {
 };
 
 module.exports = {
+    getToken,
     chargeByCard,
     chargeByExistingCard,
     deleteCardFromStripe,

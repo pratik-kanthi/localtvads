@@ -12,7 +12,7 @@ const Tax = require.main.require('./models/Tax').model;
 
 const { uploadFile } = require.main.require('./services/FileService');
 const { chargeByCard, chargeByExistingCard } = require.main.require('./services/PaymentService');
-const { getTaxes } = require.main.require('./services/TaxService');
+const { getTaxAmount } = require.main.require('./services/TaxService');
 
 const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
     return new Promise(async (resolve, reject) => {
@@ -71,7 +71,7 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                     }
                 }
                 try {
-                    const taxResult = await getTaxes(addOn.Amount);
+                    const taxResult = await getTaxAmount(addOn.Amount);
                     taxes = taxResult.taxes;
                     taxAmount = taxResult.totalTax;
                 } catch (ex) {
@@ -120,7 +120,7 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                         },
                         ClientServiceAddOn: clientServiceAddOn._id,
                         TotalAmount: addOn.Amount + taxAmount,
-                        Status: 'succeeded',
+                        Status: 'SUCCEEDED',
                         StripeResponse: charge,
                         ReferenceId: charge.id,
                         TaxBreakdown: taxes,

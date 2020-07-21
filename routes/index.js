@@ -19,5 +19,6 @@ module.exports = (app, models, io) => {
     require('./DashboardRoutes')(app);
     require('./ChannelPlanRoutes')(app);
     require('./ChannelAdScheduleRoutes')(app);
+    require('./TaxRoutes')(app);
     require('./ApiRoutes')(app, models);
 };
