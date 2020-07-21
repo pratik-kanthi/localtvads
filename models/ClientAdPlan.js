@@ -32,31 +32,11 @@ const schema = new mongoose.Schema({
     Comments: {
         type: String,
     },
-    Addons: [{
-        Name: {
-            type: String
-        },
-        Description: {
-            type: String
-        },
-        Benefits: [{
-            type: String
-        }],
-        Amount: {
-            type: Number,
-        }
-    }],
+    Addons: [{}],
     ChannelProduct: {
-        ProductLength: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'ProductLength',
-            required: true,
-        },
+        ProductLength: {},
         ChannelSlots: [{
-            Slot: {
-                type: mongoose.Schema.Types.ObjectId,
-                ref: 'ChannelSlot'
-            },
+            Slot: {},
             RatePerSecond: {
                 type: Number,
                 required: true
@@ -66,20 +46,19 @@ const schema = new mongoose.Schema({
             }
         }]
     },
+    StartDate:{
+        type: Date
+    },
+    ExpiryDate:{
+        type: Date
+    },
     Days: [],
-    PlanAmount: {
+    WeeklyAmount: {
         type: Number
     },
     AddonsAmount: {
         type: Number
     },
-    TotalAmount: {
-        type: Number
-    },
-    TaxAmount: {
-        type: Number
-    },
-    Taxes: [],
     Status: {
         type: String,
         enum: ['PAID', 'LIVE', 'EXPIRED'],

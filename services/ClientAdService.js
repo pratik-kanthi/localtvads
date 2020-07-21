@@ -428,11 +428,19 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
 const saveClientAdPlan = (cPlan, cardId, card, user) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (!cPlan || !cPlan.Client || user.Claims[0].Name !== 'Client' || user.Claims[0].Value !== cPlan.Client) {
+            if (!cPlan || !cPlan.Client) {
                 return reject({
                     code: 400,
                     error: {
                         message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
+                });
+            }
+            if(user.Claims[0].Name !== 'Client' || user.Claims[0].Value !== cPlan.Client){
+                return reject({
+                    code: 403,
+                    error: {
+                        message: utilities.ErrorMessages.UNAUTHORISED,
                     },
                 });
             }
@@ -448,48 +456,50 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                 Client: cPlan.Client,
                 Channel: cPlan.Channel,
                 Days: cPlan.Days,
-                PlanAmount: 0,
+                WeeklyAmount: 0,
                 AddonsAmount: 0,
-                TaxAmount: 0
             });
             const channelProduct = await ChannelProduct.findOne({
                 _id: cPlan.ChannelProduct
-            }).lean().exec();
+            }).deepPopulate('ProductLength ChannelSlots.Slot').lean().exec();
             const channelSlots = channelProduct.ChannelSlots.filter((item) => {
-                return cPlan.ChannelSlots.indexOf(item.Slot.toString()) != -1;
+                return cPlan.ChannelSlots.indexOf(item.Slot._id.toString()) != -1;
             });
             clientAdPlan.ChannelProduct = {
                 ProductLength: channelProduct.ProductLength,
-                Slots: channelSlots,
+                ChannelSlots: channelSlots,
             };
             for (let i = 0, len = channelSlots.length; i < len; i++) {
-                clientAdPlan.PlanAmount += channelSlots[i].RatePerSecond * channelSlots[i].Duration * clientAdPlan.Days.length;
+                clientAdPlan.WeeklyAmount += channelSlots[i].RatePerSecond * channelSlots[i].Duration * clientAdPlan.Days.length;
             }
-            if (clientAdPlan.Addons && clientAdPlan.Addons.length > 0 && clientAdPlan.Addons[0]._id) {
+            if (cPlan.Addons && cPlan.Addons.length > 0) {
                 const addon = await ServiceAddOn.findOne({
-                    _id: clientAdPlan.Addons[0]._id
-                }).select('_id Amount').exec();
+                    _id: cPlan.Addons[0]
+                }).lean().exec();
                 clientAdPlan.AddonsAmount = addon.Amount;
-                clientAdPlan.Addons = [addon._id];
+                clientAdPlan.Addons = [addon];
             }
+            let taxAmount=0;
             const taxes = (await getAllTaxes()).data;
             for (let i = 0, len = taxes.length; i < len; i++) {
                 if (taxes[i].Type === 'FIXED') {
-                    clientAdPlan.TaxAmount += taxes[i].Value;
+                    taxAmount += taxes[i].Value;
                 } else {
-                    clientAdPlan.TaxAmount += taxes[i].Value * 0.01 * (clientAdPlan.PlanAmount + clientAdPlan.AddonsAmount);
+                    taxAmount += taxes[i].Value * 0.01 * (clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount);
                 }
             }
             clientAdPlan.Taxes = taxes;
-            clientAdPlan.TotalAmount = clientAdPlan.TaxAmount + clientAdPlan.PlanAmount + clientAdPlan.AddonsAmount;
+            const totalAmount = taxAmount + clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount;
+            let transaction;
             try{
-                await stripePayment(clientAdPlan, card);
+                transaction = await stripePayment(clientAdPlan, card, totalAmount, taxes);
             }catch(err){
                 return reject({
                     code: 402,
                     error: err.error,
                 });
             }
+            clientAdPlan.Status='PAID';
             clientAdPlan.save(function (err) {
                 if (err) {
                     return reject({
@@ -497,9 +507,10 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                         error: err,
                     });
                 }
+                delete transaction.StripeResponse;
                 resolve({
                     code: 200,
-                    data: clientAdPlan,
+                    data: transaction,
                 });
             });
         } catch (err) {
@@ -511,14 +522,15 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
     });
 };
 
-function stripePayment(clientAdPlan, card) {
+function stripePayment(clientAdPlan, card, totalAmount, taxes) {
     return new Promise(async (resolve, reject) => {
         try {
-            const charge = await chargeByExistingCard(clientAdPlan.TotalAmount, card.StripeCusToken, card.Card.StripeCardToken);
+            const charge = await chargeByExistingCard(totalAmount, card.StripeCusToken, card.Card.StripeCardToken);
             const transaction = new Transaction({
                 ClientAdPlan: clientAdPlan._id,
                 Client: clientAdPlan.Client,
-                TotalAmount: clientAdPlan.TotalAmount,
+                TaxBreakdown:taxes,
+                TotalAmount: totalAmount,
                 Status: 'SUCCEEDED',
                 StripeResponse: charge,
                 ReferenceId: charge.id
@@ -528,7 +540,8 @@ function stripePayment(clientAdPlan, card) {
         } catch (err) {
             const transaction = new Transaction({
                 Client: clientAdPlan.Client,
-                TotalAmount: clientAdPlan.TotalAmount,
+                TotalAmount: totalAmount,
+                TaxBreakdown:taxes,
                 Status: 'FAILED',
                 StripeResponse: err.error,
                 StripeResponseCode:err.code

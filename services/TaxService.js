@@ -44,7 +44,7 @@ const getTaxAmount = (amount) => {
 
 const getAllTaxes = () => {
     return new Promise((resolve, reject) => {
-        Tax.find({}, (err, taxes) => {
+        Tax.find({}).lean().exec((err, taxes) => {
             if (err) {
                 return reject({
                     code: 500,
