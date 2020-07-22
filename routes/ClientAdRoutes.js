@@ -85,7 +85,7 @@ module.exports = (app) => {
                     message: utilities.ErrorMessages.BAD_REQUEST
                 });
             }
-            if(req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== req.query.clientId){
+            if(req.user.Claims[0].Name !== 'Client'){
                 return res.status(403).send({
                     message: utilities.ErrorMessages.UNAUTHORISED,
                 });
