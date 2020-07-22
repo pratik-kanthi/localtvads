@@ -4,7 +4,7 @@ const Tax = require.main.require('./models/Tax').model;
  * Add an Image
  * @param {Number} amount - amount in pounds
  */
-const getTaxes = (amount) => {
+const getTaxAmount = (amount) => {
     return new Promise(async (resolve, reject) => {
         const query = {
             Active: true
@@ -42,6 +42,21 @@ const getTaxes = (amount) => {
     });
 };
 
+const getAllTaxes = () => {
+    return new Promise((resolve, reject) => {
+        Tax.find({}).lean().exec((err, taxes) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            resolve({code:200, data:taxes});
+        });
+    });
+};
+
 module.exports = {
-    getTaxes
+    getTaxAmount,
+    getAllTaxes
 };

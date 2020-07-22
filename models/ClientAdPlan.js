@@ -1,13 +1,13 @@
 const mongoose = require('mongoose');
-const channelPlanSchema = require.main.require('./models/ChannelPlan').schema;
-const { auditSchema } = require.main.require('./models/CommonSchema');
+const {
+    auditSchema
+} = require.main.require('./models/CommonSchema');
 
 const name = 'ClientAdPlan';
 
 const schema = new mongoose.Schema({
     Name: {
-        type: String,
-        required: true,
+        type: String
     },
     Description: {
         type: String,
@@ -15,6 +15,11 @@ const schema = new mongoose.Schema({
     Client: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client',
+        required: true,
+    },
+    Channel: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Channel',
         required: true,
     },
     ClientAd: {
@@ -27,32 +32,36 @@ const schema = new mongoose.Schema({
     Comments: {
         type: String,
     },
-    ChannelPlan: {
-        Plan: channelPlanSchema,
-        Surge: {
-            type: Number,
-        },
-        Discount: {
-            type: Number,
-        },
-        Extras: [],
-        SubTotal: {
-            type: Number,
-        },
-        TaxAmount: {
-            type: Number,
-        },
-        TotalAmount: {
-            type: Number,
-        },
+    Addons: [{}],
+    ChannelProduct: {
+        ProductLength: {},
+        ChannelSlots: [{
+            Slot: {},
+            RatePerSecond: {
+                type: Number,
+                required: true
+            },
+            Duration: {
+                type: Number
+            }
+        }]
     },
-    PlanLength: {
-        type: Number,
-        enum: [3, 6],
+    StartDate:{
+        type: Date
+    },
+    ExpiryDate:{
+        type: Date
+    },
+    Days: [],
+    WeeklyAmount: {
+        type: Number
+    },
+    AddonsAmount: {
+        type: Number
     },
     Status: {
         type: String,
-        enum: ['ACTIVE', 'INACTIVE', 'EXPIRED'],
+        enum: ['PAID', 'LIVE', 'EXPIRED'],
     },
     BookedDate: {
         type: Date,

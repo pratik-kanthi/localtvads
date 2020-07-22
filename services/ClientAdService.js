@@ -4,18 +4,24 @@ const email = require('../email');
 const config = require.main.require('./config');
 
 const Coupon = require.main.require('./models/Coupon').model;
-const ChannelPlan = require.main.require('./models/ChannelPlan').model;
+const ChannelProduct = require.main.require('./models/ChannelProduct').model;
+const ServiceAddOn = require.main.require('./models/ServiceAddOn').model;
 const ClientAd = require.main.require('./models/ClientAd').model;
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
-
-const { updateChannelAdLengthCounter } = require.main.require('./services/ChannelService');
-const { getPreferredCard } = require.main.require('./services/ClientAdService');
-const { uploadFile } = require.main.require('./services/FileService');
-const { getApplicableOffers } = require.main.require('./services/OfferService');
-const { chargeByCard, chargeByExistingCard } = require.main.require('./services/PaymentService');
-const { getTaxes } = require.main.require('./services/TaxService');
+const {
+    getAllTaxes
+} = require.main.require('./services/TaxService');
+const {
+    getPreferredCard
+} = require.main.require('./services/ClientAdService');
+const {
+    uploadFile
+} = require.main.require('./services/FileService');
+const {
+    chargeByExistingCard
+} = require.main.require('./services/PaymentService');
 
 /**
  * Check for Discount coupon
@@ -61,7 +67,7 @@ const checkCouponApplicable = (clientId, channel, adSchedule, startDate, couponC
                 Coupon: coupon._id,
                 Client: clientId,
                 Status: {
-                    $in: ['succeeded', 'pending'],
+                    $in: ['SUCCEEDED', 'PENDING'],
                 },
             };
             Transaction.countDocuments(query, (err, count) => {
@@ -107,7 +113,9 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
         let query = _generateDiscountQuery(clientId, channel, channelPlan, startDate);
         let coupons = [];
         try {
-            coupons = await Coupon.find(query).sort({ Amount: -1 }).exec();
+            coupons = await Coupon.find(query).sort({
+                Amount: -1
+            }).exec();
         } catch (err) {
             return reject({
                 code: 500,
@@ -123,7 +131,7 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
             Coupon: {
                 $in: couponIds,
             },
-            Status: 'succeeded',
+            Status: 'SUCCEEDED',
         };
         const project = {
             Coupon: 1,
@@ -258,51 +266,38 @@ const getClientAdPlans = (clientId, top, skip) => {
             Client: clientId,
             PlanLength: 3,
         };
-        const project = {
-            'ChannelPlan.Plan.ChannelAdSchedule.AdSchedule': 1,
-            'ChannelPlan.Plan.Seconds': 1,
-            'ChannelPlanPlan.Channel': 1,
-            Name: 1,
-            StartDate: 1,
-            EndDate: 1,
-            ClientAd: 1,
-            Category: 1,
-        };
-        const populateOptions = [
-            {
-                path: 'ClientAd',
-                select: {
-                    VideoUrl: 1,
-                    Status: 1,
-                },
+        const populateOptions = [{
+            path: 'ClientAd',
+            select: {
+                VideoUrl: 1,
+                Status: 1,
             },
-            {
-                path: 'ChannelPlan.Plan.Channel',
-                model: 'Channel',
+        },
+        {
+            path: 'ChannelPlan.Plan.Channel',
+            model: 'Channel',
+            select: {
+                Name: 1,
+                Description: 1,
+            },
+        },
+        {
+            path: 'ChannelPlan.Plan.ChannelAdSchedule',
+            model: 'ChannelAdSchedule',
+            select: {
+                _id: 1,
+            },
+            populate: [{
+                path: 'AdSchedule',
+                model: 'AdSchedule',
                 select: {
                     Name: 1,
                     Description: 1,
+                    StartTime: 1,
+                    EndTime: 1,
                 },
-            },
-            {
-                path: 'ChannelPlan.Plan.ChannelAdSchedule',
-                model: 'ChannelAdSchedule',
-                select: {
-                    _id: 1,
-                },
-                populate: [
-                    {
-                        path: 'AdSchedule',
-                        model: 'AdSchedule',
-                        select: {
-                            Name: 1,
-                            Description: 1,
-                            StartTime: 1,
-                            EndTime: 1,
-                        },
-                    },
-                ],
-            },
+            }, ],
+        },
         ];
         ClientAdPlan.find(query)
             .skip(parseInt(skip))
@@ -390,7 +385,7 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
                 Client: cAdPlan.Client,
                 ClientAdPlan: cAdPlan,
                 TotalAmount: cAdPlan.ChannelPlan.TotalAmount,
-                Status: 'succeeded',
+                Status: 'SUCCEEDED',
                 ReferenceId: charge.id,
                 StripeResponse: charge,
                 TaxBreakdown: taxes,
@@ -430,255 +425,133 @@ const renewClientAdPlan = (clientAdPlan, cardId) => {
  * @param {String} couponCode - discount coupon code
  * @param {Object} req - original object of request of API
  */
-const saveClientAdPlan = (clientAdPlan, channelPlan, extras, cardId, token, couponCode, req) => {
+const saveClientAdPlan = (cPlan, cardId, card, user) => {
     return new Promise(async (resolve, reject) => {
-        if (!channelPlan || !clientAdPlan || !clientAdPlan.Client || !clientAdPlan.Name || req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== clientAdPlan.Client) {
+        try {
+            if (!cPlan || !cPlan.Client) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
+                });
+            }
+            if(user.Claims[0].Name !== 'Client' || user.Claims[0].Value !== cPlan.Client){
+                return reject({
+                    code: 403,
+                    error: {
+                        message: utilities.ErrorMessages.UNAUTHORISED,
+                    },
+                });
+            }
+            if (!card) {
+                card = await ClientPaymentMethod.findOne({
+                    _id: cardId
+                }, {
+                    'Card.StripeCardToken': 1,
+                    StripeCusToken: 1,
+                }).exec();
+            }
+            const clientAdPlan = new ClientAdPlan({
+                Client: cPlan.Client,
+                Channel: cPlan.Channel,
+                Days: cPlan.Days,
+                WeeklyAmount: 0,
+                AddonsAmount: 0,
+            });
+            const channelProduct = await ChannelProduct.findOne({
+                _id: cPlan.ChannelProduct
+            }).deepPopulate('ProductLength ChannelSlots.Slot').lean().exec();
+            const channelSlots = channelProduct.ChannelSlots.filter((item) => {
+                return cPlan.ChannelSlots.indexOf(item.Slot._id.toString()) != -1;
+            });
+            clientAdPlan.ChannelProduct = {
+                ProductLength: channelProduct.ProductLength,
+                ChannelSlots: channelSlots,
+            };
+            for (let i = 0, len = channelSlots.length; i < len; i++) {
+                clientAdPlan.WeeklyAmount += channelSlots[i].RatePerSecond * channelSlots[i].Duration * clientAdPlan.Days.length;
+            }
+            if (cPlan.Addons && cPlan.Addons.length > 0) {
+                const addon = await ServiceAddOn.findOne({
+                    _id: cPlan.Addons[0]
+                }).lean().exec();
+                clientAdPlan.AddonsAmount = addon.Amount;
+                clientAdPlan.Addons = [addon];
+            }
+            let taxAmount=0;
+            const taxes = (await getAllTaxes()).data;
+            for (let i = 0, len = taxes.length; i < len; i++) {
+                if (taxes[i].Type === 'FIXED') {
+                    taxAmount += taxes[i].Value;
+                } else {
+                    taxAmount += taxes[i].Value * 0.01 * (clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount);
+                }
+            }
+            clientAdPlan.Taxes = taxes;
+            const totalAmount = taxAmount + clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount;
+            let transaction;
+            try{
+                transaction = await stripePayment(clientAdPlan, card, totalAmount, taxes);
+            }catch(err){
+                return reject({
+                    code: 402,
+                    error: err.error,
+                });
+            }
+            clientAdPlan.Status='PAID';
+            clientAdPlan.save(function (err) {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+                delete transaction.StripeResponse;
+                resolve({
+                    code: 200,
+                    data: transaction,
+                });
+            });
+        } catch (err) {
             return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
+                code: 500,
+                error: err,
             });
         }
-
-        // check if the user is first timer
-        let isNewUser = false;
-        ClientAdPlan.countDocuments({ Client: clientAdPlan.Client }, (err, count) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            } else if (!count) {
-                isNewUser = true;
-            }
-
-            const query = {
-                _id: channelPlan._id,
-            };
-
-            ChannelPlan.findOne(query)
-                .populate('Channel ChannelSlot')
-                .exec(async (err, chPlan) => {
-                    if (err) {
-                        return reject({
-                            code: 500,
-                            error: err,
-                        });
-                    } else if (!chPlan) {
-                        return reject({
-                            code: 404,
-                            error: {
-                                message: 'The chosen plan' + utilities.ErrorMessages.NOT_FOUND,
-                            },
-                        });
-                    } else {
-                        let card;
-                        if (cardId) {
-                            const query = {
-                                Client: clientAdPlan.Client,
-                                _id: cardId,
-                            };
-                            try {
-                                card = await ClientPaymentMethod.findOne(query, {
-                                    'Card.StripeCardToken': 1,
-                                    StripeCusToken: 1,
-                                });
-                            } catch (err) {
-                                return reject({
-                                    code: 500,
-                                    error: err,
-                                });
-                            }
-                            if (!card) {
-                                return reject({
-                                    code: 404,
-                                    error: {
-                                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND,
-                                    },
-                                });
-                            }
-                        }
-
-                        /* let offers;
-                        const project = {
-                            Name: 1,
-                            Amount: 1,
-                            AmountType: 1,
-                            AdSchedules: 1,
-                            DaysOfWeek: 1,
-                        };
-                        try {
-                            const result = await getApplicableOffers(chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, project);
-                            offers = result.data;
-                            offers = offers.filter((offer) => {
-                                return offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(clientAdPlan.StartDate).isoWeekday()) > -1;
-                            });
-                        } catch (ex) {
-                            return reject({
-                                code: ex.code,
-                                error: ex.error,
-                            });
-                        }
-
-                        let taxAmount,
-                            taxes,
-                            discount,
-                            finalAmount = chPlan.BaseAmount,
-                            discountAmount = 0,
-                            offerDiscountAmount = 0;
-                        offers.forEach((offer) => {
-                            offerDiscountAmount += calculateOffer(chPlan.BaseAmount, offer, chPlan.ChannelAdSchedule.AdSchedule);
-                        });
-                        finalAmount = finalAmount - offerDiscountAmount;
-                        if (couponCode) {
-                            try {
-                                const result = await checkCouponApplicable(clientAdPlan.Client, chPlan.Channel, chPlan.ChannelAdSchedule.AdSchedule, clientAdPlan.StartDate, couponCode);
-                                discount = result.data;
-                                discountAmount = discount.AmountType === 'PERCENTAGE' ? (finalAmount * discount.Amount) / 100 : discount.Amount;
-                                finalAmount -= discountAmount;
-                            } catch (ex) {
-                                return reject({
-                                    code: ex.code || 500,
-                                    error: ex.error,
-                                });
-                            }
-                        }
-                        try {
-                            const taxResult = await getTaxes(finalAmount);
-                            taxes = taxResult.taxes;
-                            taxAmount = taxResult.totalTax;
-                        } catch (ex) {
-                            return reject({
-                                code: ex.code || 500,
-                                error: ex.error,
-                            });
-                        }
-                        */
-
-                        const selectedSlots = [];
-                        channelPlan.slots.map((slot) => {
-                            const _t = chPlan.ChannelSlot.find((cslot) => {
-                                return slot == cslot._id;
-                            });
-                            selectedSlots.push(_t);
-                        });
-
-                        let finalAmount = 0;
-                        selectedSlots.map((slot) => {
-                            if (channelPlan.planLength == 3) {
-                                finalAmount += slot.BaseAmount;
-                            } else {
-                                finalAmount += slot.BaseAmount2;
-                            }
-                        });
-
-                        const taxAmount = finalAmount * 0.2;
-                        const savedPlan = chPlan.toObject();
-                        savedPlan.ChannelSlot = selectedSlots;
-
-                        const cAdPlan = new ClientAdPlan({
-                            Name: clientAdPlan.Name,
-                            Client: clientAdPlan.Client,
-                            Status: 'ACTIVE',
-                            PlanLength: channelPlan.planLength,
-                            ChannelPlan: {
-                                Plan: savedPlan,
-                                SubTotal: finalAmount,
-                                TaxAmount: taxAmount,
-                                TotalAmount: finalAmount + taxAmount,
-                            },
-                        });
-
-                        let charge, func;
-                        if (card) {
-                            func = chargeByExistingCard(cAdPlan.ChannelPlan.TotalAmount, card.StripeCusToken, card.Card.StripeCardToken);
-                        } else {
-                            func = chargeByCard(cAdPlan.ChannelPlan.TotalAmount, token);
-                        }
-
-                        try {
-                            charge = await func;
-                        } catch (err) {
-                            return reject({
-                                code: err.code,
-                                error: err.error,
-                            });
-                        }
-
-                        const transaction = new Transaction({
-                            ChannelPlan: {
-                                Channel: savedPlan.Channel._id,
-                                SubTotal: finalAmount,
-                                TaxAmount: taxAmount,
-                            },
-                            Client: clientAdPlan.Client,
-                            ClientAdPlan: cAdPlan._id,
-                            TotalAmount: cAdPlan.ChannelPlan.TotalAmount,
-                            Status: 'succeeded',
-                            StripeResponse: charge,
-                            ReferenceId: charge.id,
-                        });
-                        transaction.save((err) => {
-                            if (err) {
-                                return reject({
-                                    code: 500,
-                                    error: err,
-                                });
-                            }
-
-                            cAdPlan.save((err) => {
-                                if (err) {
-                                    return reject({
-                                        code: 500,
-                                        error: err,
-                                    });
-                                }
-
-                                ClientAdPlan.findOne({ _id: cAdPlan.id })
-                                    .populate('Client ClientAd')
-                                    .exec((err) => {
-                                        if (err) {
-                                            return reject({
-                                                code: 500,
-                                                error: err,
-                                            });
-                                        }
-
-                                        resolve({
-                                            code: 200,
-                                            data: cAdPlan,
-                                        });
-
-                                        //invoice email
-                                        /*const adEmailInfo = {
-                                            invoice_number: transaction.ReferenceId,
-                                            invoice_date: moment().format('DD/MM/YYYY'),
-                                            region: chPlan.Channel.Name,
-                                            ad_length: chPlan.Seconds,
-                                            start_date: moment(cAdPlan.StartDate).format('DD/MM/YYYY'),
-                                            end_date: moment(cAdPlan.EndDate).format('DD/MM/YYYY'),
-                                            client_name: cap.Client.Name,
-                                            total: transaction.TotalAmount,
-                                            offer: transaction.ChannelPlan.Offers.length > 0 ? transaction.ChannelPlan.Offers[0].Name : null,
-                                            offer_value: transaction.ChannelPlan.Offers.length > 0 ? transaction.ChannelPlan.Offers[0].Amount : null,
-                                            subtotal: transaction.ChannelPlan.SubTotal,
-                                            tax_value: transaction.ChannelPlan.TaxAmount,
-                                            tax_type: transaction.TaxBreakdown[0].Name,
-                                            tax_rate: transaction.TaxBreakdown[0].Value,
-                                        };
-
-                                        email.helper.paymentInvoiceEmail(cap.Client.Email, adEmailInfo);
-                                        updateChannelAdLengthCounter(cAdPlan);*/
-                                    });
-                            });
-                        });
-                    }
-                });
-        });
     });
 };
 
+function stripePayment(clientAdPlan, card, totalAmount, taxes) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const charge = await chargeByExistingCard(totalAmount, card.StripeCusToken, card.Card.StripeCardToken);
+            const transaction = new Transaction({
+                ClientAdPlan: clientAdPlan._id,
+                Client: clientAdPlan.Client,
+                TaxBreakdown:taxes,
+                TotalAmount: totalAmount,
+                Status: 'SUCCEEDED',
+                StripeResponse: charge,
+                ReferenceId: charge.id
+            });
+            await transaction.save();
+            resolve(transaction);
+        } catch (err) {
+            const transaction = new Transaction({
+                Client: clientAdPlan.Client,
+                TotalAmount: totalAmount,
+                TaxBreakdown:taxes,
+                Status: 'FAILED',
+                StripeResponse: err.error,
+                StripeResponseCode:err.code
+            });
+            await transaction.save();
+            reject(err);
+        }
+    });
+
+}
 /**
  * Upload ClientAd video
  * @param {String} clientAdPlan - _id of ClientAdPlan
@@ -691,42 +564,39 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
         const query = {
             _id: clientAdPlan,
         };
-        const populateOptions = [
-            {
-                path: 'Client',
-                model: 'Client',
-                select: {
-                    Name: 1,
-                    Email: 1,
-                },
+        const populateOptions = [{
+            path: 'Client',
+            model: 'Client',
+            select: {
+                Name: 1,
+                Email: 1,
             },
-            {
-                path: 'ChannelPlan.Plan.Channel',
-                model: 'Channel',
+        },
+        {
+            path: 'ChannelPlan.Plan.Channel',
+            model: 'Channel',
+            select: {
+                Name: 1,
+                Description: 1,
+            },
+        },
+        {
+            path: 'ChannelPlan.Plan.ChannelAdSchedule',
+            model: 'ChannelAdSchedule',
+            select: {
+                _id: 1,
+            },
+            populate: [{
+                path: 'AdSchedule',
+                model: 'AdSchedule',
                 select: {
                     Name: 1,
                     Description: 1,
+                    StartTime: 1,
+                    EndTime: 1,
                 },
-            },
-            {
-                path: 'ChannelPlan.Plan.ChannelAdSchedule',
-                model: 'ChannelAdSchedule',
-                select: {
-                    _id: 1,
-                },
-                populate: [
-                    {
-                        path: 'AdSchedule',
-                        model: 'AdSchedule',
-                        select: {
-                            Name: 1,
-                            Description: 1,
-                            StartTime: 1,
-                            EndTime: 1,
-                        },
-                    },
-                ],
-            },
+            }, ],
+        },
         ];
 
         ClientAdPlan.findOne(query)
@@ -821,77 +691,69 @@ const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
     };
     if (clientId) {
         query.$and.push({
-            $or: [
-                {
-                    Clients: clientId,
+            $or: [{
+                Clients: clientId,
+            },
+            {
+                Clients: {
+                    $exists: false,
                 },
-                {
-                    Clients: {
-                        $exists: false,
-                    },
-                },
+            },
             ],
         });
     }
     if (channel) {
         query.$and.push({
-            $or: [
-                {
-                    Channels: {
-                        $in: [channel],
-                    },
+            $or: [{
+                Channels: {
+                    $in: [channel],
                 },
-                {
-                    Channels: {
-                        $exists: false,
-                    },
+            },
+            {
+                Channels: {
+                    $exists: false,
                 },
-                {
-                    Channels: [],
-                },
+            },
+            {
+                Channels: [],
+            },
             ],
         });
     }
     if (adSchedule) {
         query.$and.push({
-            $or: [
-                {
-                    AdSchedules: {
-                        $in: [adSchedule],
-                    },
+            $or: [{
+                AdSchedules: {
+                    $in: [adSchedule],
                 },
-                {
-                    AdSchedules: {
-                        $exists: false,
-                    },
+            },
+            {
+                AdSchedules: {
+                    $exists: false,
                 },
-                {
-                    AdSchedules: [],
-                },
+            },
+            {
+                AdSchedules: [],
+            },
             ],
         });
     }
     if (startDate) {
         query.$and.push({
-            $and: [
-                {
-                    StartDate: {
-                        $lte: new Date(startDate),
-                    },
+            $and: [{
+                StartDate: {
+                    $lte: new Date(startDate),
                 },
-                {
-                    EndDate: {
-                        $gte: new Date(startDate),
-                    },
+            },
+            {
+                EndDate: {
+                    $gte: new Date(startDate),
                 },
+            },
             ],
         });
     }
     return query;
-};
-
-const calculateOffer = (amount, offer) => {
-    return offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount / 100 : offer.Amount;
 };
 
 const populateCategories = () => {

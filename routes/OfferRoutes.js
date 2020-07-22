@@ -2,10 +2,9 @@ const passport = require('passport');
 const { getAllOffers, getAllOffersForStaff, saveOffer, getOffersByDuration, deleteOffer } = require.main.require('./services/OfferService');
 
 module.exports = (app) => {
-
     app.get('/api/offers/all', async (req, res) => {
         try {
-            const result = await getAllOffers(req.query.startdate);
+            const result = await getAllOffers(req.query.startDate, req.query.endDate);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -21,7 +20,7 @@ module.exports = (app) => {
         }
     });
 
-    app.post('/api/offers', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.post('/api/offers', passport.authenticate('jwt', { session: false }), async (req, res) => {
         try {
             const result = await saveOffer(req.body);
             return res.status(result.code).send(result.data);
@@ -30,7 +29,7 @@ module.exports = (app) => {
         }
     });
 
-    app.get('/api/offers/byduration', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.get('/api/offers/byduration', passport.authenticate('jwt', { session: false }), async (req, res) => {
         try {
             const result = await getOffersByDuration(req.query.from, req.query.to);
             return res.status(result.code).send(result.data);
@@ -39,7 +38,7 @@ module.exports = (app) => {
         }
     });
 
-    app.delete('/api/offers', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.delete('/api/offers', passport.authenticate('jwt', { session: false }), async (req, res) => {
         try {
             const result = await deleteOffer(req.query.id);
             return res.status(result.code).send(result.data);

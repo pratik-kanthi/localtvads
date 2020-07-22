@@ -19,18 +19,13 @@ const schema = new mongoose.Schema({
     ExpectedAdViews: {
         type: Number
     },
+    ChannelProducts: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ChannelProduct',
+    }],    
     Address: addressSchema,
     PrimaryContact: contactSchema,
     AlternativeContact: contactSchema,
-    Viewerships: [{
-        AdSchedule: {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'AdSchedule'
-        },
-        Count: {
-            type: Number
-        }
-    }]
 });
 
 const model = mongoose.model(name, schema);

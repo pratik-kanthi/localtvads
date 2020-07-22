@@ -57,13 +57,6 @@
             "@e9ine/eslint-config-node"
         ]
     },
-    "prettier": {
-        "semi": true,
-        "tabWidth": 4,
-        "singleQuote": true,
-        "printWidth": 500,
-        "jsxBracketSameLine": true
-    },
     "husky": {
         "hooks": {
             "pre-commit": "lint-staged",
