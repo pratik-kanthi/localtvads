@@ -77,6 +77,24 @@ module.exports = (app) => {
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
+    }); 
+    app.get('/api/clientplans/:id', passport.authenticate('jwt', {session: false}), async (req, res) => {
+        try{
+            if (!req.params.id) {
+                return res.status(400).send({
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                });
+            }
+            if(req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== req.query.clientId){
+                return res.status(403).send({
+                    message: utilities.ErrorMessages.UNAUTHORISED,
+                });
+            }
+            const result=await ClientAdPlan.findOne({Client:req.user.Claims[0].Value, _id:req.params.id}).populate('Channel').sort('BookedDate').lean().exec();
+            return res.status(200).send(result);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
     });
 
     app.post('/api/clientad/renew', passport.authenticate('jwt', {
