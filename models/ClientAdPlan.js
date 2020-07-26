@@ -1,13 +1,11 @@
 const mongoose = require('mongoose');
-const {
-    auditSchema
-} = require.main.require('./models/CommonSchema');
+const { auditSchema } = require.main.require('./models/CommonSchema');
 
 const name = 'ClientAdPlan';
 
 const schema = new mongoose.Schema({
     Name: {
-        type: String
+        type: String,
     },
     Description: {
         type: String,
@@ -22,10 +20,6 @@ const schema = new mongoose.Schema({
         ref: 'Channel',
         required: true,
     },
-    ClientAd: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ClientAd',
-    },
     Category: {
         type: String,
     },
@@ -35,29 +29,41 @@ const schema = new mongoose.Schema({
     Addons: [{}],
     ChannelProduct: {
         ProductLength: {},
-        ChannelSlots: [{
-            Slot: {},
-            RatePerSecond: {
-                type: Number,
-                required: true
+        ChannelSlots: [
+            {
+                Slot: {},
+                RatePerSecond: {
+                    type: Number,
+                    required: true,
+                },
+                Duration: {
+                    type: Number,
+                },
             },
-            Duration: {
-                type: Number
-            }
-        }]
+        ],
     },
-    StartDate:{
-        type: Date
+    AdVideo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClientResource',
     },
-    ExpiryDate:{
-        type: Date
+    AddOnAssets: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'ClientResource',
+        },
+    ],
+    StartDate: {
+        type: Date,
+    },
+    ExpiryDate: {
+        type: Date,
     },
     Days: [],
     WeeklyAmount: {
-        type: Number
+        type: Number,
     },
     AddonsAmount: {
-        type: Number
+        type: Number,
     },
     Status: {
         type: String,

@@ -444,9 +444,6 @@
                                                                     <tr>
                                                                         <td class="ad-description bold">
                                                                             <span>
-                                                                                <%= receipt.Type %> -
-                                                                            </span>
-                                                                            <span>
                                                                                 <%= receipt.Name %>
                                                                             </span>
                                                                         </td>
@@ -475,12 +472,6 @@
                                                             </td>
                                                 </td>
                                                 <td width="30%" align="right">
-                                                    <strong class="invoice-details">£<%= receipt.SubTotal %></strong>
-                                                    <br>
-                                                    <% if(receipt.Offer){ %>
-                                                    <strong class="invoice-details"> - £<%= receipt.Offer_Value.toFixed(2) %></strong><br>
-                                                    <% } %>
-                                                    <strong class="invoice-details">£<%= receipt.TaxAmount %></strong><br>
                                                 </td>
                                             </tr>
                                         </table>

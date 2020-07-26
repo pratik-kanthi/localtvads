@@ -6,41 +6,42 @@ const schema = new mongoose.Schema({
     Client: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client',
-        required: true
+        required: true,
     },
     ClientAdPlan: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'ClientAdPlan'
+        ref: 'ClientAdPlan',
     },
     TotalAmount: {
         type: Number,
-        required: true
+        required: true,
     },
     Status: {
         type: String,
         enum: ['SUCCEEDED', 'PENDING', 'FAILED'],
-        required: true
+        required: true,
     },
     ReferenceId: {
-        type: String
+        type: String,
     },
     DateTime: {
         type: Date,
         required: true,
         default: () => {
             return new Date();
-        }
+        },
     },
     Coupon: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Coupon'
+        ref: 'Coupon',
     },
     TaxBreakdown: [],
     StripeResponse: {},
     StripeResponseCode: {
-        type:String
+        type: String,
     },
-    ReceiptUrl: String
+
+    ReceiptUrl: String,
 });
 
 const model = mongoose.model(name, schema);
@@ -48,5 +49,5 @@ const model = mongoose.model(name, schema);
 module.exports = {
     name: name,
     model: model,
-    schema: schema
+    schema: schema,
 };

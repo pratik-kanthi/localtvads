@@ -8,8 +8,7 @@ const path = require('path');
 
 const socketPort = process.env.SOCKETPORT;
 
-const {updateClientAd} = require.main.require('./services/ClientAdService');
-const {uploadVideoForAddOns} = require.main.require('./services/AddOnService');
+const { saveClientVideo, saveClientAddOnVideo } = require.main.require('./services/ClientAdService');
 
 module.exports = () => {
     const app = http.createServer();
@@ -17,7 +16,7 @@ module.exports = () => {
         origins: '*:*',
         wsEngine: 'ws',
         pingInterval: 10000,
-        pingTimeout: 5000
+        pingTimeout: 5000,
     });
 
     app.listen(socketPort, () => {
@@ -27,12 +26,11 @@ module.exports = () => {
     io.use((socket, next) => {
         authenticateSocket(socket, next);
     }).on('connection', (socket) => {
-
         socket.on('UPLOAD_CHUNK', async (data) => {
             const tempDir = './public/uploads/' + data.client + '/Temp';
             const extension = data.name.substr(data.name.lastIndexOf('.'));
             if (!fs.existsSync(tempDir)) {
-                fs.mkdirSync(tempDir, {recursive: true});
+                fs.mkdirSync(tempDir, { recursive: true });
             }
 
             let fd;
@@ -53,7 +51,7 @@ module.exports = () => {
             if (data.isLast) {
                 const uploadDir = './public/uploads/' + data.client + '/Video/';
                 if (!fs.existsSync(uploadDir)) {
-                    fs.mkdirSync(uploadDir, {recursive: true});
+                    fs.mkdirSync(uploadDir, { recursive: true });
                 }
                 const outputFile = fs.createWriteStream(path.join(uploadDir, Date.now() + extension));
                 let filenames;
@@ -64,7 +62,7 @@ module.exports = () => {
                     socket.emit('UPLOAD_ERROR');
                     return;
                 }
-                filenames.forEach(async(tempName) => {
+                filenames.forEach(async (tempName) => {
                     const data = fs.readFileSync(`${tempDir}/${tempName}`);
 
                     try {
@@ -88,7 +86,7 @@ module.exports = () => {
                 outputFile.on('finish', async () => {
                     fs.removeSync(tempDir);
                     socket.emit('UPLOAD_FINISHED');
-                    updateClientAd(data.clientAdPlan, outputFile.path, extension, socket);
+                    saveClientVideo(data.clientAdPlan, outputFile.path, extension, socket);
                 });
             } else {
                 socket.emit('UPLOAD_CHUNK_FINISHED', data.sequence);
@@ -99,7 +97,7 @@ module.exports = () => {
             const tempDir = './public/uploads/' + data.client + '/Temp';
             const extension = data.name.substr(data.name.lastIndexOf('.'));
             if (!fs.existsSync(tempDir)) {
-                fs.mkdirSync(tempDir, {recursive: true});
+                fs.mkdirSync(tempDir, { recursive: true });
             }
 
             let fd;
@@ -120,7 +118,7 @@ module.exports = () => {
             if (data.isLast) {
                 const uploadDir = './public/uploads/' + data.client + '/Video/';
                 if (!fs.existsSync(uploadDir)) {
-                    fs.mkdirSync(uploadDir, {recursive: true});
+                    fs.mkdirSync(uploadDir, { recursive: true });
                 }
                 const outputFile = fs.createWriteStream(path.join(uploadDir, Date.now() + extension));
                 let filenames;
@@ -131,7 +129,7 @@ module.exports = () => {
                     socket.emit('UPLOAD_ERROR');
                     return;
                 }
-                filenames.forEach(async(tempName) => {
+                filenames.forEach(async (tempName) => {
                     const data = fs.readFileSync(`${tempDir}/${tempName}`);
 
                     try {
@@ -154,7 +152,7 @@ module.exports = () => {
 
                 outputFile.on('finish', async () => {
                     try {
-                        await uploadVideoForAddOns(data, outputFile.path, extension, socket);
+                        await saveClientAddOnVideo(data, outputFile.path, extension, socket);
                         fs.removeSync(tempDir);
                     } catch (err) {
                         logger.logError(err);
@@ -181,6 +179,6 @@ module.exports = () => {
         }
     };
     return {
-        io
+        io,
     };
 };

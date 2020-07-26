@@ -14,13 +14,17 @@ const port = process.env.PORT;
 const logger = require('./logger')(app);
 require('./middlewares');
 
-app.use(bodyParser.urlencoded({
-    extended: true,
-    limit: '50mb'
-}));
-app.use(bodyParser.json({
-    limit: '50mb'
-}));
+app.use(
+    bodyParser.urlencoded({
+        extended: true,
+        limit: '50mb',
+    })
+);
+app.use(
+    bodyParser.json({
+        limit: '50mb',
+    })
+);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -28,19 +32,22 @@ app.use(methodOverride('X-HTTP-Method-Override'));
 
 app.use(cors());
 
-mongoose.connect(process.env.DATABASE, {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-}, (err) => {
-    if (err) {
-        console.log(err);
+mongoose.connect(
+    process.env.DATABASE,
+    {
+        useNewUrlParser: true,
+        useCreateIndex: true,
+        useFindAndModify: false,
+    },
+    (err) => {
+        if (err) {
+            console.log(err);
+        }
     }
-});
+);
 mongoose.Promise = global.Promise;
 
 require('./models');
-
 
 global.logger = logger;
 global.utilities = utilities;

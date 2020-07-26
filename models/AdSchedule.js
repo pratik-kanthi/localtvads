@@ -1,27 +1,27 @@
 const mongoose = require('mongoose');
-const {auditSchema} = require.main.require('./models/CommonSchema');
+const { auditSchema } = require.main.require('./models/CommonSchema');
 
 const name = 'AdSchedule';
 
 const schema = new mongoose.Schema({
     Name: {
         type: String,
-        required: true
+        required: true,
     },
     Description: {
-        type: String
+        type: String,
     },
     StartTime: {
-        type: String
+        type: String,
     },
     EndTime: {
-        type: String
+        type: String,
     },
     IsActive: {
         type: Boolean,
-        default: true
+        default: true,
     },
-    AuditInfo: auditSchema
+    AuditInfo: auditSchema,
 });
 
 const model = mongoose.model(name, schema);
@@ -29,5 +29,5 @@ const model = mongoose.model(name, schema);
 module.exports = {
     name: name,
     model: model,
-    schema: schema
+    schema: schema,
 };

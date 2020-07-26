@@ -10,18 +10,12 @@ const ClientAd = require.main.require('./models/ClientAd').model;
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
-const {
-    getAllTaxes
-} = require.main.require('./services/TaxService');
-const {
-    getPreferredCard
-} = require.main.require('./services/ClientAdService');
-const {
-    uploadFile
-} = require.main.require('./services/FileService');
-const {
-    chargeByExistingCard
-} = require.main.require('./services/PaymentService');
+const ClientResource = require.main.require('./models/ClientResource').model;
+
+const { getAllTaxes } = require.main.require('./services/TaxService');
+const { getPreferredCard } = require.main.require('./services/ClientAdService');
+const { uploadFile } = require.main.require('./services/FileService');
+const { chargeByExistingCard } = require.main.require('./services/PaymentService');
 
 /**
  * Check for Discount coupon
@@ -113,9 +107,11 @@ const getApplicableCoupons = (clientId, channel, channelPlan, startDate) => {
         let query = _generateDiscountQuery(clientId, channel, channelPlan, startDate);
         let coupons = [];
         try {
-            coupons = await Coupon.find(query).sort({
-                Amount: -1
-            }).exec();
+            coupons = await Coupon.find(query)
+                .sort({
+                    Amount: -1,
+                })
+                .exec();
         } catch (err) {
             return reject({
                 code: 500,
@@ -266,38 +262,41 @@ const getClientAdPlans = (clientId, top, skip) => {
             Client: clientId,
             PlanLength: 3,
         };
-        const populateOptions = [{
-            path: 'ClientAd',
-            select: {
-                VideoUrl: 1,
-                Status: 1,
+        const populateOptions = [
+            {
+                path: 'ClientAd',
+                select: {
+                    VideoUrl: 1,
+                    Status: 1,
+                },
             },
-        },
-        {
-            path: 'ChannelPlan.Plan.Channel',
-            model: 'Channel',
-            select: {
-                Name: 1,
-                Description: 1,
-            },
-        },
-        {
-            path: 'ChannelPlan.Plan.ChannelAdSchedule',
-            model: 'ChannelAdSchedule',
-            select: {
-                _id: 1,
-            },
-            populate: [{
-                path: 'AdSchedule',
-                model: 'AdSchedule',
+            {
+                path: 'ChannelPlan.Plan.Channel',
+                model: 'Channel',
                 select: {
                     Name: 1,
                     Description: 1,
-                    StartTime: 1,
-                    EndTime: 1,
                 },
-            }, ],
-        },
+            },
+            {
+                path: 'ChannelPlan.Plan.ChannelAdSchedule',
+                model: 'ChannelAdSchedule',
+                select: {
+                    _id: 1,
+                },
+                populate: [
+                    {
+                        path: 'AdSchedule',
+                        model: 'AdSchedule',
+                        select: {
+                            Name: 1,
+                            Description: 1,
+                            StartTime: 1,
+                            EndTime: 1,
+                        },
+                    },
+                ],
+            },
         ];
         ClientAdPlan.find(query)
             .skip(parseInt(skip))
@@ -436,7 +435,7 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                     },
                 });
             }
-            if(user.Claims[0].Name !== 'Client' || user.Claims[0].Value !== cPlan.Client){
+            if (user.Claims[0].Name !== 'Client' || user.Claims[0].Value !== cPlan.Client) {
                 return reject({
                     code: 403,
                     error: {
@@ -445,12 +444,15 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                 });
             }
             if (!card) {
-                card = await ClientPaymentMethod.findOne({
-                    _id: cardId
-                }, {
-                    'Card.StripeCardToken': 1,
-                    StripeCusToken: 1,
-                }).exec();
+                card = await ClientPaymentMethod.findOne(
+                    {
+                        _id: cardId,
+                    },
+                    {
+                        'Card.StripeCardToken': 1,
+                        StripeCusToken: 1,
+                    }
+                ).exec();
             }
             const clientAdPlan = new ClientAdPlan({
                 Client: cPlan.Client,
@@ -460,8 +462,11 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                 AddonsAmount: 0,
             });
             const channelProduct = await ChannelProduct.findOne({
-                _id: cPlan.ChannelProduct
-            }).deepPopulate('ProductLength ChannelSlots.Slot').lean().exec();
+                _id: cPlan.ChannelProduct,
+            })
+                .deepPopulate('ProductLength ChannelSlots.Slot')
+                .lean()
+                .exec();
             const channelSlots = channelProduct.ChannelSlots.filter((item) => {
                 return cPlan.ChannelSlots.indexOf(item.Slot._id.toString()) != -1;
             });
@@ -474,12 +479,14 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
             }
             if (cPlan.Addons && cPlan.Addons.length > 0) {
                 const addon = await ServiceAddOn.findOne({
-                    _id: cPlan.Addons[0]
-                }).lean().exec();
+                    _id: cPlan.Addons[0],
+                })
+                    .lean()
+                    .exec();
                 clientAdPlan.AddonsAmount = addon.Amount;
                 clientAdPlan.Addons = [addon];
             }
-            let taxAmount=0;
+            let taxAmount = 0;
             const taxes = (await getAllTaxes()).data;
             for (let i = 0, len = taxes.length; i < len; i++) {
                 if (taxes[i].Type === 'FIXED') {
@@ -491,15 +498,15 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
             clientAdPlan.Taxes = taxes;
             const totalAmount = taxAmount + clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount;
             let transaction;
-            try{
+            try {
                 transaction = await stripePayment(clientAdPlan, card, totalAmount, taxes);
-            }catch(err){
+            } catch (err) {
                 return reject({
                     code: 402,
                     error: err.error,
                 });
             }
-            clientAdPlan.Status='PAID';
+            clientAdPlan.Status = 'PAID';
             clientAdPlan.save(function (err) {
                 if (err) {
                     return reject({
@@ -529,11 +536,11 @@ function stripePayment(clientAdPlan, card, totalAmount, taxes) {
             const transaction = new Transaction({
                 ClientAdPlan: clientAdPlan._id,
                 Client: clientAdPlan.Client,
-                TaxBreakdown:taxes,
+                TaxBreakdown: taxes,
                 TotalAmount: totalAmount,
                 Status: 'SUCCEEDED',
                 StripeResponse: charge,
-                ReferenceId: charge.id
+                ReferenceId: charge.id,
             });
             await transaction.save();
             resolve(transaction);
@@ -541,16 +548,15 @@ function stripePayment(clientAdPlan, card, totalAmount, taxes) {
             const transaction = new Transaction({
                 Client: clientAdPlan.Client,
                 TotalAmount: totalAmount,
-                TaxBreakdown:taxes,
+                TaxBreakdown: taxes,
                 Status: 'FAILED',
                 StripeResponse: err.error,
-                StripeResponseCode:err.code
+                StripeResponseCode: err.code,
             });
             await transaction.save();
             reject(err);
         }
     });
-
 }
 /**
  * Upload ClientAd video
@@ -564,39 +570,42 @@ const updateClientAd = (clientAdPlan, previewPath, extension, socket) => {
         const query = {
             _id: clientAdPlan,
         };
-        const populateOptions = [{
-            path: 'Client',
-            model: 'Client',
-            select: {
-                Name: 1,
-                Email: 1,
+        const populateOptions = [
+            {
+                path: 'Client',
+                model: 'Client',
+                select: {
+                    Name: 1,
+                    Email: 1,
+                },
             },
-        },
-        {
-            path: 'ChannelPlan.Plan.Channel',
-            model: 'Channel',
-            select: {
-                Name: 1,
-                Description: 1,
-            },
-        },
-        {
-            path: 'ChannelPlan.Plan.ChannelAdSchedule',
-            model: 'ChannelAdSchedule',
-            select: {
-                _id: 1,
-            },
-            populate: [{
-                path: 'AdSchedule',
-                model: 'AdSchedule',
+            {
+                path: 'ChannelPlan.Plan.Channel',
+                model: 'Channel',
                 select: {
                     Name: 1,
                     Description: 1,
-                    StartTime: 1,
-                    EndTime: 1,
                 },
-            }, ],
-        },
+            },
+            {
+                path: 'ChannelPlan.Plan.ChannelAdSchedule',
+                model: 'ChannelAdSchedule',
+                select: {
+                    _id: 1,
+                },
+                populate: [
+                    {
+                        path: 'AdSchedule',
+                        model: 'AdSchedule',
+                        select: {
+                            Name: 1,
+                            Description: 1,
+                            StartTime: 1,
+                            EndTime: 1,
+                        },
+                    },
+                ],
+            },
         ];
 
         ClientAdPlan.findOne(query)
@@ -691,65 +700,69 @@ const _generateDiscountQuery = (clientId, channel, adSchedule, startDate) => {
     };
     if (clientId) {
         query.$and.push({
-            $or: [{
-                Clients: clientId,
-            },
-            {
-                Clients: {
-                    $exists: false,
+            $or: [
+                {
+                    Clients: clientId,
                 },
-            },
+                {
+                    Clients: {
+                        $exists: false,
+                    },
+                },
             ],
         });
     }
     if (channel) {
         query.$and.push({
-            $or: [{
-                Channels: {
-                    $in: [channel],
+            $or: [
+                {
+                    Channels: {
+                        $in: [channel],
+                    },
                 },
-            },
-            {
-                Channels: {
-                    $exists: false,
+                {
+                    Channels: {
+                        $exists: false,
+                    },
                 },
-            },
-            {
-                Channels: [],
-            },
+                {
+                    Channels: [],
+                },
             ],
         });
     }
     if (adSchedule) {
         query.$and.push({
-            $or: [{
-                AdSchedules: {
-                    $in: [adSchedule],
+            $or: [
+                {
+                    AdSchedules: {
+                        $in: [adSchedule],
+                    },
                 },
-            },
-            {
-                AdSchedules: {
-                    $exists: false,
+                {
+                    AdSchedules: {
+                        $exists: false,
+                    },
                 },
-            },
-            {
-                AdSchedules: [],
-            },
+                {
+                    AdSchedules: [],
+                },
             ],
         });
     }
     if (startDate) {
         query.$and.push({
-            $and: [{
-                StartDate: {
-                    $lte: new Date(startDate),
+            $and: [
+                {
+                    StartDate: {
+                        $lte: new Date(startDate),
+                    },
                 },
-            },
-            {
-                EndDate: {
-                    $gte: new Date(startDate),
+                {
+                    EndDate: {
+                        $gte: new Date(startDate),
+                    },
                 },
-            },
             ],
         });
     }
@@ -798,6 +811,121 @@ const populateCategories = () => {
     });
 };
 
+const saveClientVideo = (clientAdPlan, previewPath, extension, socket) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const clientresource = new ClientResource({
+                AssetType: 'VIDEO',
+                AssetUrl: previewPath,
+                Extension: extension,
+            });
+
+            clientresource.AuditInfo = {
+                CreationDate: new Date(),
+            };
+
+            clientresource.save((err) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+
+                ClientAdPlan.findOne({ _id: clientAdPlan }).exec((err, cadplan) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err,
+                        });
+                    }
+                    cadplan.AdVideo = clientresource._id;
+                    cadplan.save((err, saved) => {
+                        if (err) {
+                            return reject({
+                                code: 500,
+                                error: err,
+                            });
+                        }
+                        socket.emit('PROCESS_FINISHED');
+                        resolve(saved);
+                    });
+                });
+            });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
+    });
+};
+
+const saveClientAddOnVideo = (data, previewPath, extension, socket) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const deletePreviewFile = () => {
+                try {
+                    fs.removeSync(previewPath);
+                } catch (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+            };
+
+            const dst = 'uploads/Client/' + data.client + '/ClientServiceAddOns/' + data.clientServiceAddOn + '/' + Date.now() + extension;
+            try {
+                await uploadFile(previewPath, dst);
+                deletePreviewFile();
+            } catch (ex) {
+                deletePreviewFile();
+                return reject({
+                    code: 500,
+                    error: ex,
+                });
+            }
+            const clientResource = new ClientResource({
+                AssetType: 'VIDEO',
+                AssetUrl: dst,
+                Extension: extension,
+            });
+
+            clientResource.save(async (err) => {
+                if (err) {
+                    return reject(err);
+                }
+
+                ClientAdPlan.findOne({ _id: data.clientAdPlan }).exec((err, cadplan) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err,
+                        });
+                    }
+                    cadplan.AddOnAssets.push(clientResource._id);
+                    cadplan.save((err, saved) => {
+                        if (err) {
+                            return reject({
+                                code: 500,
+                                error: err,
+                            });
+                        }
+                        socket.emit('ADDON_UPLOAD_FINISHED');
+                        resolve(saved);
+                    });
+                });
+            });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
+    });
+};
+
 module.exports = {
     getClientAd,
     getClientAdPlan,
@@ -808,4 +936,6 @@ module.exports = {
     updateClientAd,
     checkCouponApplicable,
     populateCategories,
+    saveClientVideo,
+    saveClientAddOnVideo,
 };

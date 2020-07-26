@@ -1,10 +1,9 @@
 const passport = require('passport');
-const { addCard, deleteCard, getSavedCards, setPreferredCard, getTransactions, generateReceipt, fetchClientsByPage } = require.main.require('./services/ClientService');
+const { addCard, deleteCard, getSavedCards, setPreferredCard, getTransactions, fetchClientsByPage } = require.main.require('./services/ClientService');
 const { updateProfile } = require.main.require('./services/UserService');
-
+const { generateTransactionReceipt } = require.main.require('./services/ReceiptService');
 
 module.exports = (app) => {
-
     app.post('/api/client/addcard', passport.authenticate('jwt', { session: false }), async (req, res) => {
         try {
             const result = await addCard(req.body.client, req.body.token);
@@ -53,16 +52,16 @@ module.exports = (app) => {
 
     app.get('/api/client/transactions', passport.authenticate('jwt', { session: false }), async (req, res) => {
         try {
-            const result = await getTransactions(req.query.client);
+            const result = await getTransactions(req.query.client, req.query.plan, req);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
     });
 
-    app.get('/api/client/transaction/:id', passport.authenticate('jwt', { session: false }), async (req, res) => {
+    app.get('/api/client/transaction', passport.authenticate('jwt', { session: false }), async (req, res) => {
         try {
-            const result = await generateReceipt(req.params.id);
+            const result = await generateTransactionReceipt(req.query.id);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
