@@ -15,6 +15,14 @@ const schema = new mongoose.Schema({
     TotalAmount: {
         type: Number,
         required: true,
+    }, 
+    TaxAmount: {
+        type: Number,
+        required: true,
+    },
+    Amount: {
+        type: Number,
+        required: true,
     },
     Status: {
         type: String,

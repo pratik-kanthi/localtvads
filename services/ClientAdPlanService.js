@@ -165,7 +165,7 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
             const totalAmount = taxAmount + clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount;
             let transaction;
             try {
-                transaction = await _stripePayment(clientAdPlan, card, totalAmount, taxes);
+                transaction = await _stripePayment(clientAdPlan, card, totalAmount, taxAmount, taxes);
             } catch (err) {
                 return reject({
                     code: 402,
@@ -293,15 +293,17 @@ const attachImages = (clientId, planId, images) => {
     });
 };
 
-const _stripePayment = (clientAdPlan, card, totalAmount, taxes) => {
+const _stripePayment = (clientAdPlan, card, totalAmount, taxAmount, taxes) => {
     return new Promise(async (resolve, reject) => {
         try {
             const charge = await chargeByExistingCard(totalAmount, card.StripeCusToken, card.Card.StripeCardToken);
             const transaction = new Transaction({
                 ClientAdPlan: clientAdPlan._id,
                 Client: clientAdPlan.Client,
+                Amount: (totalAmount-taxAmount).toFixed(2),
+                TaxAmount: taxAmount.toFixed(2),
                 TaxBreakdown: taxes,
-                TotalAmount: totalAmount,
+                TotalAmount: totalAmount.toFixed(2),
                 Status: 'SUCCEEDED',
                 StripeResponse: charge,
                 ReferenceId: charge.id,
@@ -311,7 +313,9 @@ const _stripePayment = (clientAdPlan, card, totalAmount, taxes) => {
         } catch (err) {
             const transaction = new Transaction({
                 Client: clientAdPlan.Client,
-                TotalAmount: totalAmount,
+                TotalAmount: totalAmount.toFixed(2),
+                Amount: (totalAmount-taxAmount).toFixed(2),
+                TaxAmount: taxAmount.toFixed(2),
                 TaxBreakdown: taxes,
                 Status: 'FAILED',
                 StripeResponse: err.error,

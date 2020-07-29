@@ -362,16 +362,8 @@ const getTransactions = (clientId, planId, req) => {
                     Client: clientId,
                 };
             }
-
-            const project = {
-                DateTime: 1,
-                ReferenceId: 1,
-                Status: 1,
-                TotalAmount: 1,
-            };
-
             try {
-                const transactions = await Transaction.find(query, project).sort('-DateTime').lean().exec();
+                const transactions = await Transaction.find(query).sort('-DateTime').lean().exec();
                 resolve({
                     code: 200,
                     data: transactions,
