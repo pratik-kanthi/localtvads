@@ -68,6 +68,9 @@ const getClientAdPlan = (clientId, planId) => {
                 Client: clientId
             })
                 .populate('Channel AdVideo AddOnAssets')
+                .sort({
+                    BookedDate: -1
+                })
                 .exec((err, data) => {
                     if (err) {
                         return reject({

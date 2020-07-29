@@ -5,7 +5,6 @@ const config = require.main.require('./config');
 const jwt = require('jsonwebtoken');
 const fs = require('fs-extra');
 const path = require('path');
-
 const socketPort = process.env.SOCKETPORT;
 const {
     saveClientVideo,
@@ -13,7 +12,6 @@ const {
 const {
     uploadFile
 } = require.main.require('./services/FileService');
-
 module.exports = () => {
     const app = http.createServer();
     const io = socketIO(app, {
@@ -22,92 +20,66 @@ module.exports = () => {
         pingInterval: 10000,
         pingTimeout: 5000,
     });
-
     app.listen(socketPort, () => {
         console.log('Socket started on port ' + socketPort);
     });
-
     io.use((socket, next) => {
         authenticateSocket(socket, next);
     }).on('connection', (socket) => {
         socket.on('UPLOAD_CHUNK', async (data) => {
-            const tempDir = './public/uploads/' + data.client + '/Temp';
-            const extension = data.name.substr(data.name.lastIndexOf('.'));
-            if (!fs.existsSync(tempDir)) {
-                fs.mkdirSync(tempDir, {
-                    recursive: true
-                });
-            }
-
-            let fd;
             try {
-                fd = await fs.open(tempDir + '/' + Date.now() + extension, 'a', 0o755);
-            } catch (err) {
-                logger.logError(err);
-                socket.emit('UPLOAD_ERROR');
-            }
-            try {
-                await fs.write(fd, data.data, null, 'Binary');
+                const tempDir = path.join(__dirname, '..', '/public/uploads/' + data.client + '/Temp');
+                const extension = data.name.substr(data.name.lastIndexOf('.'));
+                fs.ensureDirSync(tempDir);
+                const fd = await fs.open(tempDir + '/' + Date.now() + extension, 'a', 0o755);
+                fs.writeSync(fd, data.data, null, 'Binary');
                 fs.close(fd);
+                if (data.isLast) {
+                    const uploadDir = './public/uploads/' + data.client + '/Video/';
+                    if (!fs.existsSync(uploadDir)) {
+                        fs.mkdirSync(uploadDir, {
+                            recursive: true
+                        });
+                    }
+                    const outputFile = fs.createWriteStream(path.join(uploadDir, Date.now() + extension));
+                    const filenames = await fs.readdir(tempDir);
+                    filenames.forEach(async (tempName) => {
+                        const data = fs.readFileSync(`${tempDir}/${tempName}`);
+                        try {
+                            await outputFile.write(data);
+                        } catch (err) {
+                            logger.logError(err);
+                            socket.emit('UPLOAD_ERROR');
+                            return;
+                        }
+                        try {
+                            fs.removeSync(`${tempDir}/${tempName}`);
+                        } catch (err) {
+                            logger.logError(err);
+                        }
+                    });
+                    outputFile.end();
+                    outputFile.on('finish', async () => {
+                        try {
+                            const dst = 'uploads/Client/' + data.client + '/assets/' + Date.now() + extension;
+                            await uploadFile(outputFile.path, dst);
+                            fs.removeSync(tempDir);
+                            socket.emit('UPLOAD_FINISHED');
+                            saveClientVideo(data.client, dst, extension, socket);
+                        } catch (ex) {
+                            socket.emit('UPLOAD_ERROR');
+                        }
+                    });
+                } else {
+                    socket.emit('UPLOAD_CHUNK_FINISHED', data.sequence);
+                }
             } catch (err) {
                 logger.logError(err);
                 socket.emit('UPLOAD_ERROR');
                 return;
             }
-            if (data.isLast) {
-                const uploadDir = './public/uploads/' + data.client + '/Video/';
-                if (!fs.existsSync(uploadDir)) {
-                    fs.mkdirSync(uploadDir, {
-                        recursive: true
-                    });
-                }
-                const outputFile = fs.createWriteStream(path.join(uploadDir, Date.now() + extension));
-                let filenames;
-                try {
-                    filenames = await fs.readdir(tempDir);
-                } catch (err) {
-                    logger.logError(err);
-                    socket.emit('UPLOAD_ERROR');
-                    return;
-                }
-                filenames.forEach(async (tempName) => {
-                    const data = fs.readFileSync(`${tempDir}/${tempName}`);
-
-                    try {
-                        await outputFile.write(data);
-                    } catch (err) {
-                        logger.logError(err);
-                        socket.emit('UPLOAD_ERROR');
-                        return;
-                    }
-
-                    try {
-                        fs.removeSync(`${tempDir}/${tempName}`);
-                    } catch (err) {
-                        logger.logError(err);
-
-                    }
-                });
-
-                outputFile.end();
-
-                outputFile.on('finish', async () => {
-                    const dst = 'uploads/Client/' + data.client + '/assets/' + Date.now() + extension;
-                    try {
-                        await uploadFile(outputFile.path, dst);
-                    } catch (ex) {
-                        socket.emit('UPLOAD_ERROR');
-                    }
-                    fs.removeSync(tempDir);
-                    socket.emit('UPLOAD_FINISHED');
-                    saveClientVideo(data.client, dst, extension, socket);
-                });
-            } else {
-                socket.emit('UPLOAD_CHUNK_FINISHED', data.sequence);
-            }
         });
     });
-
     const authenticateSocket = (socket, next) => {
         if (socket.handshake.query && socket.handshake.query.token) {
             jwt.verify(socket.handshake.query.token, config.token.secret, (err, decoded) => {

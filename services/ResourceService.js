@@ -1,5 +1,5 @@
 const fs = require('fs-extra');
-
+const mongoose = require('mongoose');
 const Client = require.main.require('./models/Client').model;
 const ClientResource = require.main.require('./models/ClientResource').model;
 
@@ -29,11 +29,15 @@ const saveClientVideo = (client, path, extension, socket) => {
                 ResourceUrl: path
             });
 
+            resource.AuditInfo = {};
+            resource.AuditInfo.EditedByUser = mongoose.Types.ObjectId(client);
+            resource.AuditInfo.EditDate = new Date();
+
             resource.save((err) => {
                 if (err) {
                     socket.emit('PROCESS_ERRROR');
                 }
-                socket.emit('PROCESS_FINISHED');
+                socket.emit('PROCESS_FINISHED', resource);
             });
 
         } catch (err) {
@@ -479,7 +483,7 @@ const getAllResources = (id) => {
             Client: id,
         };
 
-        ClientResource.find(query, (err, clientResources) => {
+        ClientResource.find(query).populate('AuditInfo.EditedByUser').exec((err, clientResources) => {
             if (err) {
                 return reject({
                     code: 500,
