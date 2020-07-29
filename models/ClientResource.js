@@ -1,10 +1,20 @@
 const mongoose = require('mongoose');
-const { auditSchema } = require.main.require('./models/CommonSchema');
+const {
+    auditSchema
+} = require.main.require('./models/CommonSchema');
 const name = 'ClientResource';
 
 const schema = new mongoose.Schema({
-    AssetType: ['IMAGE', 'VIDEO', 'TEXT'],
-    AssetUrl: {
+    Client: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Client',
+        required: true,
+    },
+    ResourceType: {
+        type: String,
+        enum: ['IMAGE', 'VIDEO', 'TEXT']
+    },
+    ResourceUrl: {
         type: String,
     },
     Extension: {

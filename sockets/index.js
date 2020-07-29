@@ -7,8 +7,12 @@ const fs = require('fs-extra');
 const path = require('path');
 
 const socketPort = process.env.SOCKETPORT;
-
-const { saveClientVideo, saveClientAddOnVideo } = require.main.require('./services/ClientAdService');
+const {
+    saveClientVideo,
+} = require.main.require('./services/ResourceService');
+const {
+    uploadFile
+} = require.main.require('./services/FileService');
 
 module.exports = () => {
     const app = http.createServer();
@@ -30,7 +34,9 @@ module.exports = () => {
             const tempDir = './public/uploads/' + data.client + '/Temp';
             const extension = data.name.substr(data.name.lastIndexOf('.'));
             if (!fs.existsSync(tempDir)) {
-                fs.mkdirSync(tempDir, { recursive: true });
+                fs.mkdirSync(tempDir, {
+                    recursive: true
+                });
             }
 
             let fd;
@@ -51,7 +57,9 @@ module.exports = () => {
             if (data.isLast) {
                 const uploadDir = './public/uploads/' + data.client + '/Video/';
                 if (!fs.existsSync(uploadDir)) {
-                    fs.mkdirSync(uploadDir, { recursive: true });
+                    fs.mkdirSync(uploadDir, {
+                        recursive: true
+                    });
                 }
                 const outputFile = fs.createWriteStream(path.join(uploadDir, Date.now() + extension));
                 let filenames;
@@ -77,86 +85,22 @@ module.exports = () => {
                         fs.removeSync(`${tempDir}/${tempName}`);
                     } catch (err) {
                         logger.logError(err);
-                        socket.emit('UPLOAD_ERROR');
+
                     }
                 });
 
                 outputFile.end();
 
                 outputFile.on('finish', async () => {
+                    const dst = 'uploads/Client/' + data.client + '/assets/' + Date.now() + extension;
+                    try {
+                        await uploadFile(outputFile.path, dst);
+                    } catch (ex) {
+                        socket.emit('UPLOAD_ERROR');
+                    }
                     fs.removeSync(tempDir);
                     socket.emit('UPLOAD_FINISHED');
-                    saveClientVideo(data.clientAdPlan, outputFile.path, extension, socket);
-                });
-            } else {
-                socket.emit('UPLOAD_CHUNK_FINISHED', data.sequence);
-            }
-        });
-
-        socket.on('UPLOAD_RESOURCE_CHUNK', async (data) => {
-            const tempDir = './public/uploads/' + data.client + '/Temp';
-            const extension = data.name.substr(data.name.lastIndexOf('.'));
-            if (!fs.existsSync(tempDir)) {
-                fs.mkdirSync(tempDir, { recursive: true });
-            }
-
-            let fd;
-            try {
-                fd = await fs.open(tempDir + '/' + Date.now() + extension, 'a', 0o755);
-            } catch (err) {
-                logger.logError(err);
-                socket.emit('UPLOAD_ERROR');
-            }
-            try {
-                await fs.write(fd, data.data, null, 'Binary');
-                fs.close(fd);
-            } catch (err) {
-                logger.logError(err);
-                socket.emit('UPLOAD_ERROR');
-                return;
-            }
-            if (data.isLast) {
-                const uploadDir = './public/uploads/' + data.client + '/Video/';
-                if (!fs.existsSync(uploadDir)) {
-                    fs.mkdirSync(uploadDir, { recursive: true });
-                }
-                const outputFile = fs.createWriteStream(path.join(uploadDir, Date.now() + extension));
-                let filenames;
-                try {
-                    filenames = await fs.readdir(tempDir);
-                } catch (err) {
-                    logger.logError(err);
-                    socket.emit('UPLOAD_ERROR');
-                    return;
-                }
-                filenames.forEach(async (tempName) => {
-                    const data = fs.readFileSync(`${tempDir}/${tempName}`);
-
-                    try {
-                        await outputFile.write(data);
-                    } catch (err) {
-                        logger.logError(err);
-                        socket.emit('UPLOAD_ERROR');
-                        return;
-                    }
-
-                    try {
-                        fs.removeSync(`${tempDir}/${tempName}`);
-                    } catch (err) {
-                        logger.logError(err);
-                        socket.emit('UPLOAD_ERROR');
-                    }
-                });
-
-                outputFile.end();
-
-                outputFile.on('finish', async () => {
-                    try {
-                        await saveClientAddOnVideo(data, outputFile.path, extension, socket);
-                        fs.removeSync(tempDir);
-                    } catch (err) {
-                        logger.logError(err);
-                    }
+                    saveClientVideo(data.client, dst, extension, socket);
                 });
             } else {
                 socket.emit('UPLOAD_CHUNK_FINISHED', data.sequence);

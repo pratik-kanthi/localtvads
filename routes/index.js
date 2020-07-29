@@ -20,6 +20,6 @@ module.exports = (app, models, io) => {
     require('./ChannelPlanRoutes')(app);
     require('./ChannelAdScheduleRoutes')(app);
     require('./TaxRoutes')(app);
-    require('../web-routes/ClientAdPlanRoutes')(app);
+    require('../web-routes')(app);
     require('./ApiRoutes')(app, models);
 };
