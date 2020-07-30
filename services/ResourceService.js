@@ -1,6 +1,7 @@
 const fs = require('fs-extra');
 const mongoose = require('mongoose');
 const Client = require.main.require('./models/Client').model;
+const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ClientResource = require.main.require('./models/ClientResource').model;
 
 const {
@@ -497,7 +498,26 @@ const getAllResources = (id) => {
         });
     });
 };
-
+const removeAddOnResource=(planId, resourceId)=>{
+    return new Promise(async (resolve, reject) => {
+        try{
+            const clientAdPlan=await ClientAdPlan.findOne({_id:planId}).exec();
+            clientAdPlan.AddOnAssets=clientAdPlan.AddOnAssets.filter(function(item){
+                return item.toString()!=resourceId;
+            });
+            clientAdPlan.save();
+            resolve({
+                code: 200,
+                data: clientAdPlan
+            });
+        } catch (ex) {
+            return reject({
+                code: 500,
+                error: ex,
+            });
+        }
+    });
+};
 module.exports = {
     addImageResource,
     updateImageResource,
@@ -506,5 +526,6 @@ module.exports = {
     updateMediaResource,
     deleteMediaResource,
     getAllResources,
-    saveClientVideo
+    saveClientVideo,
+    removeAddOnResource
 };

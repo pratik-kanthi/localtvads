@@ -14,6 +14,9 @@ const schema = new mongoose.Schema({
         type: String,
         enum: ['IMAGE', 'VIDEO', 'TEXT']
     },
+    Management: {
+        type: Boolean
+    },
     ResourceUrl: {
         type: String,
     },

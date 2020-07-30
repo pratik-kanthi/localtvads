@@ -3,7 +3,8 @@ const multer = require('multer');
 const config = require.main.require('./config');
 const {
     addImageResource,
-    getAllResources
+    getAllResources,
+    removeAddOnResource
 } = require.main.require('./services/ResourceService');
 
 const _imageUpload = multer({
@@ -56,5 +57,15 @@ module.exports = (app) => {
                 return res.status(ex.code || 500).send(ex.error);
             }
         });
+    });
+    app.delete('/api/:clientid/addonresources', passport.authenticate('website-bearer', {
+        session: false
+    }), async (req, res) => {
+        try {
+            const result = await removeAddOnResource(req.query.planId, req.query.id);
+            return res.status(result.code).json(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
     });
 };
