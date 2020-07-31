@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+
+    <title>Transaction Receipt</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous" />
+    <style>
+        @import url("https://use.typekit.net/xrc3emd.css");
+
+        .wrapper {
+            width: 595px;
+            height: 842px;
+            font-family: "azo-sans-web";
+        }
+
+        .logo-wrapper .logo {
+            height: 56px;
+        }
+
+        .content {
+            width: 100%;
+            height: 495px;
+        }
+
+        .summary {
+            background-color: #f6f9fc;
+        }
+
+        .tag {
+            margin-left: 8px;
+            font-size: 10px;
+            padding: 4px 8px;
+            color: white;
+            border-radius: 5px;
+            background-color: #333;
+        }
+
+        /* UTILITY */
+
+        /* common */
+
+        .side-gutter {
+            padding: 0 56px !important;
+        }
+
+        .text-light {
+            color: #636466 !important;
+        }
+
+        .seperator {
+            height: 1px;
+            width: 100%;
+        }
+
+        .bold {
+            font-weight: bold;
+        }
+
+        /* padding */
+        .p8 {
+            padding: 8px !important;
+        }
+
+        .p16 {
+            padding: 16px !important;
+        }
+
+        .p24 {
+            padding: 24px !important;
+        }
+
+        .p32 {
+            padding: 32px !important;
+        }
+
+        .p48 {
+            padding: 48px !important;
+        }
+
+        /* margins */
+        .mt16 {
+            margin-top: 16px !important;
+        }
+
+        .mt24 {
+            margin-top: 24px !important;
+        }
+
+        .mt32 {
+            margin-top: 32px !important;
+        }
+
+        .mt48 {
+            margin-top: 48px !important;
+        }
+
+        /* font-size */
+        .t-xs {
+            font-size: 10px;
+        }
+
+        .t-s {
+            font-size: 14px !important;
+        }
+
+        .t-l {
+            font-size: 18px !important;
+        }
+
+        .t-xl {
+            font-size: 24px !important;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="wrapper border">
+        <div class="row mt48">
+            <div class="col">
+                <div class="logo-wrapper d-flex justify-content-center">
+                    <img class="logo" src="https://dev.localtvads.com/img/new_logo_dark.1429f6c5.png" alt="" />
+                </div>
+            </div>
+        </div>
+        <div class="row mt32">
+            <div class="col d-flex justify-content-center flex-column align-items-center">
+                <h4>Payment Receipt</h4>
+                <div class="t-s transaction-number">
+                    RECEIPT <%= receipt.ReceiptNumber %>
+                </div>
+            </div>
+        </div>
+        <div class="row mt32 side-gutter">
+            <div class="content">
+                <div class="content-row d-flex justify-content-between">
+                    <div>
+                        <div class="d-flex flex-column">
+                            <div class="t-s text-light">PAID BY</div>
+                            <div>
+                                <div class="t-s transaction-by"><%= receipt.User.Name %></div>
+                                <div class="t-s transaction-by">
+                                    <%= receipt.User.Email %>
+                                </div>
+                                <div class="t-s transaction-by">
+                                    <%= receipt.User.Phone %>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="content-row mt24 d-flex justify-content-between">
+                    <div class="d-flex flex-column">
+                        <div class="t-s text-light">DATE</div>
+                        <div class="t-s transaction-date"><%= receipt.Date %></div>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <div class="t-s text-light">AMOUNT PAID</div>
+                        <div class="t-s transaction-date">
+                            £<%= receipt.TotalAmount %>
+                        </div>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <div class="t-s text-light">PAYMENT METHOD</div>
+                        <div class="t-s transaction-date">xxxx 3642</div>
+                    </div>
+                </div>
+
+                <div class="mt32">SUMMARY</div>
+                <div class="border mt16 summary rounded">
+                    <div class="item p16 border b-b d-flex justify-content-between">
+                        <div class="item-name"><%= receipt.PlanName %></div>
+                        <div class="item-amount">£<%= receipt.PlanAmount %></div>
+                    </div>
+
+                    <%if (receipt.AddOn && receipt.AddOnAmount) { %>
+                    <div class="item p16 border b-b d-flex justify-content-between">
+                        <div class="item-name d-flex align-items-center">
+                            <div><%= receipt.AddOn %></div>
+                            <div><span class="tag">ADD ON</span></div>
+                        </div>
+                        <div class="item-amount">£<%= receipt.AddOnAmount %></div>
+                    </div>
+                    <% } %>
+                </div>
+                <div class="content-row p16">
+                    <div class="d-flex justify-content-between">
+                        <div class="">Sub Total</div>
+                        <div class="">£<%= receipt.SubTotal %></div>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <div class="">
+                            <span>Tax Amount</span>
+                            <span class="t-xs">( <% for (var i = 0; i < receipt.TaxBreakdown.length; i++) {
+                  %> <%if (i > 0) { %>
+                                <span>, </span>
+                                <% } %>
+                                <span><%= receipt.TaxBreakdown[i].Name %>:</span>
+                                <%if (receipt.TaxBreakdown[i].Type == 'FIXED') { %>
+                                <span>£</span>
+                                <% } %>
+                                <span><%= receipt.TaxBreakdown[i].Value.toFixed(2) %></span>
+                                <%if (receipt.TaxBreakdown[i].Type == 'PERCENTAGE') { %>
+                                <span>%</span>
+                                <% } %> <% } %> )
+                            </span>
+                        </div>
+                        <div class="">£<%= receipt.TaxAmount %></div>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between">
+                        <div class="t-l bold">Total Amount</div>
+                        <div class="t-l bold">£<%= receipt.TotalAmount %></div>
+                    </div>
+                </div>
+                <div class="content-row mt48">
+                    <div class="d-flex justify-content-center">
+                        <span class="t-s">
+                            ©<%= year %> LOCAL TV ADS
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>

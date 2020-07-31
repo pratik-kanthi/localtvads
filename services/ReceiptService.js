@@ -2,7 +2,9 @@ const Transaction = require.main.require('./models/Transaction').model;
 const pdf = require('html-pdf');
 const fs = require('fs');
 const path = require('path');
-const { uploadFile } = require.main.require('./services/FileService');
+const {
+    uploadFile
+} = require.main.require('./services/FileService');
 const email = require('../email');
 const moment = require('moment');
 const config = require.main.require('./config');
@@ -23,52 +25,25 @@ const generateTransactionReceipt = (transaction_id) => {
                 _id: transaction_id,
             };
 
-            const project = {
-                Client: 1,
-                ClientAdPlan: 1,
-                TotalAmount: 1,
-                ReferenceId: 1,
-                DateTime: 1,
-                TaxBreakdown: 1,
-            };
-
-            const populateOptions = [
-                {
-                    path: 'Client',
-                    model: 'Client',
-                },
-                {
-                    path: 'ClientAdPlan',
-                    populate: [
-                        {
-                            path: 'Channel',
-                            model: 'Channel',
-                        },
-                        {
-                            path: 'AddOns',
-                        },
-                    ],
-                },
-            ];
 
             let transaction;
             try {
-                transaction = await Transaction.findOne(query, project).populate(populateOptions).exec();
-
-                if (transaction.ReceiptUrl) {
-                    resolve({
-                        code: 200,
-                        data: transaction.ReceiptUrl,
-                    });
-                }
-
+                transaction = await Transaction.findOne(query).deepPopulate('Client ClientAdPlan.Channel ClientAdPlan.AddOns').exec();
                 const receipt = {
-                    InvoiceNo: transaction.ReferenceId,
+                    ReceiptNumber: transaction.ReferenceId,
                     Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
-                    Name: transaction.ClientAdPlan.Channel.Name + '_' + transaction.ClientAdPlan.ChannelProduct.ProductLength.Name,
+                    PlanName: transaction.ClientAdPlan.Channel.Name + '_' + transaction.ClientAdPlan.ChannelProduct.ProductLength.Name,
+                    PlanAmount: transaction.ClientAdPlan.WeeklyAmount.toFixed(2),
+                    SubTotal: transaction.Amount.toFixed(2),
+                    TaxAmount: transaction.TaxAmount.toFixed(2),
                     TotalAmount: transaction.TotalAmount.toFixed(2),
-                    TaxBreakdown: transaction.TaxBreakdown[0],
+                    TaxBreakdown: transaction.TaxBreakdown,
                 };
+
+                if (transaction.ClientAdPlan.Addons && transaction.ClientAdPlan.Addons.length > 0) {
+                    receipt.AddOn = transaction.ClientAdPlan.Addons[0].Name;
+                    receipt.AddOnAmount = transaction.ClientAdPlan.AddonsAmount;
+                }
 
                 receipt.User = {};
                 receipt.User.Name = transaction.Client.Name;
@@ -89,7 +64,7 @@ const generateTransactionReceipt = (transaction_id) => {
                             error: err,
                         });
                     }
-                    const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY') + '_' + transaction_id + '.pdf';
+                    const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY_HH:mm:ss') + '_' + transaction_id + '.pdf';
                     const uploadPromise = uploadFile(filePath, bucket_file_path);
                     const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
 
