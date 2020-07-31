@@ -30,7 +30,8 @@ const generateTransactionReceipt = (transaction_id) => {
             try {
                 transaction = await Transaction.findOne(query).deepPopulate('Client ClientAdPlan.Channel ClientAdPlan.AddOns').exec();
                 const receipt = {
-                    ReceiptNumber: transaction.ReferenceId,
+                    ReceiptNumber: transaction.ReceiptNo,
+                    PaymentReference: transaction.ReferenceId,
                     Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
                     PlanName: transaction.ClientAdPlan.Channel.Name + '_' + transaction.ClientAdPlan.ChannelProduct.ProductLength.Name,
                     PlanAmount: transaction.ClientAdPlan.WeeklyAmount.toFixed(2),

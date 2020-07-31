@@ -21,5 +21,6 @@ module.exports = () => {
         taxes: require('./Tax'),
         channelslots: require('./ChannelSlot'),
         productlengths: require('./ProductLength'),
+        counters: require('./Counter')
     };
 };

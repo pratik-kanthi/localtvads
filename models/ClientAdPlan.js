@@ -1,5 +1,7 @@
 const mongoose = require('mongoose');
-const { auditSchema } = require.main.require('./models/CommonSchema');
+const {
+    auditSchema
+} = require.main.require('./models/CommonSchema');
 
 const name = 'ClientAdPlan';
 
@@ -29,29 +31,25 @@ const schema = new mongoose.Schema({
     Addons: [{}],
     ChannelProduct: {
         ProductLength: {},
-        ChannelSlots: [
-            {
-                Slot: {},
-                RatePerSecond: {
-                    type: Number,
-                    required: true,
-                },
-                Duration: {
-                    type: Number,
-                },
+        ChannelSlots: [{
+            Slot: {},
+            RatePerSecond: {
+                type: Number,
+                required: true,
             },
-        ],
+            Duration: {
+                type: Number,
+            },
+        }, ],
     },
     AdVideo: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClientResource',
     },
-    AddOnAssets: [
-        {
-            type: mongoose.Schema.Types.ObjectId,
-            ref: 'ClientResource',
-        },
-    ],
+    AddOnAssets: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClientResource',
+    }, ],
     StartDate: {
         type: Date,
     },

@@ -129,42 +129,47 @@
         <div class="row mt32">
             <div class="col d-flex justify-content-center flex-column align-items-center">
                 <h4>Payment Receipt</h4>
-                <div class="t-s transaction-number">
-                    RECEIPT <%= receipt.ReceiptNumber %>
-                </div>
             </div>
         </div>
         <div class="row mt32 side-gutter">
             <div class="content">
                 <div class="content-row d-flex justify-content-between">
-                    <div>
-                        <div class="d-flex flex-column">
-                            <div class="t-s text-light">PAID BY</div>
-                            <div>
-                                <div class="t-s transaction-by"><%= receipt.User.Name %></div>
-                                <div class="t-s transaction-by">
-                                    <%= receipt.User.Email %>
-                                </div>
-                                <div class="t-s transaction-by">
-                                    <%= receipt.User.Phone %>
-                                </div>
+                    <div class="d-flex flex-column">
+                        <div class="t-xs text-light">RECEIPT #</div>
+                        <div class="t-s transaction-date"><%= receipt.ReceiptNumber %></div>
+                    </div>
+                    <div class="d-flex flex-column">
+                        <div class="t-xs text-light">PAYMENT REFERENCE</div>
+                        <div class="t-s transaction-date"><%= receipt.PaymentReference %></div>
+                    </div>
+                </div>
+                <div class="content-row d-flex justify-content-between mt24">
+                    <div class="d-flex flex-column">
+                        <div class="t-xs text-light">PAID BY</div>
+                        <div>
+                            <div class="t-s transaction-by"><%= receipt.User.Name %></div>
+                            <div class="t-s transaction-by">
+                                <%= receipt.User.Email %>
+                            </div>
+                            <div class="t-s transaction-by">
+                                <%= receipt.User.Phone %>
                             </div>
                         </div>
                     </div>
                 </div>
                 <div class="content-row mt24 d-flex justify-content-between">
                     <div class="d-flex flex-column">
-                        <div class="t-s text-light">DATE</div>
+                        <div class="t-xs text-light">DATE</div>
                         <div class="t-s transaction-date"><%= receipt.Date %></div>
                     </div>
                     <div class="d-flex flex-column">
-                        <div class="t-s text-light">AMOUNT PAID</div>
+                        <div class="t-xs text-light">AMOUNT PAID</div>
                         <div class="t-s transaction-date">
                             £<%= receipt.TotalAmount %>
                         </div>
                     </div>
                     <div class="d-flex flex-column">
-                        <div class="t-s text-light">PAYMENT METHOD</div>
+                        <div class="t-xs text-light">PAYMENT METHOD</div>
                         <div class="t-s transaction-date">xxxx 3642</div>
                     </div>
                 </div>
@@ -172,17 +177,17 @@
                 <div class="mt32">SUMMARY</div>
                 <div class="border mt16 summary rounded">
                     <div class="item p16 border b-b d-flex justify-content-between">
-                        <div class="item-name"><%= receipt.PlanName %></div>
-                        <div class="item-amount">£<%= receipt.PlanAmount %></div>
+                        <div class="t-s item-name"><%= receipt.PlanName %></div>
+                        <div class="t-s item-amount">£<%= receipt.PlanAmount %></div>
                     </div>
 
                     <%if (receipt.AddOn && receipt.AddOnAmount) { %>
                     <div class="item p16 border b-b d-flex justify-content-between">
-                        <div class="item-name d-flex align-items-center">
+                        <div class="t-s item-name d-flex align-items-center">
                             <div><%= receipt.AddOn %></div>
                             <div><span class="tag">ADD ON</span></div>
                         </div>
-                        <div class="item-amount">£<%= receipt.AddOnAmount %></div>
+                        <div class="t-s item-amount">£<%= receipt.AddOnAmount %></div>
                     </div>
                     <% } %>
                 </div>
