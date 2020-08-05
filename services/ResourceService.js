@@ -131,6 +131,20 @@ const addImageResource = (image, file) => {
     });
 };
 
+
+
+const addDocumentResource = (document, file) => {
+    return new Promise(async (resolve, reject) => {
+        if (!document || !file) {
+            return reject({
+                code: 500,
+                error: utilities.ErrorMessages.BAD_REQUEST,
+            });
+        }
+
+    });
+};
+
 /**
  * Update an Image
  * @param {Object} image - Object containing Image's details
@@ -498,12 +512,14 @@ const getAllResources = (id) => {
         });
     });
 };
-const removeAddOnResource=(planId, resourceId)=>{
+const removeAddOnResource = (planId, resourceId) => {
     return new Promise(async (resolve, reject) => {
-        try{
-            const clientAdPlan=await ClientAdPlan.findOne({_id:planId}).exec();
-            clientAdPlan.AddOnAssets=clientAdPlan.AddOnAssets.filter(function(item){
-                return item.toString()!=resourceId;
+        try {
+            const clientAdPlan = await ClientAdPlan.findOne({
+                _id: planId
+            }).exec();
+            clientAdPlan.AddOnAssets = clientAdPlan.AddOnAssets.filter(function (item) {
+                return item.toString() != resourceId;
             });
             clientAdPlan.save();
             resolve({
@@ -527,5 +543,6 @@ module.exports = {
     deleteMediaResource,
     getAllResources,
     saveClientVideo,
-    removeAddOnResource
+    removeAddOnResource,
+    addDocumentResource
 };

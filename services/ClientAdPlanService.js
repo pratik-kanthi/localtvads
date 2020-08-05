@@ -121,6 +121,8 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                 }).exec();
             }
             const clientAdPlan = new ClientAdPlan({
+                Name: cPlan.Name,
+                VAT: cPlan.VAT,
                 Client: cPlan.Client,
                 Channel: cPlan.Channel,
                 Days: cPlan.Days,
@@ -293,6 +295,46 @@ const attachImages = (clientId, planId, images) => {
     });
 };
 
+const updateClientAdPlan = (planId, plan) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!planId || !plan) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+
+            const updated = new ClientAdPlan(plan);
+            ClientAdPlan.findOneAndUpdate({
+                _id: planId,
+            }, updated, {
+                new: true
+            }).exec((err, plan) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+
+                }
+                resolve({
+                    code: 200,
+                    data: plan
+                });
+            });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+
+};
+
 const _stripePayment = (clientAdPlan, card, totalAmount, taxAmount, taxes) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -300,7 +342,7 @@ const _stripePayment = (clientAdPlan, card, totalAmount, taxAmount, taxes) => {
             const transaction = new Transaction({
                 ClientAdPlan: clientAdPlan._id,
                 Client: clientAdPlan.Client,
-                Amount: (totalAmount-taxAmount).toFixed(2),
+                Amount: (totalAmount - taxAmount).toFixed(2),
                 TaxAmount: taxAmount.toFixed(2),
                 TaxBreakdown: taxes,
                 TotalAmount: totalAmount.toFixed(2),
@@ -314,7 +356,7 @@ const _stripePayment = (clientAdPlan, card, totalAmount, taxAmount, taxes) => {
             const transaction = new Transaction({
                 Client: clientAdPlan.Client,
                 TotalAmount: totalAmount.toFixed(2),
-                Amount: (totalAmount-taxAmount).toFixed(2),
+                Amount: (totalAmount - taxAmount).toFixed(2),
                 TaxAmount: taxAmount.toFixed(2),
                 TaxBreakdown: taxes,
                 Status: 'FAILED',
@@ -331,6 +373,7 @@ module.exports = {
     getClientAdPlans,
     getClientAdPlan,
     saveClientAdPlan,
+    updateClientAdPlan,
     attachVideo,
     attachImages
 };

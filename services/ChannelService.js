@@ -2,7 +2,6 @@ const moment = require('moment');
 const Channel = require.main.require('./models/Channel').model;
 const ChannelProduct = require.main.require('./models/ChannelProduct').model;
 const ChannelPlan = require.main.require('./models/ChannelProduct').model;
-const ChannelAdSchedule = require.main.require('./models/ChannelAdSchedule').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
 
 const {
@@ -14,7 +13,7 @@ const {
 
 const createChannel = (newchannel) => {
     return new Promise(async (resolve, reject) => {
-        if (!newchannel.Name || !newchannel.Status || !newchannel.Viewerships) {
+        if (!newchannel.Name || !newchannel.Status) {
             return reject({
                 code: 400,
                 error: {
@@ -26,12 +25,7 @@ const createChannel = (newchannel) => {
         const ch = new Channel({
             Name: newchannel.Name,
             Description: newchannel.Description ? newchannel.Description : null,
-            Address: newchannel.Address ? newchannel.Address : null,
-            PrimaryContact: newchannel.PrimaryContact ? newchannel.PrimaryContact : null,
-            AlternativeContact: newchannel.AlternativeContact ? newchannel.AlternativeContact : null,
             Status: newchannel.Status,
-            ExpectedAdViews: newchannel.ExpectedAdViews,
-            Viewerships: newchannel.Viewerships,
         });
 
         ch.save((err, new_ch) => {
@@ -41,41 +35,11 @@ const createChannel = (newchannel) => {
                     error: err,
                 });
             }
-
-            //generate channel ad schedules
-            const channel_adschedules = new_ch.Viewerships.map((vship) => {
-                const new_ad_sch = new ChannelAdSchedule({
-                    Channel: new_ch._id,
-                    AdSchedule: vship.AdSchedule,
-                    TotalAvailableSeconds: vship.Count,
-                });
-
-                return new Promise(async (resolve, reject) => {
-                    new_ad_sch.save((err, saved) => {
-                        if (err) {
-                            return reject({
-                                code: 500,
-                                error: err,
-                            });
-                        }
-                        resolve(saved);
-                    });
-                });
+            resolve({
+                code: 200,
+                data: new_ch,
             });
 
-            Promise.all(channel_adschedules)
-                .then(() => {
-                    resolve({
-                        code: 200,
-                        data: new_ch,
-                    });
-                })
-                .catch((err) => {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                });
         });
     });
 };
@@ -85,7 +49,9 @@ const createChannel = (newchannel) => {
  */
 const getProductsOfChannel = (channelId) => {
     return new Promise(async (resolve, reject) => {
-        ChannelProduct.find({Channel:channelId}).deepPopulate('ProductLength ChannelSlots.Slot').exec((err, products) => {
+        ChannelProduct.find({
+            Channel: channelId
+        }).deepPopulate('ProductLength ChannelSlots.Slot').exec((err, products) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -98,7 +64,8 @@ const getProductsOfChannel = (channelId) => {
             });
         });
     });
-};/**
+};
+/**
  * get Channels
  */
 const getChannels = (projection) => {
@@ -210,28 +177,28 @@ const getLowestPriceOnChannel = (channel) => {
         ChannelPlan.find({
             Channel: channel
         }).exec((err, channelProducts) => {
-            try{
+            try {
                 if (err) {
                     return reject({
                         code: 500,
                         error: err,
                     });
                 }
-                if (!channelProducts ||channelProducts.length==0) {
+                if (!channelProducts || channelProducts.length == 0) {
                     return reject({
                         code: 404,
                         error: 'No plan found for channel',
                     });
                 }
-                let lowestRate=0;
-                for (let i = 0, len = channelProducts.length;i < len; i++) {
-                    channelProducts[i].ChannelSlots.map(function(slot) {
-                        const rate=slot.RatePerSecond * slot.Duration;
-                        if(!lowestRate){
-                            lowestRate=rate;
+                let lowestRate = 0;
+                for (let i = 0, len = channelProducts.length; i < len; i++) {
+                    channelProducts[i].ChannelSlots.map(function (slot) {
+                        const rate = slot.RatePerSecond * slot.Duration;
+                        if (!lowestRate) {
+                            lowestRate = rate;
                         }
-                        if(lowestRate>rate) {
-                            lowestRate=rate;
+                        if (lowestRate > rate) {
+                            lowestRate = rate;
                         }
                         return '';
                     });
@@ -240,7 +207,7 @@ const getLowestPriceOnChannel = (channel) => {
                     code: 200,
                     data: lowestRate.toString()
                 });
-            }catch(err){
+            } catch (err) {
                 return reject({
                     code: 500,
                     error: err,

@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const {
-    auditSchema
+    auditSchema,
+    addressSchema
 } = require.main.require('./models/CommonSchema');
 
 const name = 'ClientAdPlan';
@@ -16,6 +17,12 @@ const schema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client',
         required: true,
+    },
+    BusinessName: {
+        type: String,
+    },
+    VAT: {
+        type: String,
     },
     Channel: {
         type: mongoose.Schema.Types.ObjectId,
@@ -74,6 +81,7 @@ const schema = new mongoose.Schema({
         },
         required: true,
     },
+    BillingAddress: addressSchema,
     AuditInfo: auditSchema,
 });
 
