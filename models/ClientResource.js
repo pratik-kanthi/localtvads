@@ -10,9 +10,12 @@ const schema = new mongoose.Schema({
         ref: 'Client',
         required: true,
     },
+    ResourceName: {
+        type: String
+    },
     ResourceType: {
         type: String,
-        enum: ['IMAGE', 'VIDEO', 'TEXT']
+        enum: ['IMAGE', 'VIDEO', 'DOCUMENT']
     },
     Management: {
         type: Boolean

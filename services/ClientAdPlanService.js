@@ -128,6 +128,7 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                 Days: cPlan.Days,
                 WeeklyAmount: 0,
                 AddonsAmount: 0,
+                BillingAddress: cPlan.BillingAddress
             });
             const channelProduct = await ChannelProduct.findOne({
                 _id: cPlan.ChannelProduct,

@@ -142,6 +142,48 @@ const addDocumentResource = (document, file) => {
             });
         }
 
+        const docObj = JSON.parse(document);
+        const time = Date.now();
+        const extension = file.originalname.substr(file.originalname.lastIndexOf('.'));
+        const dst = 'uploads/' + docObj.OwnerType + '/' + docObj.Owner + '/Document/' + time + extension;
+
+        try {
+            await uploadFileBuffer(file, dst);
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+
+
+        const doc = new ClientResource({
+            ResourceName: docObj.Name,
+            Client: docObj.Owner,
+            ResourceType: 'DOCUMENT',
+            ResourceUrl: dst,
+            Extension: extension
+        });
+
+        doc.AuditInfo = {
+            CreatedByUser: docObj.Owner,
+            CreationDate: new Date()
+        };
+
+        doc.save((err, saved) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+
+            resolve({
+                code: 200,
+                data: saved
+            });
+        });
+
     });
 };
 
