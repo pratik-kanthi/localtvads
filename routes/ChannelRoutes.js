@@ -8,13 +8,23 @@ const {
     getChannelScheduleAvailability,
     updateChannel,
     getLowestPriceOnChannel,
-    getChannelPlan
+    getChannelPlan,
+    getChannelsInfo
 } = require.main.require('./services/ChannelService');
 
 module.exports = (app) => {
     app.get('/api/channel/all', async (req, res) => {
         try {
             const result = await getChannels();
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.get('/api/channelsinfo', async (req, res) => {
+        try {
+            const result = await getChannelsInfo();
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

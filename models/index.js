@@ -1,6 +1,6 @@
 module.exports = () => {
     return {
-        serviceaddons: require('./ServiceAddOn'),
+        clientserviceaddons: require('./ServiceAddOn'),
         adschedules: require('./AdSchedule'),
         channels: require('./Channel'),
         channeladschedules: require('./ChannelAdSchedule'),

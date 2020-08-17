@@ -9,10 +9,10 @@ const {
     getApplicableCoupons,
     getClientAd,
     getClientAdPlan,
-    getClientAdPlans,
     renewClientAdPlan,
     saveClientAdPlan,
-    uploadClientAd
+    uploadClientAd,
+    getAllClientAdPlans
 } = require.main.require('./services/ClientAdPlanService');
 
 const mediaUpload = multer({
@@ -89,7 +89,7 @@ module.exports = (app) => {
         session: false,
     }), async (req, res) => {
         try {
-            const result = await getClientAdPlans(req.query.clientid, req.query.top, req.query.skip);
+            const result = await getAllClientAdPlans(req.query.page, req.query.top, req.query.sort, req.query.Status, req.query.Channel);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

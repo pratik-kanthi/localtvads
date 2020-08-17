@@ -5,13 +5,48 @@ const ServiceAddOn = require.main.require('./models/ServiceAddOn').model;
 const Transaction = require.main.require('./models/Transaction').model;
 const mongoose = require('mongoose');
 
+const { getAllTaxes } = require.main.require('./services/TaxService');
+const { chargeByExistingCard } = require.main.require('./services/PaymentService');
 
-const {
-    getAllTaxes
-} = require.main.require('./services/TaxService');
-const {
-    chargeByExistingCard
-} = require.main.require('./services/PaymentService');
+const getAllClientAdPlans = (page, size, sortby, status, channel) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            page = parseInt(page) - 1;
+
+            const query = {
+                ...status && {
+                    Status: status,
+                },
+                ...channel && {
+                    Channel: channel,
+                },
+            };
+
+            ClientAdPlan.find(query)
+                .skip(page * parseInt(size))
+                .limit(parseInt(size))
+                .sort(sortby)
+                .populate('Client Channel')
+                .exec((err, plans) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err,
+                        });
+                    }
+                    resolve({
+                        code: 200,
+                        data: plans,
+                    });
+                });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
+    });
+};
 
 const getClientAdPlans = (clientid) => {
     return new Promise(async (resolve, reject) => {
@@ -26,7 +61,7 @@ const getClientAdPlans = (clientid) => {
             }
 
             ClientAdPlan.find({
-                Client: clientid
+                Client: clientid,
             })
                 .populate('Channel')
                 .exec((err, data) => {
@@ -65,11 +100,11 @@ const getClientAdPlan = (clientId, planId) => {
 
             ClientAdPlan.findOne({
                 _id: planId,
-                Client: clientId
+                Client: clientId,
             })
                 .populate('Channel AdVideo AddOnAssets')
                 .sort({
-                    BookedDate: -1
+                    BookedDate: -1,
                 })
                 .exec((err, data) => {
                     if (err) {
@@ -113,12 +148,15 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                 });
             }
             if (!card) {
-                card = await ClientPaymentMethod.findOne({
-                    _id: cardId,
-                }, {
-                    'Card.StripeCardToken': 1,
-                    StripeCusToken: 1,
-                }).exec();
+                card = await ClientPaymentMethod.findOne(
+                    {
+                        _id: cardId,
+                    },
+                    {
+                        'Card.StripeCardToken': 1,
+                        StripeCusToken: 1,
+                    }
+                ).exec();
             }
             const clientAdPlan = new ClientAdPlan({
                 Name: cPlan.Name,
@@ -128,7 +166,7 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                 Days: cPlan.Days,
                 WeeklyAmount: 0,
                 AddonsAmount: 0,
-                BillingAddress: cPlan.BillingAddress
+                BillingAddress: cPlan.BillingAddress,
             });
             const channelProduct = await ChannelProduct.findOne({
                 _id: cPlan.ChannelProduct,
@@ -205,40 +243,38 @@ const attachVideo = (clientId, planId, resourceId) => {
                 return reject({
                     code: 400,
                     error: {
-                        message: utilities.ErrorMessages.BAD_REQUEST
-                    }
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
                 });
             }
             ClientAdPlan.findOne({
                 _id: planId,
-                Client: clientId
+                Client: clientId,
             }).exec((err, plan) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
-
                 }
                 plan.AdVideo = mongoose.Types.ObjectId(resourceId);
                 plan.save((err) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
-
                     }
                     resolve({
                         code: 200,
-                        data: plan
+                        data: plan,
                     });
                 });
             });
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
     });
@@ -251,20 +287,19 @@ const attachImages = (clientId, planId, images) => {
                 return reject({
                     code: 400,
                     error: {
-                        message: utilities.ErrorMessages.BAD_REQUEST
-                    }
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
                 });
             }
             ClientAdPlan.findOne({
                 _id: planId,
-                Client: clientId
+                Client: clientId,
             }).exec((err, plan) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
-
                 }
                 /*eslint-disable */
                 images.map((image) => {
@@ -276,21 +311,19 @@ const attachImages = (clientId, planId, images) => {
                     if (err) {
                         return reject({
                             code: 500,
-                            error: err
+                            error: err,
                         });
-
                     }
                     resolve({
                         code: 200,
-                        data: plan
+                        data: plan,
                     });
                 });
             });
-
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
     });
@@ -303,37 +336,39 @@ const updateClientAdPlan = (planId, plan) => {
                 return reject({
                     code: 400,
                     error: {
-                        message: utilities.ErrorMessages.BAD_REQUEST
-                    }
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
                 });
             }
 
             const updated = new ClientAdPlan(plan);
-            ClientAdPlan.findOneAndUpdate({
-                _id: planId,
-            }, updated, {
-                new: true
-            }).exec((err, plan) => {
+            ClientAdPlan.findOneAndUpdate(
+                {
+                    _id: planId,
+                },
+                updated,
+                {
+                    new: true,
+                }
+            ).exec((err, plan) => {
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
-
                 }
                 resolve({
                     code: 200,
-                    data: plan
+                    data: plan,
                 });
             });
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
     });
-
 };
 
 const _stripePayment = (clientAdPlan, card, totalAmount, taxAmount, taxes) => {
@@ -376,5 +411,6 @@ module.exports = {
     saveClientAdPlan,
     updateClientAdPlan,
     attachVideo,
-    attachImages
+    attachImages,
+    getAllClientAdPlans,
 };

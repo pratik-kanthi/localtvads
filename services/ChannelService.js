@@ -2,6 +2,7 @@ const moment = require('moment');
 const Channel = require.main.require('./models/Channel').model;
 const ChannelProduct = require.main.require('./models/ChannelProduct').model;
 const ChannelPlan = require.main.require('./models/ChannelProduct').model;
+const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
 
 const {
@@ -96,6 +97,71 @@ const getChannels = (projection) => {
                 data: channels,
             });
         });
+    });
+};
+
+const getChannelsInfo = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            Channel.find().exec((err, channels) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+
+                ClientAdPlan.find({}, {
+                    Channel: 1
+                }).exec((err, plans) => {
+                    if (err) {
+                        return reject({
+                            code: 500,
+                            error: err
+                        });
+                    }
+
+                    channels = channels.map(channel => {
+                        channel = channel.toObject();
+                        channel.planCount = 0;
+                        plans.map(plan => {
+                            if (channel._id == plan.Channel.toString()) {
+                                channel.planCount++;
+                            }
+                            return plan;
+                        });
+                        return channel;
+                    });
+
+
+                    ChannelProduct.find({}, {
+                        Channel: 1
+                    }).exec((err, products) => {
+                        channels = channels.map(channel => {
+                            channel.productCount = 0;
+                            products.map(product => {
+                                if (channel._id == product.Channel.toString()) {
+                                    channel.productCount++;
+                                }
+                                return product;
+                            });
+                            return channel;
+                        });
+                        resolve({
+                            code: 200,
+                            data: channels
+                        });
+
+                    });
+                });
+
+            });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
     });
 };
 
@@ -677,6 +743,7 @@ const _formatDate = (date) => {
 module.exports = {
     createChannel,
     getChannels,
+    getChannelsInfo,
     getProductsOfChannel,
     getChannel,
     getSecondsByChannel,

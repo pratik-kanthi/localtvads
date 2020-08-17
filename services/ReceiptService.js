@@ -2,9 +2,7 @@ const Transaction = require.main.require('./models/Transaction').model;
 const pdf = require('html-pdf');
 const fs = require('fs');
 const path = require('path');
-const {
-    uploadFile
-} = require.main.require('./services/FileService');
+const { uploadFile } = require.main.require('./services/FileService');
 const email = require('../email');
 const moment = require('moment');
 const config = require.main.require('./config');
@@ -24,7 +22,6 @@ const generateTransactionReceipt = (transaction_id) => {
             const query = {
                 _id: transaction_id,
             };
-
 
             let transaction;
             try {
