@@ -106,7 +106,7 @@ const getClientAdPlan = (clientId, planId) => {
                 _id: planId,
                 Client: clientId,
             })
-                .populate('Channel AdVideo AddOnAssets')
+                .populate('Channel AdVideo AddOnAssets PaymentMethod')
                 .sort({
                     BookedDate: -1,
                 })

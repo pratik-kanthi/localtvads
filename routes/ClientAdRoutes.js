@@ -2,15 +2,11 @@ const multer = require('multer');
 const passport = require('passport');
 const config = require.main.require('./config');
 const {
-    addCard
-} = require.main.require('./services/ClientService');
-const {
     checkCouponApplicable,
     getApplicableCoupons,
     getClientAd,
     getClientAdPlan,
     renewClientAdPlan,
-    saveClientAdPlan,
     uploadClientAd,
     getAllClientAdPlans
 } = require.main.require('./services/ClientAdPlanService');

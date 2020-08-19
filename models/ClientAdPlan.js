@@ -81,6 +81,9 @@ const schema = new mongoose.Schema({
         },
         required: true,
     },
+    StripeReferenceId: {
+        type: String,
+    },
     PaymentMethod: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClientPaymentMethod',

@@ -1,52 +1,77 @@
 const config = require.main.require('./config');
-const stripe = require('stripe')(
-    config.stripe.secret
-);
+const stripe = require('stripe')(config.stripe.secret);
 const Client = require.main.require('./models/Client').model;
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ChannelProduct = require.main.require('./models/ChannelProduct').model;
 const ServiceAddOn = require.main.require('./models/ServiceAddOn').model;
+const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
+const Transaction = require.main.require('./models/Transaction').model;
+
 const {
     getAllTaxes
 } = require.main.require('./services/TaxService');
 
-const saveSubscription = (cplan, payment_method, ) => {
+const saveSubscription = (cplan, newCard, savedCard) => {
     return new Promise(async (resolve, reject) => {
         try {
-
-            if (!cplan || !payment_method) {
+            if (!cplan) {
                 return reject({
                     code: 500,
                     error: {
-                        message: utilities.ErrorMessages.BAD_REQUEST
-                    }
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
                 });
             }
 
+            let paymentSource = null,
+                isNewCustomer, customer, product, subscriptionPrice, addonsPrice;
 
-            let isNewCustomer = false,
-                customer, product, subscriptionPrice, addonsPrice;
+            if (newCard) {
+                //save new card
+                const cardObj = new ClientPaymentMethod({
+                    Client: cplan.Client,
+                    IsPreferred: true,
+                    StripeCardToken: newCard.paymentMethod.id,
+                    Card: {
+                        PaymentMethodType: 'CARD',
+                        Vendor: newCard.paymentMethod.card.brand,
+                        Name: newCard.CardName,
+                        ExpiryMonth: newCard.paymentMethod.card.exp_month,
+                        ExpiryYear: newCard.paymentMethod.card.exp_year,
+                        LastFour: newCard.paymentMethod.card.last4,
+                    },
+                });
 
-
-
+                try {
+                    paymentSource = await cardObj.save();
+                } catch (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+            } else if (savedCard) {
+                paymentSource = await ClientPaymentMethod.findOne({
+                    _id: savedCard,
+                });
+            }
 
             Client.findOne({
-                _id: cplan.Client
+                _id: cplan.Client,
             }).exec(async (err, client) => {
-
                 if (err) {
                     return reject({
                         code: 500,
-                        error: err
+                        error: err,
                     });
                 }
 
                 if (!client.StripeCustomerId) {
                     customer = await stripe.customers.create({
                         email: client.Email,
-                        payment_method: payment_method.paymentMethod.id,
+                        payment_method: paymentSource.StripeCardToken,
                         invoice_settings: {
-                            default_payment_method: payment_method.paymentMethod.id,
+                            default_payment_method: paymentSource.StripeCardToken,
                         },
                     });
                     isNewCustomer = true;
@@ -56,74 +81,102 @@ const saveSubscription = (cplan, payment_method, ) => {
 
                 //product
                 product = await stripe.products.create({
-                    name: cplan.Name,
+                    name: cplan.Name || 'PLAN_FOR_' + client.Name,
                     active: true,
                 });
 
-
-                //get prices
+                //generate plan
                 const clientAdPlan = await _generateClientAdPlan(cplan);
 
                 //create prices
                 subscriptionPrice = await stripe.prices.create({
-                    unit_amount: clientAdPlan.WeeklyAmount * 100,
+                    unit_amount: clientAdPlan.WeeklyAmount.toFixed(2) * 100,
                     currency: 'gbp',
                     recurring: {
-                        interval: 'week'
+                        interval: 'week',
                     },
                     product: product.id,
                 });
 
                 addonsPrice = await stripe.prices.create({
-                    unit_amount: clientAdPlan.AddonsAmount * 100,
+                    unit_amount: clientAdPlan.AddonsAmount.toFixed(2) * 100,
                     currency: 'gbp',
                     product: product.id,
                 });
 
 
-                //create subscription
-                const subscription = await stripe.subscriptions.create({
-                    customer: customer.id,
-                    items: [{
-                        price: subscriptionPrice.id,
-                    }],
-                    add_invoice_items: [{
-                        price: addonsPrice.id,
-                    }],
+                const taxes = (await getAllTaxes()).data;
+                const stripeTaxIds = taxes.map(tax => {
+                    return tax.StripeTaxId;
                 });
 
 
+                //create subscription
+                const subscription = await stripe.subscriptions.create({
+                    customer: customer,
+                    items: [{
+                        price: subscriptionPrice.id,
+                    }, ],
+                    add_invoice_items: [{
+                        price: addonsPrice.id,
+                    }, ],
+                    default_tax_rates: stripeTaxIds
+                });
+
                 clientAdPlan.Status = 'PAID';
-                clientAdPlan.save((err) => {
-                    if (err) {
+                clientAdPlan.StripeReferenceId = subscription.id;
+                clientAdPlan.PaymentMethod = paymentSource._id;
+
+                try {
+                    await clientAdPlan.save();
+                } catch (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+
+                if (isNewCustomer) {
+                    try {
+                        client.StripeCustomerId = customer;
+                        await client.save();
+                    } catch (err) {
                         return reject({
                             code: 500,
                             error: err,
                         });
                     }
-                    if (isNewCustomer) {
-                        client.StripeCustomerId = customer.id;
-                        client.save((err) => {
-                            if (err) {
-                                return reject({
-                                    code: 500,
-                                    error: err
-                                });
-                            }
-                            resolve({
-                                code: 200,
-                                data: clientAdPlan,
-                            });
-                        });
-                    }
-                });
+                }
+
+                try {
+                    const transaction = new Transaction({
+                        ClientAdPlan: clientAdPlan._id,
+                        Client: clientAdPlan.Client,
+                        Amount: (clientAdPlan.totalAmount - clientAdPlan.taxAmount).toFixed(2),
+                        TaxAmount: clientAdPlan.taxAmount.toFixed(2),
+                        TaxBreakdown: clientAdPlan.Taxes,
+                        TotalAmount: clientAdPlan.totalAmount.toFixed(2),
+                        Status: 'SUCCEEDED',
+                        StripeResponse: subscription,
+                        ReferenceId: subscription.id,
+                    });
+
+                    await transaction.save();
+                    resolve({
+                        code: 200,
+                        data: transaction
+                    });
+                } catch (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
             });
-
-
         } catch (err) {
             return reject({
                 code: 500,
-                error: err
+                error: err,
             });
         }
     });
@@ -176,12 +229,12 @@ const _generateClientAdPlan = (cPlan) => {
             }
         }
         clientAdPlan.Taxes = taxes;
-        const totalAmount = taxAmount + clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount;
+        clientAdPlan.taxAmount = taxAmount;
+        clientAdPlan.totalAmount = taxAmount + clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount;
         resolve(clientAdPlan);
-
     });
 };
 
 module.exports = {
-    saveSubscription
+    saveSubscription,
 };
