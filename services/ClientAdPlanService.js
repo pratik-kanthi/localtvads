@@ -5,8 +5,12 @@ const ServiceAddOn = require.main.require('./models/ServiceAddOn').model;
 const Transaction = require.main.require('./models/Transaction').model;
 const mongoose = require('mongoose');
 
-const { getAllTaxes } = require.main.require('./services/TaxService');
-const { chargeByExistingCard } = require.main.require('./services/PaymentService');
+const {
+    getAllTaxes
+} = require.main.require('./services/TaxService');
+const {
+    chargeByExistingCard
+} = require.main.require('./services/PaymentService');
 
 const getAllClientAdPlans = (page, size, sortby, status, channel) => {
     return new Promise(async (resolve, reject) => {
@@ -148,15 +152,12 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                 });
             }
             if (!card) {
-                card = await ClientPaymentMethod.findOne(
-                    {
-                        _id: cardId,
-                    },
-                    {
-                        'Card.StripeCardToken': 1,
-                        StripeCusToken: 1,
-                    }
-                ).exec();
+                card = await ClientPaymentMethod.findOne({
+                    _id: cardId,
+                }, {
+                    'Card.StripeCardToken': 1,
+                    StripeCusToken: 1,
+                }).exec();
             }
             const clientAdPlan = new ClientAdPlan({
                 Name: cPlan.Name,
@@ -204,6 +205,8 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
             }
             clientAdPlan.Taxes = taxes;
             const totalAmount = taxAmount + clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount;
+
+
             let transaction;
             try {
                 transaction = await _stripePayment(clientAdPlan, card, totalAmount, taxAmount, taxes);
@@ -213,6 +216,8 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                     error: err.error,
                 });
             }
+
+
             clientAdPlan.Status = 'PAID';
             clientAdPlan.save(function (err) {
                 if (err) {
@@ -227,6 +232,8 @@ const saveClientAdPlan = (cPlan, cardId, card, user) => {
                     data: transaction,
                 });
             });
+
+
         } catch (err) {
             return reject({
                 code: 500,
@@ -342,14 +349,12 @@ const updateClientAdPlan = (planId, plan) => {
             }
 
             const updated = new ClientAdPlan(plan);
-            ClientAdPlan.findOneAndUpdate(
-                {
-                    _id: planId,
-                },
-                updated,
-                {
-                    new: true,
-                }
+            ClientAdPlan.findOneAndUpdate({
+                _id: planId,
+            },
+            updated, {
+                new: true,
+            }
             ).exec((err, plan) => {
                 if (err) {
                     return reject({

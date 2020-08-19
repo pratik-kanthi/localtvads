@@ -42,7 +42,7 @@
         "passport-jwt": "^4.0.0",
         "request": "^2.88.0",
         "socket.io": "^2.2.0",
-        "stripe": "^7.8.0",
+        "stripe": "^8.86.0",
         "winston": "^3.2.1"
     },
     "devDependencies": {
@@ -77,6 +77,6 @@
         "tabWidth": 4,
         "singleQuote": true,
         "printWidth": 1300,
-        "jsxBracketSameLine": true
+        "jsxBracketSameLine": false
     }
 }

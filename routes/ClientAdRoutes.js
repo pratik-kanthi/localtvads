@@ -39,24 +39,6 @@ const mediaUpload = multer({
 const mediaType = mediaUpload.single('file');
 
 module.exports = (app) => {
-    app.post('/api/clientad/new', passport.authenticate('jwt', {
-        session: false,
-    }), async (req, res) => {
-        try {
-            let card = null;
-            if (req.body.token) {
-                card = await addCard(req.body.clientAdPlan.Client, req.body.token);
-            }
-            try {
-                const result = await saveClientAdPlan(req.body.clientAdPlan, req.body.cardId, card ? card.data : null, req.user);
-                return res.status(result.code).send(result.data);
-            } catch (ex) {
-                return res.status(ex.code || 500).send(ex.error);
-            }
-        } catch (ex) {
-            return res.status(500).send(ex);
-        }
-    });
 
     app.post('/api/clientad/renew', passport.authenticate('jwt', {
         session: false,

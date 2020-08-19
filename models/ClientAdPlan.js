@@ -81,6 +81,10 @@ const schema = new mongoose.Schema({
         },
         required: true,
     },
+    PaymentMethod: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClientPaymentMethod',
+    },
     BillingAddress: addressSchema,
     AuditInfo: auditSchema,
 });

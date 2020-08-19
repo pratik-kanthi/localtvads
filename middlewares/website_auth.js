@@ -19,16 +19,19 @@ passport.use('website-bearer', new JwtStrategy(opts, (req, token, done) => {
         _id: token.UserId
     };
     const project = {
-        _id: 1
+        _id: 1,
+        Name: 1,
+        Email: 1
     };
-    if(!req.params.clientid){
+
+    if (!req.params.clientid) {
         return done(null, false, {
             error: {
                 message: 'Client Id is missing'
             }
         });
     }
-    if (token.iat*1000 < Date.now()) {
+    if (token.iat * 1000 < Date.now()) {
         return done(null, false, {
             status: 401,
             error: {
@@ -37,11 +40,11 @@ passport.use('website-bearer', new JwtStrategy(opts, (req, token, done) => {
         });
     }
     User.findOne(query, project, (err, user) => {
-        try{
+        try {
             if (err) {
                 return done(err, false);
             } else if (user) {
-                const claims=token.Claims.split('|')[0].split(':');
+                const claims = token.Claims.split('|')[0].split(':');
                 if (claims[0] !== 'Client' || claims[1] !== req.params.clientid) {
                     return done(null, false, {
                         error: {
@@ -57,7 +60,7 @@ passport.use('website-bearer', new JwtStrategy(opts, (req, token, done) => {
                     }
                 });
             }
-        } catch(err){
+        } catch (err) {
             return done(err, false);
         }
     });

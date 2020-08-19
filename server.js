@@ -33,8 +33,7 @@ app.use(methodOverride('X-HTTP-Method-Override'));
 app.use(cors());
 
 mongoose.connect(
-    process.env.DATABASE,
-    {
+    process.env.DATABASE, {
         useNewUrlParser: true,
         useCreateIndex: true,
         useFindAndModify: false,
@@ -61,6 +60,7 @@ app.listen(port, () => {
 });
 const io = require('./sockets')();
 require('./routes')(app, models, io);
+require('./web-hooks')(app);
 require('./prototypes');
 
 exports = module.exports = app;
