@@ -1,10 +1,11 @@
+const config = require.main.require('./config');
+const stripe = require('stripe')(config.stripe.secret);
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const ChannelProduct = require.main.require('./models/ChannelProduct').model;
 const ServiceAddOn = require.main.require('./models/ServiceAddOn').model;
 const Transaction = require.main.require('./models/Transaction').model;
 const mongoose = require('mongoose');
-
 const {
     getAllTaxes
 } = require.main.require('./services/TaxService');
@@ -376,6 +377,72 @@ const updateClientAdPlan = (planId, plan) => {
     });
 };
 
+const updatePlanPayment = (client, planId, paymentMethod) => {
+    return new Promise(async (resolve, reject) => {
+        if (!client || !planId || !paymentMethod) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+
+
+        ClientAdPlan.findOne({
+            _id: planId
+        }).exec(async (err, cplan) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+            ClientPaymentMethod.findOne({
+                _id: paymentMethod._id
+            }).exec(async (err, method) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+
+                if (method) {
+                    try {
+                        await stripe.subscriptions.update(
+                            cplan.StripeReferenceId, {
+                                default_payment_method: method.StripeCardToken
+                            }
+                        );
+                        cplan.PaymentMethod = method._id;
+                        cplan.save((err) => {
+                            if (err) {
+                                return reject({
+                                    code: 500,
+                                    error: err
+                                });
+                            }
+
+                            resolve({
+                                code: 200,
+                                data: method
+                            });
+                        });
+                    } catch (err) {
+                        return reject({
+                            code: err.code,
+                            error: err
+                        });
+                    }
+                }
+            });
+
+        });
+    });
+
+};
+
 const _stripePayment = (clientAdPlan, card, totalAmount, taxAmount, taxes) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -418,4 +485,5 @@ module.exports = {
     attachVideo,
     attachImages,
     getAllClientAdPlans,
+    updatePlanPayment
 };
