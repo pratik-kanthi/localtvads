@@ -4,7 +4,8 @@ const {
     getClientAdPlan,
     attachVideo,
     attachImages,
-    updateClientAdPlan
+    updateClientAdPlan,
+    updatePlanPayment
 } = require.main.require('./services/ClientAdPlanService');
 
 module.exports = (app) => {
@@ -59,6 +60,17 @@ module.exports = (app) => {
     }), async (req, res) => {
         try {
             const result = await attachImages(req.params.clientid, req.params.planid, req.body.images);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.post('/api/:clientid/clientadplans/:planid/updatepayment', passport.authenticate('website-bearer', {
+        session: false
+    }), async (req, res) => {
+        try {
+            const result = await updatePlanPayment(req.params.clientid, req.params.planid, req.body.payment);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);

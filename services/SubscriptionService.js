@@ -31,17 +31,16 @@ const saveSubscription = (cplan, newCard, savedCard) => {
                 const cardObj = new ClientPaymentMethod({
                     Client: cplan.Client,
                     IsPreferred: true,
-                    StripeCardToken: newCard.paymentMethod.id,
+                    StripeCardToken: newCard.id,
                     Card: {
                         PaymentMethodType: 'CARD',
-                        Vendor: newCard.paymentMethod.card.brand,
+                        Vendor: newCard.card.brand,
                         Name: newCard.CardName,
-                        ExpiryMonth: newCard.paymentMethod.card.exp_month,
-                        ExpiryYear: newCard.paymentMethod.card.exp_year,
-                        LastFour: newCard.paymentMethod.card.last4,
+                        ExpiryMonth: newCard.card.exp_month,
+                        ExpiryYear: newCard.card.exp_year,
+                        LastFour: newCard.card.last4,
                     },
                 });
-
                 try {
                     paymentSource = await cardObj.save();
                 } catch (err) {
@@ -67,16 +66,29 @@ const saveSubscription = (cplan, newCard, savedCard) => {
                 }
 
                 if (!client.StripeCustomerId) {
-                    customer = await stripe.customers.create({
-                        email: client.Email,
+                    customer = (await stripe.customers.create({
                         payment_method: paymentSource.StripeCardToken,
-                        invoice_settings: {
-                            default_payment_method: paymentSource.StripeCardToken,
-                        },
-                    });
+                        name: client.Name,
+                        email: client.Email,
+                    })).id;
                     isNewCustomer = true;
                 } else {
                     customer = client.StripeCustomerId;
+                    if (newCard) {
+                        try {
+                            await stripe.paymentMethods.attach(
+                                paymentSource.StripeCardToken, {
+                                    customer: client.StripeCustomerId
+                                }
+                            );
+                        } catch (err) {
+                            return reject({
+                                code: 500,
+                                error: err
+                            });
+
+                        }
+                    }
                 }
 
                 //product
@@ -114,6 +126,7 @@ const saveSubscription = (cplan, newCard, savedCard) => {
                 //create subscription
                 const subscription = await stripe.subscriptions.create({
                     customer: customer,
+                    default_payment_method: paymentSource.StripeCardToken,
                     items: [{
                         price: subscriptionPrice.id,
                     }, ],
