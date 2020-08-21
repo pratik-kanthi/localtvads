@@ -39,32 +39,11 @@ module.exports = (def) => {
     };
 
     const count = (req, res) => {
-        const Channels = req.user.Channels || [];
-        //query string that filters just the records with the selected Brands or no brand all together
-        const querystring = [{
-            Channel: {
-                $in: Channels,
-            },
-        },
-        {
-            Channel: {
-                $exists: false,
-            },
-        },
-        {
-            Channel: {
-                $eq: null,
-            },
-        },
-        ];
-        let query = Model.count();
-
+        let query = Model.countDocuments();
         query = odata.selectExpandParser(query, '_id', null);
         if (req.query.$filter) {
             query = odata.filterParser(query, req.query.$filter);
         }
-
-        query = query.or(querystring);
         query.exec((err, count) => {
             if (err) {
                 return res.status(500).send(err);
@@ -76,33 +55,10 @@ module.exports = (def) => {
     };
 
     const getOne = (req, res) => {
-        const Channels = req.user.Channels || [];
-
-        //query string that filters just the records with the requested Id, selected brands or no brand all together
-
         const querystring = {
             $and: [{
                 _id: req.params._id,
-            },
-            {
-                $or: [{
-                    Channel: {
-                        $in: Channels,
-                    },
-                },
-                {
-                    Channel: {
-                        $exists: false,
-                    },
-                },
-                {
-                    Channel: {
-                        $eq: null,
-                    },
-                },
-                ],
-            },
-            ],
+            }],
         };
 
         Model.findOne(querystring, (err, model) => {

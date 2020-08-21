@@ -12,7 +12,7 @@ const {
     chargeByExistingCard
 } = require.main.require('./services/PaymentService');
 
-const getAllClientAdPlans = (page, size, sortby, status, channel) => {
+const getAllClientAdPlans = (page, size, sortby, status, channel, client) => {
     return new Promise(async (resolve, reject) => {
         try {
             page = parseInt(page) - 1;
@@ -23,6 +23,9 @@ const getAllClientAdPlans = (page, size, sortby, status, channel) => {
                 },
                 ...channel && {
                     Channel: channel,
+                },
+                ...client && {
+                    Client: client,
                 },
             };
 
