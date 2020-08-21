@@ -70,8 +70,8 @@ const getClientAdPlans = (clientid) => {
 
             ClientAdPlan.find({
                 Client: clientid,
-            })
-                .populate('Channel')
+            }).populate('Channel')
+                .sort('BookedDate')
                 .exec((err, data) => {
                     if (err) {
                         return reject({

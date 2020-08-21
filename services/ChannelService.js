@@ -4,7 +4,7 @@ const ChannelProduct = require.main.require('./models/ChannelProduct').model;
 const ChannelPlan = require.main.require('./models/ChannelProduct').model;
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
-
+const ImageService =require('./ImageService');
 const {
     getApplicableOffers
 } = require.main.require('./services/OfferService');
@@ -12,6 +12,42 @@ const {
     getTaxAmount
 } = require.main.require('./services/TaxService');
 
+const uploadLogo = async (channelId, file) => {
+    return new Promise(async (resolve, reject) => {
+        try{
+            if (!channelId || !file) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
+                });
+            }
+            const channel=await Channel.findOne({_id:channelId});
+            if(!channel){
+                return reject({
+                    code: 404,
+                    error: {
+                        message: 'Channel not found',
+                    },
+                });
+            }
+            const destination='uploads/channels/'+channelId+'/logo_'+Date.now()+'.png';
+            const oldFileLocation=channel.ImageUrl;
+            channel.ImageUrl=destination;
+            await ImageService._uploadFileToBucket(file, destination, oldFileLocation, channel);
+            resolve({
+                code: 200,
+                data: channel
+            });
+        }catch(err){
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
+    });
+};
 const createChannel = (newchannel) => {
     return new Promise(async (resolve, reject) => {
         if (!newchannel.Name || !newchannel.Status) {
@@ -741,6 +777,7 @@ const _formatDate = (date) => {
 };
 
 module.exports = {
+    uploadLogo,
     createChannel,
     getChannels,
     getChannelsInfo,
