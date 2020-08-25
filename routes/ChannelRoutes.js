@@ -1,3 +1,4 @@
+const multer=require('multer');
 const {
     createChannel,
     getProductsOfChannel,
@@ -9,10 +10,15 @@ const {
     updateChannel,
     getLowestPriceOnChannel,
     getChannelPlan,
-    getChannelsInfo
+    getChannelsInfo,
+    uploadLogo
 } = require.main.require('./services/ChannelService');
-
 module.exports = (app) => {
+    const upload = multer({
+        storage: multer.memoryStorage()
+    });
+
+    const mediaType = upload.single('file');
     app.get('/api/channel/all', async (req, res) => {
         try {
             const result = await getChannels();
@@ -105,6 +111,14 @@ module.exports = (app) => {
     app.post('/api/channels', async (req, res) => {
         try {
             const result = await createChannel(req.body);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.stats(ex.code || 500).send(ex.error);
+        }
+    });
+    app.post('/api/channel/logo', mediaType, async (req, res) => {
+        try {
+            const result = await uploadLogo(req.query.id, req.file);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.stats(ex.code || 500).send(ex.error);

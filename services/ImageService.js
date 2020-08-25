@@ -230,7 +230,7 @@ const uploadImage = (file, query) => {
     });
 };
 
-const _uploadFileToBucket = (file, dst, deleteFileLocation, owner, data) => {
+const _uploadFileToBucket = (file, dst, deleteFileLocation, data) => {
     return new Promise(async (resolve, reject) => {
         try {
             await uploadFileBuffer(file, dst, deleteFileLocation);
@@ -248,6 +248,7 @@ const _uploadFileToBucket = (file, dst, deleteFileLocation, owner, data) => {
 };
 
 module.exports = {
+    _uploadFileToBucket,
     uploadImage,
     removeImage,
     removeBucketImage,
