@@ -11,7 +11,7 @@ require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT;
-const logger = require('./logger')(app);
+const logger = require('./log');
 require('./middlewares');
 
 app.use(
@@ -48,7 +48,7 @@ mongoose.Promise = global.Promise;
 
 require('./models');
 
-global.logger = logger;
+global.__logger = logger;
 global.utilities = utilities;
 
 mongoose.Promise = global.Promise;

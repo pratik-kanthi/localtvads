@@ -1,10 +1,22 @@
 const passport = require('passport');
 
-const {addCard} = require.main.require('./services/ClientService');
-const {getActiveAddOns, getClientServiceAddOn, getClientServiceAddOns, saveClientServiceAddOn, updateClientServiceAddOn, saveServiceAddOn} = require.main.require('./services/AddOnService');
+const {
+    addCard
+} = require.main.require('./services/ClientService');
+const {
+    getActiveAddOns,
+    getClientServiceAddOn,
+    getClientServiceAddOns,
+    saveClientServiceAddOn,
+    updateClientServiceAddOn,
+    saveServiceAddOn
+} = require.main.require('./services/AddOnService');
 
 module.exports = (app) => {
-    app.post('/api/serviceaddons/save', passport.authenticate('jwt', {session: false}), async (req, res) => {
+
+    app.post('/api/serviceaddons/save', passport.authenticate('jwt', {
+        session: false
+    }), async (req, res) => {
         let card;
         if (req.body.save && !req.body.cardid) {
             try {
@@ -30,7 +42,9 @@ module.exports = (app) => {
         }
     });
 
-    app.put('/api/serviceaddons/update', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.put('/api/serviceaddons/update', passport.authenticate('jwt', {
+        session: false
+    }), async (req, res) => {
         try {
             const result = await updateClientServiceAddOn(req.body.serviceaddon, req.body.images, req.body.videos, req.body.text);
             return res.status(result.code).send(result.data);
@@ -39,7 +53,9 @@ module.exports = (app) => {
         }
     });
 
-    app.get('/api/serviceaddons/getone', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.get('/api/serviceaddons/getone', passport.authenticate('jwt', {
+        session: false
+    }), async (req, res) => {
         try {
             const result = await getClientServiceAddOn(req.query.serviceaddon);
             return res.status(result.code).send(result.data);
@@ -48,7 +64,9 @@ module.exports = (app) => {
         }
     });
 
-    app.get('/api/serviceaddons/client/all', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.get('/api/serviceaddons/client/all', passport.authenticate('jwt', {
+        session: false
+    }), async (req, res) => {
         try {
             const result = await getClientServiceAddOns(req.query.client);
             return res.status(result.code).send(result.data);
@@ -57,7 +75,9 @@ module.exports = (app) => {
         }
     });
 
-    app.post('/api/serviceaddons', passport.authenticate('jwt', {session: false}), async (req, res) => {
+    app.post('/api/serviceaddons', passport.authenticate('jwt', {
+        session: false
+    }), async (req, res) => {
         try {
             const result = await saveServiceAddOn(req.body);
             return res.status(result.code).send(result.data);

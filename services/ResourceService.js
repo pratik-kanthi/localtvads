@@ -50,6 +50,58 @@ const saveClientVideo = (client, path, extension, socket) => {
     });
 };
 
+
+const saveClientAd = (client, clientadplan, path, socket) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!client || !path || !clientadplan) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+
+            const resource = new ClientResource({
+                Client: client,
+                ResourceType: 'VIDEO',
+                ResourceUrl: path
+            });
+
+            resource.Management = true;
+            resource.save((err) => {
+                if (err) {
+                    socket.emit('PROCESS_ADMIN_ERROR');
+                }
+
+                ClientAdPlan.findOne({
+                    _id: clientadplan
+                }).exec((err, cplan) => {
+
+                    if (err) {
+                        socket.emit('PROCESS_ADMIN_ERROR');
+                    }
+
+                    cplan.AdVideo = resource._id;
+                    cplan.save((err) => {
+                        if (err) {
+                            socket.emit('PROCESS_ADMIN_ERROR');
+                        }
+                        socket.emit('PROCESS_ADMIN_FINISHED', resource);
+                    });
+                });
+            });
+
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
 /**
  * Add an Image
  * @param {Object} image - Object containing Image's details
@@ -130,6 +182,7 @@ const addImageResource = (image, file) => {
         });
     });
 };
+
 
 
 
@@ -586,5 +639,6 @@ module.exports = {
     getAllResources,
     saveClientVideo,
     removeAddOnResource,
-    addDocumentResource
+    addDocumentResource,
+    saveClientAd
 };
