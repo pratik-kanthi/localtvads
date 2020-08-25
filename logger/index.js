@@ -1,59 +1,81 @@
 /* eslint no-console: 0 */
 
-const log = require('../log');
-
 module.exports = (app) => {
     const _sentry = require('./sentry')(app);
+    const _logfile = require('./logfile')();
 
     //SETUP LOGGER
     switch (process.env.CURRENT_LOGGER) {
     case 'SENTRY':
         _sentry.setupSentry();
         break;
+    case 'LOGFILE':
+        _logfile.init();
+        break;
     }
 
     return {
-        logError: (exc) => {
-            log.error(exc);
+        logError: (text, data) => {
             switch (process.env.CURRENT_LOGGER) {
             case 'SENTRY':
-                _sentry.logError(exc);
+                _sentry.logError(text);
+                break;
+            case 'LOGFILE':
+                _logfile.logError(text, data);
                 break;
             default:
-                console.log('Error: ' + exc);
+                if (data && typeof data == 'object') {
+                    data = JSON.stringify(data);
+                }
+                console.error('Error  : ' + new Date().toISOString() + ' --- ' + text + '||' + data);
             }
 
         },
-        logWarning: (warningText) => {
-            log.warn(warningText);
+        logWarning: (text, data) => {
             switch (process.env.CURRENT_LOGGER) {
             case 'SENTRY':
-                _sentry.logWarning(warningText);
+                _sentry.logWarning(text);
+                break;
+            case 'LOGFILE':
+                _logfile.logWarning(text, data);
                 break;
             default:
-                console.log('Warning: ' + warningText);
+                if (data && typeof data == 'object') {
+                    data = JSON.stringify(data);
+                }
+                console.warn('Warning  : ' + new Date().toISOString() + ' --- ' + text + '||' + data);
             }
 
         },
-        logDebug: (message, item) => {
-            log.debug(message);
+        logDebug: (text, data) => {
             switch (process.env.CURRENT_LOGGER) {
             case 'SENTRY':
-                _sentry.logDebug(message, item);
+                _sentry.logDebug(text, data);
+                break;
+            case 'LOGFILE':
+                _logfile.logDebug(text, data);
                 break;
             default:
-                console.log('Debug: ' + new Date().toISOString() + message);
+                if (data && typeof data == 'object') {
+                    data = JSON.stringify(data);
+                }
+                console.warn('Debug  : ' + new Date().toISOString() + ' --- ' + text + '||' + data);
             }
 
         },
-        logInfo: (infoText) => {
-            log.info(infoText);
+        logInfo: (text, data) => {
             switch (process.env.CURRENT_LOGGER) {
             case 'SENTRY':
-                _sentry.logInfo(infoText);
+                _sentry.logInfo(text);
+                break;
+            case 'LOGFILE':
+                _logfile.logDebug(text, data);
                 break;
             default:
-                console.log('Info: ' + new Date().toISOString() + infoText);
+                if (data && typeof data == 'object') {
+                    data = JSON.stringify(data);
+                }
+                console.warn('Info  : ' + new Date().toISOString() + ' --- ' + text + '||' + data);
             }
 
         }

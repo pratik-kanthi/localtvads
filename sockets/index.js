@@ -21,7 +21,7 @@ module.exports = () => {
         pingTimeout: 5000,
     });
     app.listen(socketPort, () => {
-        console.log('Socket started on port ' + socketPort);
+        logger.logDebug('Socket started on port ' + socketPort);
     });
     io.use((socket, next) => {
         authenticateSocket(socket, next);

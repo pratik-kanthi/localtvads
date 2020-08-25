@@ -1,0 +1,14 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 7
+    },
+    "auditLog": "/Users/monikgrover/sites/localtvads-api/logs/.b841a3bc92bbe51fdb5272e35184a4515cdaac27-audit.json",
+    "files": [
+        {
+            "date": 1598363871320,
+            "name": "/Users/monikgrover/sites/localtvads-api/logs/info_2020-08-25.log",
+            "hash": "7c4a5e9fa966f9898f2a7910eb24216a"
+        }
+    ]
+}
