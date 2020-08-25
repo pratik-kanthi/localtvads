@@ -1,6 +1,6 @@
 module.exports = () => {
     return {
-        serviceaddons: require('./ServiceAddOn'),
+        clientserviceaddons: require('./ServiceAddOn'),
         adschedules: require('./AdSchedule'),
         channels: require('./Channel'),
         channeladschedules: require('./ChannelAdSchedule'),
@@ -21,5 +21,6 @@ module.exports = () => {
         taxes: require('./Tax'),
         channelslots: require('./ChannelSlot'),
         productlengths: require('./ProductLength'),
+        counters: require('./Counter')
     };
 };

@@ -1,24 +1,32 @@
 const mongoose = require('mongoose');
-
+const {
+    auditSchema
+} = require.main.require('./models/CommonSchema');
 const name = 'ClientResource';
 
 const schema = new mongoose.Schema({
-    Name: {
-        type: String,
-        required: true
-    },
     Client: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Client',
-        required: true
+        required: true,
+    },
+    ResourceName: {
+        type: String
+    },
+    ResourceType: {
+        type: String,
+        enum: ['IMAGE', 'VIDEO', 'DOCUMENT']
+    },
+    Management: {
+        type: Boolean
     },
     ResourceUrl: {
         type: String,
     },
-    Type: {
+    Extension: {
         type: String,
-        enum: ['IMAGE', 'VIDEO', 'AUDIO']
-    }
+    },
+    AuditInfo: auditSchema,
 });
 
 const model = mongoose.model(name, schema);
@@ -26,5 +34,5 @@ const model = mongoose.model(name, schema);
 module.exports = {
     name,
     model,
-    schema
+    schema,
 };

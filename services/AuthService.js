@@ -732,7 +732,9 @@ const changePassword = (password, user) => {
             });
         }
 
-        User.findOne({ _id: user._id }).exec((err, user) => {
+        User.findOne({
+            _id: user._id,
+        }).exec((err, user) => {
             if (err) {
                 return reject({
                     code: 500,

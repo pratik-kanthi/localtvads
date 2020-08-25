@@ -30,6 +30,7 @@
         "html-pdf": "^2.2.0",
         "jimp": "^0.6.4",
         "jsonwebtoken": "^8.5.1",
+        "log-rotate": "^0.2.8",
         "mailchimp-api-v3": "^1.13.1",
         "mailgun-js": "^0.22.0",
         "method-override": "^3.0.0",
@@ -38,12 +39,15 @@
         "mongoose": "^5.6.7",
         "mongoose-deep-populate": "^3.1.1",
         "multer": "^1.4.2",
+        "object-hash": "^2.0.3",
+        "os": "^0.1.1",
         "passport": "^0.4.0",
         "passport-jwt": "^4.0.0",
         "request": "^2.88.0",
         "socket.io": "^2.2.0",
-        "stripe": "^7.8.0",
-        "winston": "^3.2.1"
+        "stripe": "^8.86.0",
+        "winston": "^2.2.0",
+        "winston-compat": "^0.1.5"
     },
     "devDependencies": {
         "@e9ine/eslint-config-node": "0.0.9-b",
@@ -55,7 +59,11 @@
         "root": true,
         "extends": [
             "@e9ine/eslint-config-node"
-        ]
+        ],
+        "globals": {
+            "logger": "readonly",
+            "_host": "readonly"
+        }
     },
     "husky": {
         "hooks": {
@@ -71,5 +79,12 @@
         "config.js": [
             "node scripts/verifyUntrackable.js"
         ]
+    },
+    "prettier": {
+        "semi": true,
+        "tabWidth": 4,
+        "singleQuote": true,
+        "printWidth": 1300,
+        "jsxBracketSameLine": false
     }
 }

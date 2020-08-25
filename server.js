@@ -2,6 +2,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const mongoose = require('mongoose');
+const os = require('os');
 const path = require('path');
 const cors = require('cors');
 const methodOverride = require('method-override');
@@ -11,49 +12,50 @@ require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT;
-const logger = require('./logger')(app);
 require('./middlewares');
 
-app.use(bodyParser.urlencoded({
-    extended: true,
-    limit: '50mb'
-}));
-app.use(bodyParser.json({
-    limit: '50mb'
-}));
-
+app.use(
+    bodyParser.urlencoded({
+        extended: true,
+        limit: '50mb',
+    })
+);
+app.use(
+    bodyParser.json({
+        limit: '50mb',
+    })
+);
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(methodOverride('X-HTTP-Method-Override'));
 
 app.use(cors());
 
-mongoose.connect(process.env.DATABASE, {
-    useNewUrlParser: true,
-    useCreateIndex: true,
-    useFindAndModify: false
-}, (err) => {
-    if (err) {
-        console.log(err);
-    }
-});
-mongoose.Promise = global.Promise;
-
-require('./models');
-
-
-global.logger = logger;
+global.logger = require('./logger')(app);
+global._host = os.hostname();
 global.utilities = utilities;
 
 mongoose.Promise = global.Promise;
-
-const models = require('./models')(mongoose);
-
-app.listen(port, () => {
-    console.log('Application started at PORT ' + port);
-});
-const io = require('./sockets')();
-require('./routes')(app, models, io);
-require('./prototypes');
+mongoose.connect(
+    process.env.DATABASE, {
+        useNewUrlParser: true,
+        useCreateIndex: true,
+        useFindAndModify: false,
+    },
+    (err) => {
+        if (err) {
+            logger.logError('Error in connection MongoDb', err);
+        }else{
+            app.listen(port, () => {
+                logger.logDebug('Application started at PORT ' + port);
+            });
+            const models = require('./models')(mongoose);
+            const io = require('./sockets')();
+            require('./routes')(app, models, io);
+            require('./web-hooks')(app);
+            require('./prototypes');
+        }
+    }
+);
 
 exports = module.exports = app;

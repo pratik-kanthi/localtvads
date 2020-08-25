@@ -35,15 +35,14 @@ const chargeByExistingCard = (amount, cusToken, cardToken) => {
 const getToken = (card) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const token=await stripe.tokens.create(
-                {
-                    card: {
-                        number: card.card_number,
-                        cvc: card.cvv,
-                        exp_month: card.expiry.substring(0, 2),
-                        exp_year: parseInt(card.expiry.substring(card.expiry.indexOf('/') + 1)),
-                    },
-                });
+            const token = await stripe.tokens.create({
+                card: {
+                    number: card.card_number,
+                    cvc: card.cvv,
+                    exp_month: card.expiry.substring(0, 2),
+                    exp_year: parseInt(card.expiry.substring(card.expiry.indexOf('/') + 1)),
+                },
+            });
             resolve(token);
         } catch (err) {
             return reject({

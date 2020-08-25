@@ -1,8 +1,4 @@
 const mongoose = require('mongoose');
-const {
-    billingSchema
-} = require.main.require('./models/CommonSchema');
-
 const name = 'ClientPaymentMethod';
 
 const paymentCardSchema = new mongoose.Schema({
@@ -10,10 +6,6 @@ const paymentCardSchema = new mongoose.Schema({
         type: String,
         enum: ['CARD'],
         default: 'CARD'
-    },
-    StripeCardToken: {
-        type: String,
-        required: true
     },
     Vendor: {
         type: String,
@@ -42,14 +34,14 @@ const schema = new mongoose.Schema({
         ref: 'Client',
         required: true
     },
-    StripeCusToken: {
-        type: String
-    },
     IsPreferred: {
         type: Boolean
     },
+    StripeCardToken: {
+        type: String,
+        required: true
+    },
     Card: paymentCardSchema,
-    BankInformation: billingSchema
 });
 
 const model = mongoose.model(name, schema);

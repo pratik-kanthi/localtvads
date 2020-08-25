@@ -15,13 +15,16 @@ const schema = new mongoose.Schema({
         enum: ['PERCENTAGE', 'FIXED'],
         required: true
     },
-    Value:{
+    Value: {
         type: Number,
         required: true
     },
-    Active:{
+    Active: {
         type: Boolean,
         required: true
+    },
+    StripeTaxId: {
+        type: String
     }
 });
 

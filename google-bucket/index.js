@@ -62,7 +62,7 @@ const uploadFileBuffer = (buffer, filename, mimetype) => {
 
         stream.on('finish', () => {
             file.makePublic().then(() => {
-                console.log('Uploaded');
+                logger.logDebug('Uploaded');
                 resolve('Uploaded');
             }, function (err) {
                 reject(err);

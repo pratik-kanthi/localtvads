@@ -1,7 +1,10 @@
 const mongoose = require('mongoose');
-const {addressSchema, contactSchema} = require.main.require('./models/CommonSchema');
+const {
+    addressSchema,
+    contactSchema
+} = require.main.require('./models/CommonSchema');
 
-const name='Channel';
+const name = 'Channel';
 
 const schema = new mongoose.Schema({
     Name: {
@@ -22,7 +25,10 @@ const schema = new mongoose.Schema({
     ChannelProducts: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ChannelProduct',
-    }],    
+    }],
+    LogoUrl: {
+        type: String
+    },
     Address: addressSchema,
     PrimaryContact: contactSchema,
     AlternativeContact: contactSchema,

@@ -3,17 +3,21 @@ const Channel = require.main.require('./models/Channel').model;
 const Client = require.main.require('./models/Client').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
-const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 
 const moment = require('moment');
 const email = require('../email');
 const pdf = require('html-pdf');
 const path = require('path');
 const config = require.main.require('./config');
-const mongoose = require('mongoose');
 const fs = require('fs');
-const { saveCustomer, saveNewCardToCustomer, deleteCardFromStripe } = require.main.require('./services/PaymentService');
-const { uploadFile } = require.main.require('./services/FileService');
+const {
+    saveCustomer,
+    saveNewCardToCustomer,
+    deleteCardFromStripe
+} = require.main.require('./services/PaymentService');
+const {
+    uploadFile
+} = require.main.require('./services/FileService');
 
 /*
  * Add card to a client
@@ -45,7 +49,9 @@ const addCard = (clientId, stripeToken) => {
                 });
             } else if (!clientPaymentMethod) {
                 try {
-                    const client = await _getClient(clientId, { Email: 1 });
+                    const client = await _getClient(clientId, {
+                        Email: 1
+                    });
                     const csToken = await saveCustomer(stripeToken, client.Email);
                     newClientPaymentMethod = new ClientPaymentMethod({
                         StripeCusToken: csToken.id,
@@ -124,7 +130,9 @@ const getSavedCards = (clientId) => {
             'Card.LastFour': 1,
         };
         ClientPaymentMethod.find(query, project)
-            .sort({ IsPreferred: -1 })
+            .sort({
+                IsPreferred: -1
+            })
             .exec((err, cards) => {
                 if (err) {
                     return reject({
@@ -161,7 +169,10 @@ const getPreferredCard = (clientId, cardId) => {
             IsPreferred: true,
         };
         try {
-            const card = await ClientPaymentMethod.findOne(query, { CardToken: 1, CustomerToken: 1 });
+            const card = await ClientPaymentMethod.findOne(query, {
+                CardToken: 1,
+                CustomerToken: 1
+            });
             if (!card) {
                 return reject({
                     code: 404,
@@ -332,69 +343,56 @@ const deleteCard = (clientId, cardId) => {
     });
 };
 
-const getTransactions = (clientId) => {
+const getTransactions = (clientId, planId, req) => {
     return new Promise(async (resolve, reject) => {
-        if (!clientId) {
+        try {
+            if (req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== clientId) {
+                return reject({
+                    code: 403,
+                    error: {
+                        message: utilities.ErrorMessages.UNAUTHORISED,
+                    },
+                });
+            }
+
+            if (!clientId) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
+                });
+            }
+
+            let query;
+            if (planId !== 'undefined') {
+                query = {
+                    Client: clientId,
+                    ClientAdPlan: planId,
+                };
+            } else {
+                query = {
+                    Client: clientId,
+                };
+            }
+            try {
+                const transactions = await Transaction.find(query).sort('-DateTime').lean().exec();
+                resolve({
+                    code: 200,
+                    data: transactions,
+                });
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            }
+        } catch (err) {
             return reject({
                 code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
+                error: err,
             });
         }
-        const query = {
-                Client: clientId,
-            },
-            project = {
-                ChannelPlan: 1,
-                TotalAmount: 1,
-                DateTime: 1,
-                Status: 1,
-                ReferenceId: 1,
-                ClientAdPlan: 1,
-                ServiceAddOn: 1,
-                ClientServiceAddOn: 1,
-            };
-        const populateOptions = [
-            {
-                path: 'ChannelPlan.Channel',
-                model: Channel,
-                select: {
-                    Name: 1,
-                    _id: 0,
-                },
-            },
-            {
-                path: 'ChannelPlan.AdSchedule',
-                model: AdSchedule,
-                select: {
-                    Name: 1,
-                    _id: 0,
-                },
-            },
-        ];
-        Transaction.find(query, project)
-            .populate(populateOptions)
-            .sort({ DateTime: -1 })
-            .exec((err, transactions) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-
-                const val = mongoose.Types.ObjectId('5e9718e793cf171b28356c12');
-                ClientAdPlan.updateMany({}, { $set: { 'ChannelPlan.Plan.ChannelAdSchedule': val } }).exec((err, updated) => {
-                    err;
-                    updated;
-
-                    resolve({
-                        code: 200,
-                        data: transactions,
-                    });
-                });
-            });
     });
 };
 
@@ -424,32 +422,31 @@ const generateReceipt = (transaction_id) => {
                 TaxBreakdown: 1,
                 ReceiptUrl: 1,
             };
-            const populateOptions = [
-                {
-                    path: 'Client',
-                    model: Client,
-                    select: {
-                        Name: 1,
-                        Email: 1,
-                        Phone: 1,
-                    },
+            const populateOptions = [{
+                path: 'Client',
+                model: Client,
+                select: {
+                    Name: 1,
+                    Email: 1,
+                    Phone: 1,
                 },
-                {
-                    path: 'ChannelPlan.Channel',
-                    model: Channel,
-                    select: {
-                        Name: 1,
-                        _id: 0,
-                    },
+            },
+            {
+                path: 'ChannelPlan.Channel',
+                model: Channel,
+                select: {
+                    Name: 1,
+                    _id: 0,
                 },
-                {
-                    path: 'ChannelPlan.AdSchedule',
-                    model: AdSchedule,
-                    select: {
-                        Name: 1,
-                        _id: 0,
-                    },
+            },
+            {
+                path: 'ChannelPlan.AdSchedule',
+                model: AdSchedule,
+                select: {
+                    Name: 1,
+                    _id: 0,
                 },
+            },
             ];
 
             Transaction.findOne(query, project)
@@ -459,12 +456,6 @@ const generateReceipt = (transaction_id) => {
                         return reject({
                             code: 500,
                             error: err,
-                        });
-                    }
-                    if (transaction.ReceiptUrl) {
-                        resolve({
-                            code: 200,
-                            data: transaction.ReceiptUrl,
                         });
                     } else {
                         const receipt = {
@@ -535,7 +526,9 @@ const generateReceipt = (transaction_id) => {
 
 const _getClient = (client, projection) => {
     return new Promise(async (resolve, reject) => {
-        Client.findOne({ _id: client }, projection || {}, (err, client) => {
+        Client.findOne({
+            _id: client
+        }, projection || {}, (err, client) => {
             if (err) {
                 return reject({
                     code: 500,

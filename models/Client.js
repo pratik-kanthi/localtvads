@@ -34,6 +34,9 @@ const schema = new mongoose.Schema({
             return new Date();
         },
     },
+    StripeCustomerId: {
+        type: String
+    }
 });
 
 /* eslint-disable */

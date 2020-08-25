@@ -1,13 +1,14 @@
 const mongoose = require('mongoose');
 const {
-    auditSchema
+    auditSchema,
+    addressSchema
 } = require.main.require('./models/CommonSchema');
 
 const name = 'ClientAdPlan';
 
 const schema = new mongoose.Schema({
     Name: {
-        type: String
+        type: String,
     },
     Description: {
         type: String,
@@ -17,14 +18,16 @@ const schema = new mongoose.Schema({
         ref: 'Client',
         required: true,
     },
+    BusinessName: {
+        type: String,
+    },
+    VAT: {
+        type: String,
+    },
     Channel: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Channel',
         required: true,
-    },
-    ClientAd: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'ClientAd',
     },
     Category: {
         type: String,
@@ -39,25 +42,33 @@ const schema = new mongoose.Schema({
             Slot: {},
             RatePerSecond: {
                 type: Number,
-                required: true
+                required: true,
             },
             Duration: {
-                type: Number
-            }
-        }]
+                type: Number,
+            },
+        }, ],
     },
-    StartDate:{
-        type: Date
+    AdVideo: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClientResource',
     },
-    ExpiryDate:{
-        type: Date
+    AddOnAssets: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClientResource',
+    }, ],
+    StartDate: {
+        type: Date,
+    },
+    ExpiryDate: {
+        type: Date,
     },
     Days: [],
     WeeklyAmount: {
-        type: Number
+        type: Number,
     },
     AddonsAmount: {
-        type: Number
+        type: Number,
     },
     Status: {
         type: String,
@@ -70,6 +81,14 @@ const schema = new mongoose.Schema({
         },
         required: true,
     },
+    StripeReferenceId: {
+        type: String,
+    },
+    PaymentMethod: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'ClientPaymentMethod',
+    },
+    BillingAddress: addressSchema,
     AuditInfo: auditSchema,
 });
 

@@ -1,9 +1,36 @@
-const { createChannel, getProductsOfChannel, getChannels, getChannel, getPlansByChannel, getSecondsByChannel, getChannelScheduleAvailability, updateChannel, getLowestPriceOnChannel, getChannelPlan } = require.main.require('./services/ChannelService');
-
+const multer=require('multer');
+const {
+    createChannel,
+    getProductsOfChannel,
+    getChannels,
+    getChannel,
+    getPlansByChannel,
+    getSecondsByChannel,
+    getChannelScheduleAvailability,
+    updateChannel,
+    getLowestPriceOnChannel,
+    getChannelPlan,
+    getChannelsInfo,
+    uploadLogo
+} = require.main.require('./services/ChannelService');
 module.exports = (app) => {
+    const upload = multer({
+        storage: multer.memoryStorage()
+    });
+
+    const mediaType = upload.single('file');
     app.get('/api/channel/all', async (req, res) => {
         try {
             const result = await getChannels();
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.status(ex.code || 500).send(ex.error);
+        }
+    });
+
+    app.get('/api/channelsinfo', async (req, res) => {
+        try {
+            const result = await getChannelsInfo();
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
@@ -81,9 +108,17 @@ module.exports = (app) => {
         }
     });
 
-    app.post('/api/channel', async (req, res) => {
+    app.post('/api/channels', async (req, res) => {
         try {
             const result = await createChannel(req.body);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            return res.stats(ex.code || 500).send(ex.error);
+        }
+    });
+    app.post('/api/channel/logo', mediaType, async (req, res) => {
+        try {
+            const result = await uploadLogo(req.query.id, req.file);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.stats(ex.code || 500).send(ex.error);

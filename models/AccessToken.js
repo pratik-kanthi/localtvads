@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const name='AccessToken';
+const name = 'AccessToken';
 
 const schema = new mongoose.Schema({
     UserId: String,
