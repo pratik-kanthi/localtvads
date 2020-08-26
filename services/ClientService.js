@@ -1,5 +1,3 @@
-const AdSchedule = require.main.require('./models/AdSchedule').model;
-const Channel = require.main.require('./models/Channel').model;
 const Client = require.main.require('./models/Client').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
@@ -343,18 +341,9 @@ const deleteCard = (clientId, cardId) => {
     });
 };
 
-const getTransactions = (clientId, planId, req) => {
+const getTransactions = (clientId, planId) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== clientId) {
-                return reject({
-                    code: 403,
-                    error: {
-                        message: utilities.ErrorMessages.UNAUTHORISED,
-                    },
-                });
-            }
-
             if (!clientId) {
                 return reject({
                     code: 400,
@@ -396,130 +385,101 @@ const getTransactions = (clientId, planId, req) => {
     });
 };
 
-const generateReceipt = (transaction_id) => {
-    return new Promise(async (resolve, reject) => {
-        if (!transaction_id) {
-            return reject({
-                code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        } else {
-            const query = {
-                ReferenceId: transaction_id,
-            };
-            const project = {
-                Client: 1,
-                ChannelPlan: 1,
-                TotalAmount: 1,
-                DateTime: 1,
-                Status: 1,
-                ReferenceId: 1,
-                ClientAdPlan: 1,
-                ServiceAddOn: 1,
-                ClientServiceAddOn: 1,
-                TaxBreakdown: 1,
-                ReceiptUrl: 1,
-            };
-            const populateOptions = [{
-                path: 'Client',
-                model: Client,
-                select: {
-                    Name: 1,
-                    Email: 1,
-                    Phone: 1,
-                },
-            },
-            {
-                path: 'ChannelPlan.Channel',
-                model: Channel,
-                select: {
-                    Name: 1,
-                    _id: 0,
-                },
-            },
-            {
-                path: 'ChannelPlan.AdSchedule',
-                model: AdSchedule,
-                select: {
-                    Name: 1,
-                    _id: 0,
-                },
-            },
-            ];
 
-            Transaction.findOne(query, project)
-                .populate(populateOptions)
-                .exec((err, transaction) => {
+const generateTransactionReceipt = (transaction_id) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!transaction_id) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
+                });
+            }
+
+            const query = {
+                _id: transaction_id,
+            };
+
+            let transaction;
+            try {
+                transaction = await Transaction.findOne(query).deepPopulate('Client ClientAdPlan.Channel ClientAdPlan.AddOns').exec();
+                const receipt = {
+                    ReceiptNumber: transaction.ReceiptNo,
+                    PaymentReference: transaction.ReferenceId,
+                    Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
+                    PlanName: transaction.ClientAdPlan.Channel.Name + '_' + transaction.ClientAdPlan.ChannelProduct.ProductLength.Name,
+                    PlanAmount: transaction.ClientAdPlan.WeeklyAmount.toFixed(2),
+                    SubTotal: transaction.Amount.toFixed(2),
+                    TaxAmount: transaction.TaxAmount.toFixed(2),
+                    TotalAmount: transaction.TotalAmount.toFixed(2),
+                    TaxBreakdown: transaction.TaxBreakdown,
+                };
+
+                if (transaction.ClientAdPlan.Addons && transaction.ClientAdPlan.Addons.length > 0) {
+                    receipt.AddOn = transaction.ClientAdPlan.Addons[0].Name;
+                    receipt.AddOnAmount = transaction.ClientAdPlan.AddonsAmount;
+                }
+
+                receipt.User = {};
+                receipt.User.Name = transaction.Client.Name;
+                receipt.User.Email = transaction.Client.Email;
+                receipt.User.Phone = transaction.Client.Phone;
+
+                const message = email.helper.downloadReceipt(receipt);
+                const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
+                const options = {
+                    format: 'A4',
+                    orientation: 'portrait',
+                };
+
+                pdf.create(message, options).toFile(filePath, (err) => {
                     if (err) {
                         return reject({
                             code: 500,
                             error: err,
                         });
-                    } else {
-                        const receipt = {
-                            InvoiceNo: transaction_id,
-                            Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
-                            Type: transaction.ServiceAddOn ? 'Add On' : 'Ad Slot',
-                            Name: transaction.ServiceAddOn ? transaction.ServiceAddOn.Name : transaction.ChannelPlan.Channel.Name,
-                            TotalAmount: transaction.TotalAmount.toFixed(2),
-                            SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal.toFixed(2) : transaction.ChannelPlan.SubTotal.toFixed(2),
-                            TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount.toFixed(2) : transaction.ChannelPlan.TaxAmount.toFixed(2),
-                            TaxBreakdown: transaction.TaxBreakdown[0],
-                            Offer: transaction.ChannelPlan && transaction.ChannelPlan.Offers.length > 0 ? transaction.ChannelPlan.Offers[0].Name : null,
-                            Offer_Value: transaction.ChannelPlan && transaction.ChannelPlan.Offers.length > 0 ? transaction.ChannelPlan.Offers[0].Amount : null,
-                        };
+                    }
+                    const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY_HH:mm:ss') + '_' + transaction_id + '.pdf';
+                    const uploadPromise = uploadFile(filePath, bucket_file_path);
+                    const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
 
-                        receipt.User = {};
-                        receipt.User.Name = transaction.Client.Name;
-                        receipt.User.Email = transaction.Client.Email;
-                        receipt.User.Phone = transaction.Client.Phone;
-
-                        const message = email.helper.downloadReceipt(receipt);
-                        const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
-                        const options = {
-                            format: 'A4',
-                            orientation: 'portrait',
-                        };
-
-                        pdf.create(message, options).toFile(filePath, (err) => {
-                            if (err) {
-                                return reject({
-                                    code: 500,
-                                    error: err,
-                                });
-                            }
-                            const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY') + '_' + transaction_id + '.pdf';
-                            const uploadPromise = uploadFile(filePath, bucket_file_path);
-                            const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
-
-                            Promise.all([uploadPromise])
-                                .then(() => {
-                                    transaction.ReceiptUrl = receipt_bucket_url;
-                                    transaction.save((err, tr) => {
-                                        if (err) {
-                                            return reject({
-                                                code: 500,
-                                                error: err,
-                                            });
-                                        }
-                                        fs.unlinkSync(filePath);
-                                        resolve({
-                                            code: 200,
-                                            data: tr.ReceiptUrl,
-                                        });
-                                    });
-                                })
-                                .catch((err) => {
+                    Promise.all([uploadPromise])
+                        .then(() => {
+                            transaction.ReceiptUrl = receipt_bucket_url;
+                            transaction.save((err, tr) => {
+                                if (err) {
                                     return reject({
                                         code: 500,
                                         error: err,
                                     });
+                                }
+                                fs.unlinkSync(filePath);
+                                resolve({
+                                    code: 200,
+                                    data: tr.ReceiptUrl,
                                 });
+                            });
+                        })
+                        .catch((err) => {
+                            return reject({
+                                code: 500,
+                                error: err,
+                            });
                         });
-                    }
                 });
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            }
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
         }
     });
 };
@@ -572,6 +532,6 @@ module.exports = {
     getSavedCards,
     setPreferredCard,
     getTransactions,
-    generateReceipt,
+    generateTransactionReceipt,
     fetchClientsByPage,
 };

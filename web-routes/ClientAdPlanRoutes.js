@@ -9,6 +9,7 @@ const {
 } = require.main.require('./services/ClientAdPlanService');
 
 module.exports = (app) => {
+
     app.get('/api/:clientid/clientadplans', passport.authenticate('website-bearer', {
         session: false
     }), async (req, res) => {

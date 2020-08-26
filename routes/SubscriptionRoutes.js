@@ -3,6 +3,7 @@ const {
 } = require.main.require('./services/SubscriptionService');
 
 module.exports = (app) => {
+
     app.post('/api/subscriptions', async (req, res) => {
         try {
             const result = await createSubscriptionCustomer(req.body.name, req.body.email);

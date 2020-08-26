@@ -1,34 +1,23 @@
-const multer=require('multer');
+const passport = require('passport');
+const multer = require('multer');
 const {
     createChannel,
-    getProductsOfChannel,
-    getChannels,
-    getChannel,
-    getPlansByChannel,
-    getSecondsByChannel,
-    getChannelScheduleAvailability,
     updateChannel,
-    getLowestPriceOnChannel,
-    getChannelPlan,
     getChannelsInfo,
     uploadLogo
 } = require.main.require('./services/ChannelService');
+
+
 module.exports = (app) => {
     const upload = multer({
         storage: multer.memoryStorage()
     });
 
     const mediaType = upload.single('file');
-    app.get('/api/channel/all', async (req, res) => {
-        try {
-            const result = await getChannels();
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
-        }
-    });
 
-    app.get('/api/channelsinfo', async (req, res) => {
+    app.get('/api/channelsinfo', passport.authenticate('jwt', {
+        session: false
+    }), async (req, res) => {
         try {
             const result = await getChannelsInfo();
             return res.status(result.code).send(result.data);
@@ -37,69 +26,9 @@ module.exports = (app) => {
         }
     });
 
-    app.get('/api/channel/seconds', async (req, res) => {
-        try {
-            const result = await getSecondsByChannel(req.query.channel);
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
-        }
-    });
-
-    app.get('/api/channel/lowestprice', async (req, res) => {
-        try {
-            const result = await getLowestPriceOnChannel(req.query.id);
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
-        }
-    });
-
-    app.get('/api/channel/plan', async (req, res) => {
-        try {
-            const result = await getChannelPlan(req.query.channel);
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
-        }
-    });
-
-    app.get('/api/channel/plans', async (req, res) => {
-        try {
-            const result = await getPlansByChannel(req.query.channel, req.query.seconds, req.query.startdate, req.query.enddate);
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
-        }
-    });
-
-    app.get('/api/channel/availability', async (req, res) => {
-        try {
-            const result = await getChannelScheduleAvailability(req.query.channel, req.query.seconds, req.query.startdate, req.query.enddate);
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
-        }
-    });
-
-    app.get('/api/channel/:id', async (req, res) => {
-        try {
-            const result = await getChannel(req.params.id);
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.stats(ex.code || 500).send(ex.error);
-        }
-    });
-    app.get('/api/channelproducts/all', async (req, res) => {
-        try {
-            const result = await getProductsOfChannel(req.query.id);
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            return res.stats(ex.code || 500).send(ex.error);
-        }
-    });
-
-    app.put('/api/channel/:id', async (req, res) => {
+    app.put('/api/channel/:id', passport.authenticate('jwt', {
+        session: false
+    }), async (req, res) => {
         try {
             const result = await updateChannel(req.params.id, req.body);
             return res.status(result.code).send(result.data);
@@ -108,7 +37,9 @@ module.exports = (app) => {
         }
     });
 
-    app.post('/api/channels', async (req, res) => {
+    app.post('/api/channels', passport.authenticate('jwt', {
+        session: false
+    }), async (req, res) => {
         try {
             const result = await createChannel(req.body);
             return res.status(result.code).send(result.data);
@@ -116,7 +47,10 @@ module.exports = (app) => {
             return res.stats(ex.code || 500).send(ex.error);
         }
     });
-    app.post('/api/channel/logo', mediaType, async (req, res) => {
+
+    app.post('/api/channel/logo', mediaType, passport.authenticate('jwt', {
+        session: false
+    }), async (req, res) => {
         try {
             const result = await uploadLogo(req.query.id, req.file);
             return res.status(result.code).send(result.data);

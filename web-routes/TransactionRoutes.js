@@ -1,30 +1,31 @@
 const passport = require('passport');
 const {
-    createChannelProduct,
-    deleteChannelProduct
-} = require.main.require('./services/ChannelProductService');
+    getTransactions,
+    generateTransactionReceipt
+} = require.main.require('./services/ClientService');
+
 
 module.exports = (app) => {
-
-    app.post('/api/channelproducts', passport.authenticate('jwt', {
+    app.get('/api/:clientid/transactions', passport.authenticate('website-bearer', {
         session: false
     }), async (req, res) => {
         try {
-            const result = await createChannelProduct(req.body);
+            const result = await getTransactions(req.query.client, req.query.plan, req);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
     });
 
-    app.delete('/api/channelproducts', passport.authenticate('jwt', {
+    app.get('/api/:clientid/transaction', passport.authenticate('website-bearer', {
         session: false
     }), async (req, res) => {
         try {
-            const result = await deleteChannelProduct(req.query.productId);
+            const result = await generateTransactionReceipt(req.query.id);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             return res.status(ex.code || 500).send(ex.error);
         }
     });
+
 };

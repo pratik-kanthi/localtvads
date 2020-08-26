@@ -45,8 +45,9 @@ mongoose.connect(
     (err) => {
         if (err) {
             logger.logError('Error in connection MongoDb', err);
-        }else{
+        } else {
             app.listen(port, () => {
+                console.log('Application started at PORT ' + port);
                 logger.logDebug('Application started at PORT ' + port);
             });
             const models = require('./models')(mongoose);
