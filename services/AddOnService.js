@@ -10,9 +10,16 @@ const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod')
 const Transaction = require.main.require('./models/Transaction').model;
 const Tax = require.main.require('./models/Tax').model;
 
-const { uploadFile } = require.main.require('./services/FileService');
-const { chargeByCard, chargeByExistingCard } = require.main.require('./services/PaymentService');
-const { getTaxAmount } = require.main.require('./services/TaxService');
+const {
+    uploadFile
+} = require.main.require('./services/FileService');
+const {
+    chargeByCard,
+    chargeByExistingCard
+} = require.main.require('./services/PaymentService');
+const {
+    getTaxAmount
+} = require.main.require('./services/TaxService');
 
 const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
     return new Promise(async (resolve, reject) => {
@@ -133,7 +140,9 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
                             });
                         }
 
-                        Transaction.findOne({ _id: t.id })
+                        Transaction.findOne({
+                            _id: t.id
+                        })
                             .populate('ChannelPlan Client ClientAdPlan')
                             .exec((err, trans) => {
                                 const adEmailInfo = {
@@ -164,59 +173,62 @@ const saveClientServiceAddOn = (addon, clientId, cardId, token) => {
 
 const getActiveAddOns = () => {
     return new Promise(async (resolve, reject) => {
-        await async.parallel(
-            {
-                addOns: (callback) => {
-                    const query = {
-                        IsActive: true,
-                    };
-                    ServiceAddOn.find(query, (err, addOns) => {
-                        if (err) {
-                            return callback(err, null);
-                        }
-                        callback(null, addOns);
-                    });
-                },
-                taxes: (callback) => {
-                    const query = {
-                        Active: true,
-                    };
-                    Tax.find(query, (err, taxes) => {
-                        if (err) {
-                            return callback(err, null);
-                        }
-                        callback(null, taxes);
-                    });
-                },
-            },
-            (err, result) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                } else {
-                    const responseObj = [];
-                    if (result.taxes && result.addOns) {
-                        result.addOns.forEach((addOn) => {
-                            addOn = addOn.toObject();
-                            let taxAmount = 0;
-                            result.taxes.forEach((tax) => {
-                                if (tax.Type === 'FIXED') {
-                                    taxAmount += tax.Value;
-                                } else {
-                                    taxAmount += tax.Value * 0.01 * addOn.Amount;
-                                }
-                            });
-                            responseObj.push({ ...addOn, TaxAmount: taxAmount, TotalAmount: addOn.Amount + taxAmount });
-                        });
+        await async.parallel({
+            addOns: (callback) => {
+                const query = {
+                    IsActive: true,
+                };
+                ServiceAddOn.find(query, (err, addOns) => {
+                    if (err) {
+                        return callback(err, null);
                     }
-                    resolve({
-                        code: 200,
-                        data: responseObj,
+                    callback(null, addOns);
+                });
+            },
+            taxes: (callback) => {
+                const query = {
+                    Active: true,
+                };
+                Tax.find(query, (err, taxes) => {
+                    if (err) {
+                        return callback(err, null);
+                    }
+                    callback(null, taxes);
+                });
+            },
+        },
+        (err, result) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            } else {
+                const responseObj = [];
+                if (result.taxes && result.addOns) {
+                    result.addOns.forEach((addOn) => {
+                        addOn = addOn.toObject();
+                        let taxAmount = 0;
+                        result.taxes.forEach((tax) => {
+                            if (tax.Type === 'FIXED') {
+                                taxAmount += tax.Value;
+                            } else {
+                                taxAmount += tax.Value * 0.01 * addOn.Amount;
+                            }
+                        });
+                        responseObj.push({
+                            ...addOn,
+                            TaxAmount: taxAmount,
+                            TotalAmount: addOn.Amount + taxAmount
+                        });
                     });
                 }
+                resolve({
+                    code: 200,
+                    data: responseObj,
+                });
             }
+        }
         );
     });
 };

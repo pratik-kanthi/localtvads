@@ -14,6 +14,7 @@ module.exports = (app) => {
 
     const _imageUpload = multer({
         storage: multer.memoryStorage(),
+
         fileFilter: (req, file, callback) => {
             if (!file) {
                 return callback(null, true);
@@ -47,18 +48,18 @@ module.exports = (app) => {
 
     app.get('/api/:clientid/clientresources', passport.authenticate('website-bearer', {
         session: false
-    }), async (req, res) => {
+    }), async (req, res, next) => {
         try {
             const result = await getAllResources(req.params.clientid);
             return res.status(result.code).json(result.data);
         } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
+            next(ex);
         }
     });
 
     app.post('/api/:clientid/clientresource/image', passport.authenticate('website-bearer', {
         session: false
-    }), (req, res) => {
+    }), (req, res, next) => {
         imageType(req, res, async (err) => {
             if (err) {
                 return res.status(500).send(err);
@@ -67,14 +68,14 @@ module.exports = (app) => {
                 const result = await addImageResource(req.body.document, req.file);
                 return res.status(result.code).json(result.data);
             } catch (ex) {
-                return res.status(ex.code || 500).send(ex.error);
+                next(ex);
             }
         });
     });
 
     app.post('/api/:clientid/clientresource/document', fileType, passport.authenticate('website-bearer', {
         session: false
-    }), async (req, res) => {
+    }), async (req, res, next) => {
 
         if (!req.body.document) {
             return res.status(400).json({
@@ -88,18 +89,18 @@ module.exports = (app) => {
             const result = await addDocumentResource(req.body.document, req.file);
             return res.status(result.code).json(result.data);
         } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
+            next(ex);
         }
     });
 
     app.delete('/api/:clientid/addonresources', passport.authenticate('website-bearer', {
         session: false
-    }), async (req, res) => {
+    }), async (req, res, next) => {
         try {
             const result = await removeAddOnResource(req.query.planId, req.query.id);
             return res.status(result.code).json(result.data);
         } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
+            next(ex);
         }
     });
 

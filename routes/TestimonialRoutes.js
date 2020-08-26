@@ -7,24 +7,24 @@ const {
 module.exports = (app) => {
     app.post('/api/testimonials', passport.authenticate('jwt', {
         session: false
-    }), async (req, res) => {
+    }), async (req, res, next) => {
         try {
             const result = await saveTestimonial(req.body, req);
             return res.status(result.code).send(result.data);
         } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
+            next(ex);
         }
     });
 
 
     app.delete('/api/testimonials', passport.authenticate('jwt', {
         session: false
-    }), async (req, res) => {
+    }), async (req, res, next) => {
         try {
             const result = await deleteTestimonial(req.query.id);
             return res.status(result.code).send(result.data);
         } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
+            next(ex);
         }
     });
 };
