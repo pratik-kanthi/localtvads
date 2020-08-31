@@ -4,121 +4,151 @@ const Email = require('../email');
 
 const updateProfile = (userid, title, email, phone, currentpassword, newpassword) => {
     return new Promise(async (resolve, reject) => {
-        let emailchanged = false;
-        if (!userid) {
-            return reject({
-                code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-
-        const query = {
-            _id: userid
-        };
-
-        User.findOne(query, async (err, user) => {
-            if (err) {
+        try {
+            let emailchanged = false;
+            if (!userid) {
                 return reject({
                     code: 500,
-                    error: err
-                });
-            } else if (!user) {
-                return reject({
-                    code: 404,
                     error: {
-                        message: 'User ' + utilities.ErrorMessages.NOT_FOUND
+                        message: utilities.ErrorMessages.BAD_REQUEST
                     }
                 });
-            } else {
+            }
+            let query = {
+                _id: userid
+            };
+            const user = await User.findOne(query).exec();
+            user.Name = title;
+            user.Phone = phone;
+            user.Owner.Title = title;
+            user.Owner.Phone = phone;
 
-                user.Name = title;
-                user.Phone = phone;
-                user.Owner.Title = title;
-                user.Owner.Phone = phone;
+            if (user.Email !== email) {
+                //email was changed
+                user.UserName = email;
+                user.Email = email;
+                user.Owner.Email = email;
+                user.IsEmailConfirmed = false;
+                emailchanged = true;
 
-                if (user.Email !== email) {
+            }
 
-                    //email was changed
-                    user.UserName = email;
-                    user.Email = email;
-                    user.Owner.Email = email;
-                    user.IsEmailConfirmed = false;
-                    emailchanged = true;
+            if (currentpassword && newpassword) {
 
+                if (user.ValidatePassword(currentpassword, user.PasswordHash)) {
+                    user.PasswordHash = user.EncryptPassword(newpassword);
+                } else {
+                    return reject({
+                        code: 401,
+                        error: {
+                            message: utilities.ErrorMessages.PASSWORD_INCORRECT
+                        }
+                    });
                 }
+            }
 
-                if (currentpassword && newpassword) {
+            try {
 
-                    if (user.ValidatePassword(currentpassword, user.PasswordHash)) {
-                        user.PasswordHash = user.EncryptPassword(newpassword);
-                    } else {
-                        return reject({
-                            code: 401,
-                            error: {
-                                message: utilities.ErrorMessages.PASSWORD_INCORRECT
-                            }
+                query = {
+                    _id: user.Owner._id
+                };
+
+                const client = await Client.findOne(query).exec();
+                client.Name = title;
+                client.Email = email;
+                client.Phone = phone;
+
+                await client.save();
+                await user.save();
+
+                if (emailchanged) {
+                    try {
+                        const verification_link = process.env.APP + 'api/auth/confirmation/' + user.id;
+                        Email.helper.emailChangeVerification(user.Email, verification_link);
+                        resolve({
+                            code: 205,
+                            data: user
                         });
-                    }
-                }
-                Client.findOne({_id: user.Owner._id}, (err, client) => {
-                    if (err) {
+                    } catch (err) {
+                        logger.logError('Failed to send verification email', err);
                         return reject({
                             code: 500,
                             error: err
                         });
-                    } else if (!client) {
-                        return reject({
-                            code: 404,
-                            error: {
-                                message: 'User ' + utilities.ErrorMessages.NOT_FOUND
-                            }
-                        });
-                    } else {
-                        client.Name = title;
-                        client.Email = email;
-                        client.Phone = phone;
-                        client.save(err, () => {
-                            if (err) {
-                                return reject({
-                                    code: 500,
-                                    error: err
-                                });
-                            }
-                            user.save((err) => {
-                                if (err) {
-                                    return reject({
-                                        code: 500,
-                                        error: err.code === 11000 ? { message: 'Provided email already exists ' } : err
-                                    });
-                                } else {
-                                    if (emailchanged) {
-                                        const verification_link = process.env.APP + 'api/auth/confirmation/' + user.id;
-                                        Email.helper.emailChangeVerification(user.Email, verification_link);
+                    }
+                } else {
+                    resolve({
+                        code: 200,
+                        data: client
+                    });
+                }
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
 
-                                        resolve({
-                                            code: 205,
-                                            data: user
-                                        });
+        }
+    });
+};
 
-                                    } else {
-
-                                        resolve({
-                                            code: 200,
-                                            data: client
-                                        });
-                                    }
-                                }
-                            });
-                        });
+const updatePassword = (userid, currentpassword, newpassword) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!currentpassword || !newpassword) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
                     }
                 });
             }
-        });
+            const user = await User.findOne({
+                _id: userid
+            }).exec();
+
+            if (user.ValidatePassword(currentpassword, user.PasswordHash)) {
+                user.PasswordHash = user.EncryptPassword(newpassword);
+            } else {
+                logger.logDebug('Password validation failed for user', user);
+                return reject({
+                    code: 401,
+                    error: {
+                        message: utilities.ErrorMessages.PASSWORD_INCORRECT
+                    }
+                });
+            }
+
+            try {
+                const result = await user.save();
+                resolve({
+                    code: 200,
+                    data: result
+                });
+
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
     });
 };
 
 module.exports = {
-    updateProfile
+    updateProfile,
+    updatePassword
 };

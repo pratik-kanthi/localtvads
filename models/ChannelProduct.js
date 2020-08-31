@@ -17,7 +17,6 @@ const schema = new mongoose.Schema({
     ProductLength: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ProductLength',
-        required: true,
     },
     IsActive: {
         type: Boolean,
@@ -33,9 +32,13 @@ const schema = new mongoose.Schema({
             required: true
         },
         Duration: {
-            type:Number
+            type: Number
         }
-    }]
+    }],
+    MaxSlotsAllowed: {
+        type: Number,
+        required: true
+    }
 });
 const model = mongoose.model(name, schema);
 

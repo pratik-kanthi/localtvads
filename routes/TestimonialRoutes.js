@@ -5,6 +5,7 @@ const {
 } = require.main.require('./services/TestimonialService');
 
 module.exports = (app) => {
+
     app.post('/api/testimonials', passport.authenticate('jwt', {
         session: false
     }), async (req, res, next) => {

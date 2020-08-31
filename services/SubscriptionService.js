@@ -116,7 +116,6 @@ const saveSubscription = (cplan, newCard, savedCard) => {
                 //generate plan
                 const clientAdPlan = await _generateClientAdPlan(cplan);
 
-
                 try {
                     //create prices
                     subscriptionPrice = await stripe.prices.create({
@@ -160,6 +159,8 @@ const saveSubscription = (cplan, newCard, savedCard) => {
 
 
                 try {
+
+
                     //create subscription
                     subscription = await stripe.subscriptions.create({
                         customer: customer,
@@ -172,6 +173,8 @@ const saveSubscription = (cplan, newCard, savedCard) => {
                         }, ],
                         default_tax_rates: stripeTaxIds
                     });
+
+
                 } catch (err) {
                     return reject({
                         code: 500,

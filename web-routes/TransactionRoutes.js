@@ -10,7 +10,7 @@ module.exports = (app) => {
         session: false
     }), async (req, res, next) => {
         try {
-            const result = await getTransactions(req.query.client, req.query.plan, req);
+            const result = await getTransactions(req.query.client, req.query.plan);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             next(ex);

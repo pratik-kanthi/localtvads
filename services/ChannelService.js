@@ -1,20 +1,12 @@
-const moment = require('moment');
 const Channel = require.main.require('./models/Channel').model;
 const ChannelProduct = require.main.require('./models/ChannelProduct').model;
-const ChannelPlan = require.main.require('./models/ChannelProduct').model;
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
-const ChannelAdLengthCounter = require.main.require('./models/ChannelAdLengthCounter').model;
-const ImageService =require('./ImageService');
-const {
-    getApplicableOffers
-} = require.main.require('./services/OfferService');
-const {
-    getTaxAmount
-} = require.main.require('./services/TaxService');
+const ImageService = require('./ImageService');
+
 
 const uploadLogo = async (channelId, file) => {
     return new Promise(async (resolve, reject) => {
-        try{
+        try {
             if (!channelId || !file) {
                 return reject({
                     code: 400,
@@ -23,8 +15,11 @@ const uploadLogo = async (channelId, file) => {
                     },
                 });
             }
-            const channel=await Channel.findOne({_id:channelId});
-            if(!channel){
+            const channel = await Channel.findOne({
+                _id: channelId
+            });
+
+            if (!channel) {
                 return reject({
                     code: 404,
                     error: {
@@ -32,15 +27,25 @@ const uploadLogo = async (channelId, file) => {
                     },
                 });
             }
-            const destination='uploads/channels/'+channelId+'/logo_'+Date.now()+'.png';
-            const oldFileLocation=channel.ImageUrl;
-            channel.ImageUrl=destination;
-            await ImageService._uploadFileToBucket(file, destination, oldFileLocation, channel);
+
+            const destination = 'uploads/channels/' + channelId + '/logo_' + Date.now() + '.png';
+            const oldFileLocation = channel.ImageUrl;
+            channel.ImageUrl = destination;
+
+            try {
+                await ImageService._uploadFileToBucket(file, destination, oldFileLocation, channel);
+            } catch (err) {
+                logger.logError(`Channel logo upload failed for ${channel.Name}`, err);
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            }
             resolve({
                 code: 200,
                 data: channel
             });
-        }catch(err){
+        } catch (err) {
             return reject({
                 code: 500,
                 error: err,
@@ -48,150 +53,125 @@ const uploadLogo = async (channelId, file) => {
         }
     });
 };
+
 const createChannel = (newchannel) => {
     return new Promise(async (resolve, reject) => {
-        if (!newchannel.Name || !newchannel.Status) {
+        try {
+            if (!newchannel.Name || !newchannel.Status) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
+                });
+            }
+            const ch = new Channel({
+                Name: newchannel.Name,
+                Description: newchannel.Description ? newchannel.Description : null,
+                Status: newchannel.Status,
+            });
+            const result = await ch.save();
+            resolve({
+                code: 200,
+                data: result,
+            });
+        } catch (err) {
+            logger.logError('Channel Creation failed', err);
             return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
+                code: 500,
+                error: err,
             });
         }
-
-        const ch = new Channel({
-            Name: newchannel.Name,
-            Description: newchannel.Description ? newchannel.Description : null,
-            Status: newchannel.Status,
-        });
-
-        ch.save((err, new_ch) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            }
-            resolve({
-                code: 200,
-                data: new_ch,
-            });
-
-        });
     });
 };
 
-/**
- * get Channel Products 
- */
 const getProductsOfChannel = (channelId) => {
     return new Promise(async (resolve, reject) => {
-        ChannelProduct.find({
-            Channel: channelId
-        }).deepPopulate('ProductLength ChannelSlots.Slot').exec((err, products) => {
-            if (err) {
+        try {
+            if (!channelId) {
                 return reject({
-                    code: 500,
-                    error: err,
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
                 });
             }
+            const query = {
+                Channel: channelId
+            };
+            const result = await ChannelProduct.find(query).deepPopulate('ProductLength ChannelSlots.Slot').exec();
             resolve({
                 code: 200,
-                data: products,
+                data: result,
             });
-        });
-    });
-};
-/**
- * get Channels
- */
-const getChannels = (projection) => {
-    return new Promise(async (resolve, reject) => {
-        const query = {
-            Status: {
-                $in: ['LIVE'],
-            },
-        };
-        const project = projection || {
-            Name: 1,
-            Description: 1,
-            Status: 1,
-            'Address.Location': 1,
-            Viewerships: 1,
-            ExpectedAdViews: 1,
-        };
 
-        Channel.find(query, project).exec((err, channels) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            }
-            resolve({
-                code: 200,
-                data: channels,
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
             });
-        });
+        }
     });
 };
 
-const getChannelsInfo = () => {
+const getChannels = () => {
     return new Promise(async (resolve, reject) => {
         try {
-            Channel.find().exec((err, channels) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err
-                    });
-                }
-
-                ClientAdPlan.find({}, {
-                    Channel: 1
-                }).exec((err, plans) => {
-                    if (err) {
-                        return reject({
-                            code: 500,
-                            error: err
-                        });
-                    }
-
-                    channels = channels.map(channel => {
-                        channel = channel.toObject();
-                        channel.planCount = 0;
-                        plans.map(plan => {
-                            if (channel._id == plan.Channel.toString()) {
-                                channel.planCount++;
-                            }
-                            return plan;
-                        });
-                        return channel;
-                    });
-
-
-                    ChannelProduct.find({}, {
-                        Channel: 1
-                    }).exec((err, products) => {
-                        channels = channels.map(channel => {
-                            channel.productCount = 0;
-                            products.map(product => {
-                                if (channel._id == product.Channel.toString()) {
-                                    channel.productCount++;
-                                }
-                                return product;
-                            });
-                            return channel;
-                        });
-                        resolve({
-                            code: 200,
-                            data: channels
-                        });
-
-                    });
-                });
-
+            const query = {
+                Status: {
+                    $in: ['LIVE'],
+                },
+            };
+            const channels = await Channel.find(query).exec();
+            resolve({
+                code: 200,
+                data: channels
             });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
+    });
+};
+
+const getChannelsWithMetrics = () => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let channels = await Channel.find({}).exec();
+            const plans = await ClientAdPlan.find({}).exec();
+
+            channels = channels.map(channel => {
+                channel = channel.toObject();
+                channel.planCount = 0;
+                plans.map(plan => {
+                    if (channel._id == plan.Channel.toString()) {
+                        channel.planCount++;
+                    }
+                    return plan;
+                });
+                return channel;
+            });
+
+            const products = await ChannelProduct.find({}).exec();
+
+            channels = channels.map(channel => {
+                channel.productCount = 0;
+                products.map(product => {
+                    if (channel._id == product.Channel.toString()) {
+                        channel.productCount++;
+                    }
+                    return product;
+                });
+                return channel;
+            });
+
+            resolve({
+                code: 200,
+                data: channels
+            });
+
         } catch (err) {
             return reject({
                 code: 500,
@@ -203,591 +183,89 @@ const getChannelsInfo = () => {
 
 const getChannel = (channel_id) => {
     return new Promise(async (resolve, reject) => {
-        if (!channel_id) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        } else {
+        try {
+            if (!channel_id) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
+                });
+            }
             const query = {
                 _id: channel_id,
             };
-            Channel.findOne(query)
-                .populate('Viewerships.AdSchedule')
-                .exec((err, channels) => {
-                    if (err) {
-                        return reject({
-                            code: 500,
-                            error: err,
-                        });
-                    }
-
-                    resolve({
-                        code: 200,
-                        data: channels,
-                    });
-                });
-        }
-    });
-};
-
-const getChannelPlan = (channel) => {
-    return new Promise(async (resolve, reject) => {
-        if (!channel) {
+            const channels = await Channel.findOne(query).exec();
+            resolve({
+                code: 200,
+                data: channels
+            });
+        } catch (err) {
             return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
+                code: 500,
+                error: err,
             });
-        }
-        ChannelPlan.findOne({
-            Channel: channel,
-            ChannelSlot: {
-                $exists: true
-            }
-        })
-            .populate('Channel ChannelSlot')
-            .exec((err, cplan) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
 
-                resolve({
-                    code: 200,
-                    data: cplan,
-                });
-            });
+        }
     });
 };
+
 
 const getLowestPriceOnChannel = (channel) => {
     return new Promise(async (resolve, reject) => {
-        if (!channel) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-        ChannelPlan.find({
-            Channel: channel
-        }).exec((err, channelProducts) => {
-            try {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-                if (!channelProducts || channelProducts.length == 0) {
-                    return reject({
-                        code: 404,
-                        error: 'No plan found for channel',
-                    });
-                }
-                let lowestRate = 0;
-                for (let i = 0, len = channelProducts.length; i < len; i++) {
-                    channelProducts[i].ChannelSlots.map(function (slot) {
-                        const rate = slot.RatePerSecond * slot.Duration;
-                        if (!lowestRate) {
-                            lowestRate = rate;
-                        }
-                        if (lowestRate > rate) {
-                            lowestRate = rate;
-                        }
-                        return '';
-                    });
-                }
-                resolve({
-                    code: 200,
-                    data: lowestRate.toString()
-                });
-            } catch (err) {
+        try {
+            if (!channel) {
                 return reject({
-                    code: 500,
-                    error: err,
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
                 });
             }
-        });
-    });
-};
-
-/**
- * Get availability of ad to be broadcast on a channel on a particular duration
- * @param {String} channel - _id of the channel
- * @param {Number} seconds - number of seconds of video
- * @param {String} startDateString - start Date of duration
- * @param {String} endDateString - end Date of duration
- */
-const getChannelScheduleAvailability = (channel, seconds, startDateString, endDateString) => {
-    return new Promise(async (resolve, reject) => {
-        if (!channel || !seconds || !startDateString || !endDateString) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-        seconds = parseInt(seconds);
-        const splitStartDate = startDateString.split('-');
-        const splitEndDate = endDateString.split('-');
-        const startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
-        const endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
-
-        const nextAvailableDate = new Date(new Date().setDate(new Date().getDate() + 7));
-
-        if (startDate >= nextAvailableDate) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-
-        let query = {
-            Channel: channel,
-            IsActive: true,
-        };
-        const project = {
-            ChannelAdSchedule: 1,
-        };
-        ChannelPlan.find(query, project)
-            .distinct('ChannelAdSchedule')
-            .exec((err, channelPlans) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-                const channelAdScheduleIds = channelPlans.map((cp) => cp);
-                query = {
-                    $and: [{
-                        DateTime: {
-                            $gte: startDate,
-                        },
-                    },
-                    {
-                        DateTime: {
-                            $lte: endDate,
-                        },
-                    },
-                    ],
-                    ChannelAdSchedule: {
-                        $in: channelAdScheduleIds,
-                    },
-                };
-                const project = {
-                    DateTime: 1,
-                    TotalSeconds: 1,
-                };
-                ChannelAdLengthCounter.find(query, project)
-                    .populate('ChannelAdSchedule', 'TotalAvailableSeconds')
-                    .sort({
-                        DateTime: 1,
-                    })
-                    .exec((err, countsByDate) => {
-                        if (err) {
-                            return reject({
-                                code: 500,
-                                error: err,
-                            });
-                        }
-                        const result = {};
-
-                        for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
-                            result[_formatDate(i)] = [];
-                        }
-                        for (let i = 0; i < countsByDate.length; i++) {
-                            const key = _formatDate(countsByDate[i].DateTime);
-                            if (countsByDate[i].ChannelAdSchedule && countsByDate[i].ChannelAdSchedule.TotalAvailableSeconds < seconds + countsByDate[i].TotalSeconds) {
-                                result[key].push(false);
-                            }
-                        }
-                        resolve({
-                            code: 200,
-                            data: {
-                                dates: result,
-                                totalActiveSchedules: channelAdScheduleIds.length,
-                            },
-                        });
-                    });
-            });
-    });
-};
-
-/**
- * get Seconds by Channel
- * @param {String} channel - _id of the channel
- */
-const getSecondsByChannel = (channel) => {
-    return new Promise(async (resolve, reject) => {
-        if (!channel) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-        const query = {
-            Channel: channel,
-        };
-
-        const project = {
-            _id: 0,
-            Seconds: 1,
-            ExpectedAdViews: 1,
-        };
-        ChannelPlan.find(query, project)
-            .distinct('Seconds')
-            .exec((err, channels) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                } else {
-                    resolve({
-                        code: 200,
-                        data: channels,
-                    });
-                }
-            });
-    });
-};
-
-/**
- * get active plans of the channel
- * @param {String} channel - _id of the channel
- * @param {Number} seconds - _id of the channel
- * @param {String} startDateString - start date
- * @param {String} endDateString - end date
- */
-const getPlansByChannel = (channel, seconds, startDateString, endDateString) => {
-    return new Promise(async (resolve, reject) => {
-        if (!channel || !seconds || !startDateString) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-        seconds = parseInt(seconds);
-        const splitStartDate = startDateString.split('-');
-        const startDate = new Date(parseInt(splitStartDate[0]), parseInt(splitStartDate[1]) - 1, parseInt(splitStartDate[2]), 0, 0, 0);
-        const splitEndDate = endDateString.split('-');
-        const endDate = new Date(parseInt(splitEndDate[0]), parseInt(splitEndDate[1]) - 1, parseInt(splitEndDate[2]), 0, 0, 0);
-        // memoization - reduce space complexity and additional function calls. Store all possible key value pairs of adSchedule for later use
-        const adScheduleMapping = {};
-        const adScheduleViewershipMapping = {};
-        try {
-            const channelModel = await Channel.findOne({
-                _id: channel,
-            }, {
-                Viewerships: 1,
-            });
-            if (!channelModel) {
+            const channelProducts = await ChannelProduct.find({
+                Channel: channel
+            }).exec();
+            if (!channelProducts || channelProducts.length == 0) {
                 return reject({
                     code: 404,
-                    error: 'Channel' + utilities.ErrorMessages.NOT_FOUND,
+                    error: {
+                        message: 'No plan found for channel',
+                    }
                 });
             }
-            channelModel.Viewerships.map((views) => adScheduleViewershipMapping[views.AdSchedule.toString()] = views.Count);
+            let lowestRate = 0;
+            for (let i = 0, len = channelProducts.length; i < len; i++) {
+                channelProducts[i].ChannelSlots.map(function (slot) {
+                    const rate = slot.RatePerSecond * slot.Duration;
+                    if (!lowestRate) {
+                        lowestRate = rate;
+                    }
+                    if (lowestRate > rate) {
+                        lowestRate = rate;
+                    }
+                    return '';
+                });
+            }
+            resolve({
+                code: 200,
+                data: lowestRate.toString()
+            });
         } catch (err) {
             return reject({
                 code: 500,
                 error: err,
             });
         }
-        let query = {
-            Channel: channel,
-            Seconds: seconds,
-            IsActive: true,
-        };
-        const project = {
-            _id: 1,
-            ChannelAdSchedule: 1,
-            Seconds: 1,
-            BaseAmount: 1,
-        };
-        const populateOptions = {
-            path: 'ChannelAdSchedule',
-            select: {
-                TotalAvailableSeconds: 1,
-                AdSchedule: 1,
-            },
-            populate: [{
-                path: 'AdSchedule',
-                model: 'AdSchedule',
-                select: {
-                    _id: 1,
-                    Name: 1,
-                    Description: 1,
-                    StartTime: 1,
-                    EndTime: 1,
-                },
-            }, ],
-        };
-        ChannelPlan.find(query, project)
-            .populate(populateOptions)
-            .sort({
-                BaseAmount: 1,
-            })
-            .exec((err, channelPlans) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                } else {
-                    const channelAdScheduleIds = channelPlans.map((c) => {
-                        adScheduleMapping[c.ChannelAdSchedule._id.toString()] = {
-                            AdSchedule: c.ChannelAdSchedule.AdSchedule,
-                            ChannelAdSchedule: c.ChannelAdSchedule,
-                        };
-                        return c.ChannelAdSchedule._id;
-                    });
-                    query = {
-                        $and: [{
-                            DateTime: {
-                                $gte: startDate,
-                            },
-                        },
-                        {
-                            DateTime: {
-                                $lte: endDate,
-                            },
-                        },
-                        ],
-                        ChannelAdSchedule: {
-                            $in: channelAdScheduleIds,
-                        },
-                    };
-                    const project = {
-                        DateTime: 1,
-                        TotalSeconds: 1,
-                        ChannelAdSchedule: 1,
-                    };
-                    ChannelAdLengthCounter.find(query, project)
-                        .sort({
-                            DateTime: 1,
-                        })
-                        .exec(async (err, countsByDate) => {
-                            if (err) {
-                                return reject({
-                                    code: 500,
-                                    error: err,
-                                });
-                            }
-                            const result = {};
-                            let taxes;
-                            try {
-                                const taxResult = await getTaxAmount();
-                                taxes = taxResult.taxes;
-                            } catch (ex) {
-                                return reject({
-                                    code: ex.code || 500,
-                                    error: ex.error,
-                                });
-                            }
-
-                            let offers;
-                            const project = {
-                                Name: 1,
-                                Amount: 1,
-                                AmountType: 1,
-                                AdSchedules: 1,
-                                DaysOfWeek: 1,
-                                StartDate: 1,
-                                EndDate: 1,
-                            };
-                            try {
-                                const result = await getApplicableOffers(channel, undefined, startDate, project);
-                                offers = result.data;
-                            } catch (ex) {
-                                return reject({
-                                    code: ex.code,
-                                    error: ex.error,
-                                });
-                            }
-
-                            for (let i = startDate; i <= endDate; i = moment(i).add(1, 'days').toDate()) {
-                                const key = _formatDate(i);
-                                result[key] = {};
-                                channelPlans.forEach((p) => {
-                                    if (p.ChannelAdSchedule && adScheduleMapping[p.ChannelAdSchedule._id.toString()]) {
-                                        let offerDiscount = 0;
-                                        const appliedOffers = offers.filter((offer) => {
-                                            offerDiscount += calculateOffer(p.BaseAmount, offer, adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule._id, key);
-                                            return offerDiscount;
-                                        });
-                                        const subTotal = p.BaseAmount - offerDiscount;
-                                        const totalAmount = subTotal + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * subTotal * 0.01 : accumulator + tax.Value, 0);
-                                        const totalAmountWithoutDiscount = p.BaseAmount + taxes.reduce((accumulator, tax) => tax.Type === 'PERCENTAGE' ? accumulator + tax.Value * p.BaseAmount * 0.01 : accumulator + tax.Value, 0);
-                                        result[key][adScheduleMapping[p.ChannelAdSchedule._id.toString()].AdSchedule.Name] = {
-                                            Plan: p._id,
-                                            Name: p.Name,
-                                            Description: p.Description,
-                                            AdSchedule: p.ChannelAdSchedule.AdSchedule,
-                                            Seconds: p.Seconds,
-                                            TotalAmount: totalAmount,
-                                            TotalAmountWithoutDiscount: totalAmountWithoutDiscount,
-                                            OfferDiscount: offerDiscount,
-                                            Offers: appliedOffers,
-                                            BaseAmount: p.BaseAmount,
-                                            ViewershipCount: adScheduleViewershipMapping[p.ChannelAdSchedule.AdSchedule._id.toString()],
-                                        };
-                                    }
-                                });
-                            }
-
-                            for (let i = 0; i < countsByDate.length; i++) {
-                                const key = _formatDate(countsByDate[i].DateTime);
-                                if (adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()] && adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule) {
-                                    const totalAvailableSeconds = adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].ChannelAdSchedule.TotalAvailableSeconds;
-                                    if (totalAvailableSeconds < seconds + countsByDate[i].TotalSeconds) {
-                                        result[key][adScheduleMapping[countsByDate[i].ChannelAdSchedule.toString()].AdSchedule.Name] = undefined;
-                                    }
-                                } else {
-                                    return reject({
-                                        code: 500,
-                                        error: {
-                                            message: utilities.ErrorMessages.INACTIVE_PLAN,
-                                        },
-                                    });
-                                }
-                            }
-                            resolve({
-                                code: 200,
-                                data: {
-                                    plans: result,
-                                    taxes: taxes,
-                                },
-                            });
-                        });
-                }
-            });
     });
 };
 
-/**
- * get active plans of the nearby channel
- * @param {String} clientAdPlan - object of the ClientAdPlan model
- */
-const updateChannelAdLengthCounter = (clientAdPlan) => {
-    return new Promise(async (resolve, reject) => {
-        const dates = [];
-        for (let i = clientAdPlan.StartDate; i <= clientAdPlan.EndDate; i = moment(i).add(7, 'days').toDate()) {
-            dates.push(i);
-        }
-        const queue = dates.map((d) => _updateChannelAdLengthByDate(clientAdPlan, d));
-        try {
-            await Promise.all(queue);
-            resolve();
-        } catch (err) {
-            return reject({
-                code: err.code,
-                error: err.error,
-            });
-        }
-    });
-};
-
-const _updateChannelAdLengthByDate = (clientAdPlan, dateTime) => {
-    return new Promise(async (resolve, reject) => {
-        const query = {
-            Channel: clientAdPlan.ChannelPlan.Plan.Channel,
-            ChannelAdSchedule: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule,
-            DateTime: dateTime,
-        };
-        const value = {
-            Channel: clientAdPlan.ChannelPlan.Plan.Channel,
-            ChannelAdSchedule: clientAdPlan.ChannelPlan.Plan.ChannelAdSchedule,
-            DateTime: dateTime,
-            $inc: {
-                TotalSeconds: clientAdPlan.ChannelPlan.Plan.Seconds,
-            },
-        };
-        ChannelAdLengthCounter.findOneAndUpdate(
-            query,
-            value, {
-                upsert: true,
-            },
-            (err) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-                resolve();
-            }
-        );
-    });
-};
-
-const updateChannel = (channel_id) => {
-    return new Promise(async (resolve, reject) => {
-        if (!channel_id) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        } else {
-            const query = {
-                _id: channel_id,
-            };
-            Channel.findOne(query, (err, ch) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-                ch;
-            });
-        }
-    });
-};
-const calculateOffer = (amount, offer, adSchedule, startDate) => {
-    let discountAmount = 0;
-    if ((offer.AdSchedules.length === 0 || offer.AdSchedules.indexOf(adSchedule) > -1) && (offer.DaysOfWeek.length === 0 || offer.DaysOfWeek.toObject().indexOf(moment(startDate).isoWeekday()) > -1) && new Date(startDate) <= offer.EndDate && new Date(startDate) >= offer.StartDate) {
-        discountAmount = offer.AmountType === 'PERCENTAGE' ? amount * offer.Amount / 100 : offer.Amount;
-    }
-    return discountAmount;
-};
-
-const _formatDate = (date) => {
-    const month = date.getMonth() + 1;
-    const day = date.getDate();
-    return date.getFullYear() + '-' + (month > 9 ? month : '0' + month) + '-' + (day > 9 ? day : '0' + day);
-};
 
 module.exports = {
     uploadLogo,
     createChannel,
     getChannels,
-    getChannelsInfo,
+    getChannelsWithMetrics,
     getProductsOfChannel,
     getChannel,
-    getSecondsByChannel,
-    getPlansByChannel,
-    updateChannelAdLengthCounter,
-    getChannelScheduleAvailability,
-    updateChannel,
-    getLowestPriceOnChannel,
-    getChannelPlan,
+    getLowestPriceOnChannel
 };

@@ -1,165 +1,10 @@
 const email = require('../email');
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
-const ClientAd = require.main.require('./models/ClientAd').model;
 const Client = require.main.require('./models/Client').model;
 const Staff = require.main.require('./models/Staff').model;
 const User = require.main.require('./models/User').model;
 const UserClaim = require.main.require('./models/UserClaim').model;
 
-const approveAd = (id) => {
-    return new Promise(async (resolve, reject) => {
-        if (!id) {
-            return reject({
-                code: 400,
-                error: utilities.ErrorMessages.BAD_REQUEST,
-            });
-        } else {
-            const query = {
-                _id: id,
-            };
-            ClientAd.findOne(query, (err, clientad) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-                if (!clientad) {
-                    return reject({
-                        code: 400,
-                        error: utilities.ErrorMessages.BAD_REQUEST,
-                    });
-                } else {
-                    clientad.Status = 'APPROVED';
-                    clientad.save((err, cad) => {
-                        if (err) {
-                            return reject({
-                                code: 500,
-                                error: err,
-                            });
-                        }
-                        resolve({
-                            code: 200,
-                            data: cad,
-                        });
-                    });
-                }
-            });
-        }
-    });
-};
-
-const getAllAds = (skip, limit) => {
-    return new Promise(async (resolve, reject) => {
-        const projection = {
-            Name: 1,
-            Client: 1,
-            ClientAd: 1,
-            StartDate: 1,
-            DayOfWeek: 1,
-            ChannelPlan: 1,
-            Status: 1,
-            BookedDate: 1,
-        };
-
-        const populateOptions = [
-            {
-                path: 'Client',
-                select: {
-                    Name: 1,
-                },
-            },
-            {
-                path: 'ClientAd',
-                select: {
-                    Status: 1,
-                    Length: 1,
-                },
-            },
-            {
-                path: 'ChannelPlan.Plan.Channel',
-                model: 'Channel',
-                select: {
-                    Name: 1,
-                    Description: 1,
-                },
-            },
-            {
-                path: 'ChannelPlan.Plan.ChannelAdSchedule',
-                model: 'ChannelAdSchedule',
-                select: {
-                    _id: 1,
-                },
-                populate: [
-                    {
-                        path: 'AdSchedule',
-                        model: 'AdSchedule',
-                        select: {
-                            Name: 1,
-                            Description: 1,
-                            StartTime: 1,
-                            EndTime: 1,
-                        },
-                    },
-                ],
-            },
-        ];
-
-        ClientAdPlan.find(
-            {
-                ClientAd: {
-                    $ne: null,
-                },
-            },
-            projection
-        )
-            .sort('-BookedDate')
-            .skip(parseInt(skip))
-            .limit(parseInt(limit))
-            .populate(populateOptions)
-            .exec((err, caps) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-
-                resolve({
-                    code: 200,
-                    data: caps,
-                });
-            });
-    });
-};
-
-const getAllClients = () => {
-    return new Promise(async (resolve, reject) => {
-        const projection = {};
-
-        Client.find({}, projection).exec((err, clients) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            } else {
-                const date = new Date();
-                clients.map((c) => {
-                    c.DateCreated = date;
-                    c.save();
-
-                    return c;
-                });
-
-                resolve({
-                    code: 200,
-                    data: clients,
-                });
-            }
-        });
-    });
-};
 
 const getClient = (clientid) => {
     return new Promise(async (resolve, reject) => {
@@ -172,52 +17,10 @@ const getClient = (clientid) => {
             const query = {
                 _id: clientid,
             };
-            const populateOptions = [
-                {
-                    path: 'Client',
-                    select: {
-                        Name: 1,
-                    },
-                },
-                {
-                    path: 'ClientAd',
-                    select: {
-                        Status: 1,
-                        Length: 1,
-                    },
-                },
-                {
-                    path: 'ChannelPlan.Plan.Channel',
-                    model: 'Channel',
-                    select: {
-                        Name: 1,
-                        Description: 1,
-                    },
-                },
-                {
-                    path: 'ChannelPlan.Plan.ChannelAdSchedule',
-                    model: 'ChannelAdSchedule',
-                    select: {
-                        _id: 1,
-                    },
-                    populate: [
-                        {
-                            path: 'AdSchedule',
-                            model: 'AdSchedule',
-                            select: {
-                                Name: 1,
-                                Description: 1,
-                                StartTime: 1,
-                                EndTime: 1,
-                            },
-                        },
-                    ],
-                },
-            ];
+
             ClientAdPlan.find({
                 Client: clientid,
             })
-                .populate(populateOptions)
                 .exec((err, cad) => {
                     if (err) {
                         return reject({
@@ -253,102 +56,6 @@ const getClient = (clientid) => {
                     }
                 });
         }
-    });
-};
-
-const getAd = (id) => {
-    return new Promise(async (resolve, reject) => {
-        const query = {
-            ClientAd: id,
-        };
-
-        const populateOptions = [
-            {
-                path: 'Client',
-                model: 'Client',
-            },
-            {
-                path: 'ClientAd',
-                model: 'ClientAd',
-            },
-            {
-                path: 'ChannelPlan.Plan.Channel',
-                model: 'Channel',
-            },
-            {
-                path: 'ChannelPlan.Plan.ChannelAdSchedule',
-                model: 'ChannelAdSchedule',
-                select: {
-                    ChannelAdSchedule: 1,
-                },
-                populate: [
-                    {
-                        path: 'AdSchedule',
-                        model: 'AdSchedule',
-                        select: {
-                            Name: 1,
-                            Description: 1,
-                            StartTime: 1,
-                            EndTime: 1,
-                        },
-                    },
-                ],
-            },
-        ];
-
-        ClientAdPlan.findOne(query)
-            .populate(populateOptions)
-            .exec((err, ad) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                } else {
-                    resolve({
-                        code: 200,
-                        data: ad,
-                    });
-                }
-            });
-    });
-};
-
-const rejectAd = (id) => {
-    return new Promise(async (resolve, reject) => {
-        const query = {
-            _id: id,
-        };
-
-        ClientAd.findOne(query, (err, clientad) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            }
-            if (!clientad) {
-                return reject({
-                    code: 400,
-                    error: utilities.ErrorMessages.BAD_REQUEST,
-                });
-            } else {
-                clientad.Status = 'REJECTED';
-                clientad.save((err, cad) => {
-                    if (err) {
-                        return reject({
-                            code: 500,
-                            error: err,
-                        });
-                    }
-
-                    resolve({
-                        code: 200,
-                        data: cad,
-                    });
-                });
-            }
-        });
     });
 };
 
@@ -449,24 +156,7 @@ const addStaff = (new_staff) => {
     });
 };
 
-const getAllStaff = () => {
-    return new Promise(async (resolve, reject) => {
-        const projection = {};
-        Staff.find({}, projection).exec((err, staff) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            } else {
-                resolve({
-                    code: 200,
-                    data: staff,
-                });
-            }
-        });
-    });
-};
+
 const _isExists = (Model, query) => {
     return new Promise(async (resolve, reject) => {
         Model.countDocuments(query, (err, user) => {
@@ -491,38 +181,7 @@ const _generatePassword = (length) => {
     return pass;
 };
 
-const fetchStaffsByPage = (page, size, sortby) => {
-    return new Promise(async (resolve, reject) => {
-        page = page - 1;
-
-        Staff.find({})
-            .skip(page * size)
-            .limit(size)
-            .sort(sortby)
-            .exec((err, staffs) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                } else {
-                    resolve({
-                        code: 200,
-                        data: staffs,
-                    });
-                }
-            });
-    });
-};
-
 module.exports = {
-    approveAd,
-    getAd,
-    getAllAds,
-    getAllClients,
     getClient,
-    rejectAd,
-    addStaff,
-    getAllStaff,
-    fetchStaffsByPage,
+    addStaff
 };

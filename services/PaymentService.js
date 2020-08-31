@@ -1,154 +1,45 @@
-const config = require.main.require('./config');
+const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 
-const stripe = require('stripe')(
-    config.stripe.secret
-);
-
-/**
- * Charge by existing saved card
- * @param {Number} amount - amount in pounds
- * @param {String} cusToken - token of the Stripe customer starting with cus_
- * @param {String} cardToken - token of the Stripe card starting with card_
- */
-const chargeByExistingCard = (amount, cusToken, cardToken) => {
+const saveCard = (clientId, newCard) => {
     return new Promise(async (resolve, reject) => {
         try {
-            const charge = await stripe.charges.create({
-                amount: amount * 100 | 0,
-                currency: 'gbp',
-                description: '',
-                customer: cusToken,
-                source: cardToken,
-                expand: ['balance_transaction']
+            if (!clientId || !newCard.id) {
+                logger.logError('Failed to saved card, required details missing');
+                return reject({
+                    code: 400,
+                    error: {
+                        message: 'Required card details missing'
+                    },
+                });
+            }
+            const card = new ClientPaymentMethod({
+                Client: clientId,
+                StripeCardToken: newCard.id,
+                Card: {
+                    PaymentMethodType: 'CARD',
+                    Vendor: newCard.card.brand,
+                    Name: newCard.CardName,
+                    ExpiryMonth: newCard.card.exp_month,
+                    ExpiryYear: newCard.card.exp_year,
+                    LastFour: newCard.card.last4,
+                }
             });
-            resolve(charge);
-        } catch (err) {
-            return reject({
-                code: err.statusCode,
-                error: _throwError(err)
-            });
-        }
-    });
-};
 
-
-const getToken = (card) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const token = await stripe.tokens.create({
-                card: {
-                    number: card.card_number,
-                    cvc: card.cvv,
-                    exp_month: card.expiry.substring(0, 2),
-                    exp_year: parseInt(card.expiry.substring(card.expiry.indexOf('/') + 1)),
-                },
-            });
-            resolve(token);
-        } catch (err) {
-            return reject({
-                code: err.statusCode,
-                error: _throwError(err)
-            });
-        }
-    });
-};
-/**
- * Save customer to Stripe
- * @param {String} stripeToken - token of Stripe starting with tok_
- * @param {String} email - email of the customer
- */
-const saveCustomer = (stripeToken, email) => {
-    return new Promise(async (resolve, reject) => {
-        let customer;
-        try {
-            customer = await stripe.customers.create({
-                email: email,
-                source: stripeToken,
-            });
-            resolve(customer);
-        } catch (err) {
-            return reject({
-                code: err.statusCode,
-                error: _throwError(err)
-            });
-        }
-    });
-};
-
-/**
- * Save new card to the customer
- * @param {String} stripeToken - token of Stripe starting with tok_
- * @param {String} cusToken - token of the customer starting with cus_
- */
-const saveNewCardToCustomer = (stripeToken, cusToken) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const card = await stripe.customers.createSource(cusToken, {
-                source: stripeToken
-            });
-            resolve(card);
-        } catch (err) {
-            return reject({
-                code: err.statusCode,
-                error: _throwError(err)
-            });
-        }
-    });
-};
-
-/**
- * Charge by a new (unsaved) card
- * @param {String} amount - amount in pounds
- * @param {String} stripeToken - token of the customer starting with tok_
- */
-const chargeByCard = async (amount, stripeToken) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const charge = await stripe.charges.create({
-                amount: amount * 100 | 0,
-                currency: 'gbp',
-                description: '',
-                source: stripeToken,
-                expand: ['balance_transaction']
-            });
-            resolve(charge);
-        } catch (err) {
-            return reject({
-                code: err.statusCode,
-                error: _throwError(err)
-            });
-        }
-    });
-};
-
-/**
- * Charge by a new (unsaved) card
- * @param {String} cusToken - Stripe token for customer
- * @param {String} cardToken - Stripe token for card
- */
-const deleteCardFromStripe = async (cusToken, cardToken) => {
-    return new Promise(async (resolve, reject) => {
-        try {
-            const result = await stripe.customers.deleteSource(cusToken, cardToken);
+            const result = await card.save();
+            logger.logInfo(`Saved new card ${result._id} to user ${clientId}`);
             resolve(result);
+
         } catch (err) {
+            logger.logError('Failed to saved card', err);
             return reject({
-                code: err.code,
-                error: err.error
+                code: 500,
+                error: err,
             });
         }
     });
 };
 
-const _throwError = (err) => {
-    return utilities.ErrorMessages[err.type] ? utilities.ErrorMessages[err.type] : utilities.GeneralMessages.PAYMENT_ERROR;
-};
 
 module.exports = {
-    getToken,
-    chargeByCard,
-    chargeByExistingCard,
-    deleteCardFromStripe,
-    saveCustomer,
-    saveNewCardToCustomer
+    saveCard
 };

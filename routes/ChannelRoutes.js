@@ -2,8 +2,7 @@ const passport = require('passport');
 const multer = require('multer');
 const {
     createChannel,
-    updateChannel,
-    getChannelsInfo,
+    getChannelsWithMetrics,
     uploadLogo
 } = require.main.require('./services/ChannelService');
 
@@ -19,18 +18,7 @@ module.exports = (app) => {
         session: false
     }), async (req, res, next) => {
         try {
-            const result = await getChannelsInfo();
-            return res.status(result.code).send(result.data);
-        } catch (ex) {
-            next(ex);
-        }
-    });
-
-    app.put('/api/channel/:id', passport.authenticate('jwt', {
-        session: false
-    }), async (req, res, next) => {
-        try {
-            const result = await updateChannel(req.params.id, req.body);
+            const result = await getChannelsWithMetrics();
             return res.status(result.code).send(result.data);
         } catch (ex) {
             next(ex);

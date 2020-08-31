@@ -1,15 +1,15 @@
 const jimp = require('jimp');
-
 const Client = require.main.require('./models/Client').model;
-const Offer = require.main.require('./models/Offer').model;
 const Testimonial = require.main.require('./models/Testimonial').model;
 const Staff = require.main.require('./models/Staff').model;
 
-const { deleteBucketFile, uploadFileBuffer } = require.main.require('./services/FileService');
+const {
+    deleteBucketFile,
+    uploadFileBuffer
+} = require.main.require('./services/FileService');
 
 const model = {
     Client: Client,
-    Offer: Offer,
     Testimonial: Testimonial,
     Staff: Staff,
 };
@@ -120,7 +120,9 @@ const removeImage = (attribute, owner, ownerid) => {
             });
         }
 
-        Owner.findOne({ _id: ownerid }, (err, data) => {
+        Owner.findOne({
+            _id: ownerid
+        }, (err, data) => {
             if (err) {
                 return reject({
                     code: 500,
@@ -178,54 +180,53 @@ const uploadImage = (file, query) => {
 
         let deleteFilelocation = null;
 
-        Owner.findOne(
-            {
-                _id: query.ownerid,
-            },
-            async (err, data) => {
-                if (err) {
+        Owner.findOne({
+            _id: query.ownerid,
+        },
+        async (err, data) => {
+            if (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            } else if (!data) {
+                return reject({
+                    code: 404,
+                    error: {
+                        message: Owner + utilities.ErrorMessages.NOT_FOUND,
+                    },
+                });
+            } else {
+                if (data[query.attribute] && data[query.attribute].trim() !== '') {
+                    deleteFilelocation = data[query.attribute];
+                }
+                data[query.attribute] = dst;
+
+                if (query.cropx) {
+                    try {
+                        file = await cropImage(query, file);
+                    } catch (ex) {
+                        return reject({
+                            code: 500,
+                            error: ex,
+                        });
+                    }
+                }
+
+                try {
+                    await _uploadFileToBucket(file, dst, deleteFilelocation, query.owner, data);
+                    resolve({
+                        code: 200,
+                        data: data,
+                    });
+                } catch (err) {
                     return reject({
                         code: 500,
                         error: err,
                     });
-                } else if (!data) {
-                    return reject({
-                        code: 404,
-                        error: {
-                            message: Owner + utilities.ErrorMessages.NOT_FOUND,
-                        },
-                    });
-                } else {
-                    if (data[query.attribute] && data[query.attribute].trim() !== '') {
-                        deleteFilelocation = data[query.attribute];
-                    }
-                    data[query.attribute] = dst;
-
-                    if (query.cropx) {
-                        try {
-                            file = await cropImage(query, file);
-                        } catch (ex) {
-                            return reject({
-                                code: 500,
-                                error: ex,
-                            });
-                        }
-                    }
-
-                    try {
-                        await _uploadFileToBucket(file, dst, deleteFilelocation, query.owner, data);
-                        resolve({
-                            code: 200,
-                            data: data,
-                        });
-                    } catch (err) {
-                        return reject({
-                            code: 500,
-                            error: err,
-                        });
-                    }
                 }
             }
+        }
         );
     });
 };

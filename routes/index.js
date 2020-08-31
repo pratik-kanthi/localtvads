@@ -1,9 +1,9 @@
-module.exports = (app, models, io) => {
+module.exports = (app, models) => {
     require('./AddOnRoutes')(app);
     require('./AuthRoutes')(app);
     require('./ChannelProductRoutes')(app);
+    require('./ClientAdPlanRoutes')(app);
     require('./ChannelRoutes')(app);
-    require('./ClientAdPlanRoutes')(app, io);
     require('./ClientRoutes')(app);
     require('./EnquiryRoutes')(app);
     require('./HealthCheckRoutes')(app);
