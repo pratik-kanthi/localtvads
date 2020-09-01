@@ -12,7 +12,7 @@ const ServiceAddOn = require.main.require('./models/ServiceAddOn').model;
 
 const {
     saveCard
-} = require.main.require('./services/PaymentService');
+} = require.main.require('./services/ClientService');
 
 const {
     createPrice,
@@ -66,13 +66,18 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
 
             const product = await createProduct(plan.Name, true);
             const clientAdPlan = await _generateClientAdPlan(plan);
+
             const subscriptionPrice = await createPrice(clientAdPlan.WeeklyAmount, 'gbp', product.id, {
                 recurring: {
                     interval: 'week',
                 }
             });
 
-            const addonsPrice = await createPrice(clientAdPlan.AddonsAmount, 'gbp', product.id);
+
+            let addonsPrice;
+            if (plan.Addons.length > 0) {
+                addonsPrice = await createPrice(clientAdPlan.AddonsAmount, 'gbp', product.id);
+            }
             const taxes = (await getAllTaxes()).data;
             const stripeTaxIds = taxes.map(tax => {
                 return tax.StripeTaxId;
@@ -82,11 +87,15 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
                 price: subscriptionPrice.id,
             }];
 
-            const subscription = await createSubscription(customer, paymentSource.StripeCardToke, subscription_items, stripeTaxIds, {
-                add_invoice_items: [{
-                    price: addonsPrice.id,
-                }]
-            });
+
+            const subscription_options = {};
+            if (addonsPrice) {
+                subscription_options.add_invoice_items = [{
+                    price: addonsPrice.id
+                }];
+            }
+
+            const subscription = await createSubscription(customer, paymentSource.StripeCardToken, subscription_items, stripeTaxIds, subscription_options);
 
             clientAdPlan.Status = 'PAID';
             clientAdPlan.StripeReferenceId = subscription.id;
@@ -128,15 +137,15 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
                     StripeResponse: subscription,
                     ReferenceId: subscription.id,
                 });
+
                 await transaction.save();
                 resolve({
                     code: 200,
                     data: transaction
                 });
+
             } catch (err) {
-
                 logger.logError(`Failed to save client ad plan for user ${plan.Client} on channel ${plan.Channel}`, err);
-
                 return reject({
                     code: 500,
                     error: err,

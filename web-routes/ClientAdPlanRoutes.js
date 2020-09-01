@@ -1,5 +1,6 @@
 const passport = require('passport');
 const {
+    saveClientAdPlan,
     getClientAdPlans,
     getClientAdPlan,
     attachVideo,
@@ -9,6 +10,16 @@ const {
 } = require.main.require('./services/ClientAdPlanService');
 
 module.exports = (app) => {
+    app.post('/api/:clientid/createplan', passport.authenticate('website-bearer', {
+        session: false
+    }), async (req, res, next) => {
+        try {
+            const result = await saveClientAdPlan(req.body.clientAdPlan, req.body.newCard, req.body.savedCard);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            next(ex);
+        }
+    });
 
     app.get('/api/:clientid/clientadplans', passport.authenticate('website-bearer', {
         session: false

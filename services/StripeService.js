@@ -99,6 +99,38 @@ const createSubscription = (customer, payment_method, items, tax_rates, options)
 };
 
 
+const createCharge = (amount, currency, source, description) => {
+    return new Promise(async (resolve, reject) => {
+        if (!amount || !currency || !source) {
+            return reject({
+                code: 400,
+                error: {
+                    message: utilities.ErrorMessages.BAD_REQUEST
+                }
+            });
+        }
+
+        try {
+            amount = parseFloat(amount).toFixed(2) * 100;
+
+            const result = await stripe.prices.create({
+                unit_amount: amount,
+                currency: currency,
+                source: source,
+                description: description
+            });
+            resolve(result);
+
+        } catch (err) {
+            logger.logError('Failed to create stripe charge', err);
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
 const createPrice = (amount, currency, product, options) => {
     return new Promise(async (resolve, reject) => {
         if (!amount || !product || !currency) {
@@ -111,10 +143,13 @@ const createPrice = (amount, currency, product, options) => {
         }
 
         try {
+
+            amount = parseFloat(amount).toFixed(2) * 100;
+
             const result = await stripe.prices.create({
                 unit_amount: amount,
                 currency: currency,
-                product: product.id,
+                product: product,
                 ...options
 
             });
@@ -167,5 +202,6 @@ module.exports = {
     attachPaymentMethod,
     createProduct,
     createPrice,
-    createSubscription
+    createSubscription,
+    createCharge
 };

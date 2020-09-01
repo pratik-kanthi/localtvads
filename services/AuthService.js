@@ -7,9 +7,16 @@ const Client = require.main.require('./models/Client').model;
 const User = require.main.require('./models/User').model;
 const UserClaim = require.main.require('./models/UserClaim').model;
 const UserLogin = require.main.require('./models/UserLogin').model;
-const { uploadImage } = require.main.require('./services/FileService');
-const { addToSubscribers, addRegisteredUserTag } = require.main.require('./services/MailChimpService');
-const { standardRegisterEmail } = require.main.require('./email/helper');
+const {
+    uploadImage
+} = require.main.require('./services/FileService');
+const {
+    addToSubscribers,
+    addRegisteredUserTag
+} = require.main.require('./services/MailChimpService');
+const {
+    standardRegisterEmail
+} = require.main.require('./email/helper');
 /**
  * Social Registration through Facebook and Google+
  * @param {Object} profile - Profile object returned by respective OAuth 2.0 social login
@@ -96,6 +103,7 @@ const socialRegister = (profile) => {
                         });
                         claim.save((err) => {
                             if (err) {
+                                logger.logError('Failed to register new social account', err);
                                 return reject({
                                     code: 500,
                                     error: err,
@@ -114,8 +122,7 @@ const socialRegister = (profile) => {
 
                             jwt.sign(
                                 accessToken,
-                                config.token.secret,
-                                {
+                                config.token.secret, {
                                     algorithm: 'HS256',
                                 },
                                 (err, token) => {
@@ -191,6 +198,7 @@ const standardRegister = (profile) => {
         });
         client.save((err) => {
             if (err) {
+                logger.logError('Failed to register new client account', err);
                 return reject({
                     code: 500,
                     error: err,
@@ -213,6 +221,7 @@ const standardRegister = (profile) => {
                 user.PasswordHash = user.EncryptPassword(profile.Password);
                 user.save((err) => {
                     if (err) {
+                        logger.logError('Failed to register new user account', err);
                         return reject({
                             code: 500,
                             error: err,
@@ -270,13 +279,14 @@ const socialLogin = (profile, req) => {
             };
             User.findOne(query, async (err, user) => {
                 if (err) {
-                    _logLogin(profile.Email, req, 'API_ERROR');
+
+                    logger.logError('API ERROR', err);
                     return reject({
                         code: 500,
                         error: err,
                     });
                 } else if (!user) {
-                    _logLogin(profile.Email, req, 'FAILED_LOGIN');
+                    logger.logError('Failed login', err);
                     return reject({
                         code: 404,
                         error: {
@@ -284,7 +294,7 @@ const socialLogin = (profile, req) => {
                         },
                     });
                 } else if (user && user.IsLockoutEnabled) {
-                    _logLogin(profile.Email, req, 'FAILED_LOGIN');
+                    logger.logError('Failed login', err);
                     return reject({
                         code: 401,
                         error: {
@@ -292,7 +302,7 @@ const socialLogin = (profile, req) => {
                         },
                     });
                 } else if (user && user.PasswordHash) {
-                    _logLogin(profile.Email, req, 'FAILED_LOGIN');
+                    logger.logError('Failed login', err);
                     return reject({
                         code: 409,
                         error: {
@@ -323,8 +333,7 @@ const socialLogin = (profile, req) => {
 
                 jwt.sign(
                     accessToken,
-                    config.token.secret,
-                    {
+                    config.token.secret, {
                         algorithm: 'HS256',
                     },
                     (err, token) => {
@@ -353,7 +362,7 @@ const socialLogin = (profile, req) => {
  * @param {String} password - Password of the user
  * @param {Object} req - request of the API
  */
-const standardLogin = (email, password, req) => {
+const standardLogin = (email, password) => {
     return new Promise(async (resolve, reject) => {
         if (!email || !password) {
             return reject({
@@ -374,7 +383,7 @@ const standardLogin = (email, password, req) => {
                     error: err,
                 });
             } else if (!user) {
-                _logLogin(email, req, 'FAILED_LOGIN');
+                logger.logError('Failed login', err);
                 return reject({
                     code: 404,
                     error: {
@@ -384,7 +393,7 @@ const standardLogin = (email, password, req) => {
             } else {
                 if (user.ValidatePassword(password, user.PasswordHash)) {
                     if (user && !user.IsEmailConfirmed) {
-                        _logLogin(email, req, 'EMAIL_UNVERIFIED');
+                        logger.logWarning('Email unverified', err);
                         return reject({
                             code: 403,
                             error: {
@@ -392,7 +401,6 @@ const standardLogin = (email, password, req) => {
                             },
                         });
                     } else if (user && user.IsLockoutEnabled) {
-                        _logLogin(email, req, 'FAILED_LOGIN');
                         return reject({
                             code: 401,
                             error: {
@@ -404,7 +412,7 @@ const standardLogin = (email, password, req) => {
                         try {
                             claims = await _fetchClaim(user._id);
                         } catch (ex) {
-                            _logLogin(email, req, 'FAILED_LOGIN');
+                            logger.logError('Failed login', err);
                             return reject({
                                 code: ex.code || 500,
                                 error: ex.error,
@@ -424,12 +432,12 @@ const standardLogin = (email, password, req) => {
 
                         jwt.sign(
                             accessToken,
-                            config.token.secret,
-                            {
+                            config.token.secret, {
                                 algorithm: 'HS256',
                             },
                             (err, token) => {
                                 if (err) {
+                                    logger.logError('Failed login', err);
                                     return reject({
                                         code: 500,
                                         error: err,
@@ -443,10 +451,9 @@ const standardLogin = (email, password, req) => {
                                 }
                             }
                         );
-                        _logLogin(email, req, 'SUCCESS');
                     }
                 } else {
-                    _logLogin(email, req, 'FAILED_LOGIN');
+                    logger.logError('Failed login', err);
                     return reject({
                         code: 401,
                         error: {
@@ -543,8 +550,7 @@ const portalLogin = (email, password, req) => {
 
                         jwt.sign(
                             accessToken,
-                            config.token.secret,
-                            {
+                            config.token.secret, {
                                 algorithm: 'HS256',
                             },
                             (err, token) => {
@@ -856,11 +862,10 @@ const _fetchProfileImage = (client, profile) => {
                     error: err,
                 });
             }
-            uploadImage(
-                {
-                    buffer: body,
-                },
-                dst
+            uploadImage({
+                buffer: body,
+            },
+            dst
             ).then(
                 () => {
                     resolve(dst);

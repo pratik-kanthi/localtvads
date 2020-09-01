@@ -11,7 +11,6 @@ module.exports = (app, models) => {
     require('./SliderRoutes')(app);
     require('./StaffRoutes')(app);
     require('./SubscriberRoutes')(app);
-    require('./SubscriptionRoutes')(app);
     require('./TestimonialRoutes')(app);
     require('../web-routes')(app);
     require('./ApiRoutes')(app, models);

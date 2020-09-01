@@ -6,7 +6,6 @@ module.exports = (app) => {
     require('./TaxRoutes')(app);
     require('./ClientResourceRoutes')(app);
     require('./ClientAdPlanRoutes')(app);
-    require('./PaymentRoutes')(app);
     require('./ProfileRoutes')(app);
     require('./ContactRoutes')(app);
     require('./TransactionRoutes')(app);
