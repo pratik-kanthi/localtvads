@@ -1,50 +1,54 @@
 const Enquiry = require.main.require('./models/Enquiry').model;
 
-const fetchEnquiries = () => {
+const fetchEnquiries = (page, size, sortby) => {
     return new Promise(async (resolve, reject) => {
-        Enquiry.find({}).sort({
-            Date: -1
-        }).exec((err, enquiries) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            }
+        try {
+            page = parseInt(page) - 1;
+            const enquiries = await Enquiry.find()
+                .skip(page * size)
+                .limit(size)
+                .sort(sortby)
+                .exec();
 
             resolve({
                 code: 200,
                 data: enquiries
             });
-        });
+
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
     });
 };
 
-const fetchEnquiry = (eid) => {
+const fetchEnquiry = (enquiry_id) => {
     return new Promise(async (resolve, reject) => {
-        if (!eid) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-        Enquiry.findOne({
-            _id: eid
-        }, (err, enquiry) => {
-            if (err) {
+        try {
+            if (!enquiry_id) {
                 return reject({
-                    code: 500,
-                    error: err
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
                 });
             }
-
+            const query = {
+                _id: enquiry_id
+            };
+            const result = await Enquiry.findOne(query);
             resolve({
                 code: 200,
-                data: enquiry
+                data: result
             });
-        });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
     });
 };
 

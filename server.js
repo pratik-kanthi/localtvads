@@ -7,6 +7,7 @@ const path = require('path');
 const cors = require('cors');
 const methodOverride = require('method-override');
 const utilities = require('./utilities');
+const logger = require('./logger');
 
 require('dotenv').config();
 
@@ -20,15 +21,15 @@ app.use(
         limit: '50mb',
     })
 );
+
 app.use(
     bodyParser.json({
         limit: '50mb',
     })
 );
+
 app.use(express.static(path.join(__dirname, 'public')));
-
 app.use(methodOverride('X-HTTP-Method-Override'));
-
 app.use(cors());
 
 global.logger = require('./logger')(app);
@@ -45,15 +46,17 @@ mongoose.connect(
     (err) => {
         if (err) {
             logger.logError('Error in connection MongoDb', err);
-        }else{
+        } else {
             app.listen(port, () => {
-                logger.logDebug('Application started at PORT ' + port);
+                console.log('Application started at PORT ' + port);
             });
             const models = require('./models')(mongoose);
             const io = require('./sockets')();
             require('./routes')(app, models, io);
             require('./web-hooks')(app);
             require('./prototypes');
+
+
         }
     }
 );

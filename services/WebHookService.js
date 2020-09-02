@@ -8,8 +8,6 @@ const subscriptionPaymentSucess = (invoice) => {
                 code: 500
             });
         }
-
-
         if (invoice.billing_reason == 'subscription_create') {
             ClientAdPlan.findOne({
                 StripeReferenceId: invoice.subscription

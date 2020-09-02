@@ -6,28 +6,34 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs-extra');
 const path = require('path');
 const socketPort = process.env.SOCKETPORT;
+
 const {
     saveClientVideo,
     saveClientAd
 } = require.main.require('./services/ResourceService');
+
 const {
     uploadFile
 } = require.main.require('./services/FileService');
+
+
 module.exports = () => {
     const app = http.createServer();
+
     const io = socketIO(app, {
         origins: '*:*',
         wsEngine: 'ws',
         pingInterval: 10000,
         pingTimeout: 5000,
     });
+
     app.listen(socketPort, () => {
         logger.logDebug('Socket started on port ' + socketPort);
     });
+
     io.use((socket, next) => {
         authenticateSocket(socket, next);
     }).on('connection', (socket) => {
-
 
         socket.on('UPLOAD_CHUNK', async (data) => {
             try {
@@ -155,6 +161,7 @@ module.exports = () => {
             next(new Error('Authentication error'));
         }
     };
+
     return {
         io,
     };

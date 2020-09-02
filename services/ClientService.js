@@ -1,5 +1,3 @@
-const AdSchedule = require.main.require('./models/AdSchedule').model;
-const Channel = require.main.require('./models/Channel').model;
 const Client = require.main.require('./models/Client').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
@@ -11,177 +9,79 @@ const path = require('path');
 const config = require.main.require('./config');
 const fs = require('fs');
 const {
-    saveCustomer,
-    saveNewCardToCustomer,
-    deleteCardFromStripe
-} = require.main.require('./services/PaymentService');
-const {
     uploadFile
 } = require.main.require('./services/FileService');
 
-/*
- * Add card to a client
- * @param {String} clientId - _id of the client
- * @param {String} stripeToken - token of stripe
- */
-const addCard = (clientId, stripeToken) => {
+
+const saveCard = (clientId, newCard) => {
     return new Promise(async (resolve, reject) => {
-        if (!clientId) {
+        try {
+            if (!clientId || !newCard.id) {
+                logger.logError('Failed to saved card, required details missing');
+                return reject({
+                    code: 400,
+                    error: {
+                        message: 'Required card details missing'
+                    },
+                });
+            }
+            const card = new ClientPaymentMethod({
+                Client: clientId,
+                StripeCardToken: newCard.id,
+                Card: {
+                    PaymentMethodType: 'CARD',
+                    Vendor: newCard.card.brand,
+                    Name: newCard.CardName,
+                    ExpiryMonth: newCard.card.exp_month,
+                    ExpiryYear: newCard.card.exp_year,
+                    LastFour: newCard.card.last4,
+                }
+            });
+
+            const result = await card.save();
+            logger.logInfo(`Saved new card ${result._id} to user ${clientId}`);
+            resolve(result);
+
+        } catch (err) {
+            logger.logError('Failed to saved card', err);
             return reject({
                 code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
+                error: err,
             });
         }
-        const query = {
-            Client: clientId,
-        };
-
-        let newClientPaymentMethod;
-        let cardToken;
-
-        ClientPaymentMethod.findOne(query, async (err, clientPaymentMethod) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            } else if (!clientPaymentMethod) {
-                try {
-                    const client = await _getClient(clientId, {
-                        Email: 1
-                    });
-                    const csToken = await saveCustomer(stripeToken, client.Email);
-                    newClientPaymentMethod = new ClientPaymentMethod({
-                        StripeCusToken: csToken.id,
-                    });
-                    cardToken = csToken.sources.data[0];
-                    newClientPaymentMethod.IsPreferred = true;
-                } catch (err) {
-                    return reject({
-                        code: err.code,
-                        error: err.error,
-                    });
-                }
-            } else {
-                try {
-                    cardToken = await saveNewCardToCustomer(stripeToken, clientPaymentMethod.StripeCusToken);
-                    newClientPaymentMethod = new ClientPaymentMethod({
-                        StripeCusToken: clientPaymentMethod.StripeCusToken,
-                    });
-                } catch (ex) {
-                    return reject({
-                        code: ex.code,
-                        error: ex.error,
-                    });
-                }
-            }
-            newClientPaymentMethod.Card = {
-                PaymentMethodType: 'CARD',
-                StripeCardToken: cardToken.id,
-                Vendor: cardToken.brand.toUpperCase().replace(/ +/g, ''), // avoid space in filenames and tp match with image files
-                Name: cardToken.name,
-                ExpiryMonth: cardToken.exp_month,
-                ExpiryYear: cardToken.exp_year,
-                LastFour: cardToken.last4,
-            };
-            newClientPaymentMethod.Client = clientId;
-            newClientPaymentMethod.save((err) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-                resolve({
-                    code: 200,
-                    data: newClientPaymentMethod,
-                });
-            });
-        });
     });
 };
 
-/*
- * Get saved cards by a client
- * @param {String} clientId - _id of the client
- */
 const getSavedCards = (clientId) => {
     return new Promise(async (resolve, reject) => {
-        if (!clientId) {
-            return reject({
-                code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-        const query = {
-            Client: clientId,
-        };
-        const project = {
-            _id: 1,
-            IsPreferred: 1,
-            'Card.Vendor': 1,
-            'Card.Name': 1,
-            'Card.ExpiryMonth': 1,
-            'Card.ExpiryYear': 1,
-            'Card.LastFour': 1,
-        };
-        ClientPaymentMethod.find(query, project)
-            .sort({
+        try {
+            if (!clientId) {
+                return reject({
+                    code: 500,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
+                });
+            }
+            const query = {
+                Client: clientId,
+            };
+            const project = {
+                _id: 1,
+                IsPreferred: 1,
+                'Card.Vendor': 1,
+                'Card.Name': 1,
+                'Card.ExpiryMonth': 1,
+                'Card.ExpiryYear': 1,
+                'Card.LastFour': 1,
+            };
+            const cards = await ClientPaymentMethod.find(query, project).sort({
                 IsPreferred: -1
-            })
-            .exec((err, cards) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-                resolve({
-                    code: 200,
-                    data: cards,
-                });
+            }).exec();
+            resolve({
+                code: 200,
+                data: cards,
             });
-    });
-};
-
-/*
- * Get preferred card by client
- * @param {String} clientId - _id of the client
- * @param {String} cardId - stripe's card token
- */
-const getPreferredCard = (clientId, cardId) => {
-    return new Promise(async (resolve, reject) => {
-        if (!clientId || !cardId) {
-            return reject({
-                code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-        const query = {
-            Client: clientId,
-            _id: cardId,
-            IsPreferred: true,
-        };
-        try {
-            const card = await ClientPaymentMethod.findOne(query, {
-                CardToken: 1,
-                CustomerToken: 1
-            });
-            if (!card) {
-                return reject({
-                    code: 404,
-                    error: {
-                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND,
-                    },
-                });
-            }
-            resolve(card);
         } catch (err) {
             return reject({
                 code: 500,
@@ -191,170 +91,9 @@ const getPreferredCard = (clientId, cardId) => {
     });
 };
 
-/*
- * Set preferred card by client
- * @param {String} clientId - _id of the client
- * @param {String} cardId - stripe's card token
- */
-const setPreferredCard = (clientId, cardId) => {
-    return new Promise(async (resolve, reject) => {
-        if (!clientId || !cardId) {
-            return reject({
-                code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-        let query = {
-                Client: clientId,
-                IsPreferred: true,
-            },
-            card;
-        try {
-            card = await ClientPaymentMethod.findOne(query);
-        } catch (err) {
-            return reject({
-                code: 500,
-                error: err,
-            });
-        }
-        if (card) {
-            card.IsPreferred = false;
-            try {
-                await card.save();
-            } catch (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            }
-            card = undefined;
-        }
-
-        query = {
-            Client: clientId,
-            _id: cardId,
-        };
-        try {
-            card = await ClientPaymentMethod.findOne(query);
-        } catch (err) {
-            return reject({
-                code: 500,
-                error: err,
-            });
-        }
-        if (card) {
-            card.IsPreferred = true;
-            try {
-                await card.save();
-                resolve({
-                    code: 200,
-                    data: undefined,
-                });
-            } catch (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            }
-        } else {
-            return reject({
-                code: 404,
-                error: {
-                    message: 'Card' + utilities.ErrorMessages.NOT_FOUND,
-                },
-            });
-        }
-    });
-};
-
-const deleteCard = (clientId, cardId) => {
-    return new Promise(async (resolve, reject) => {
-        if (!clientId || !cardId) {
-            return reject({
-                code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-        let count = 0,
-            query = {
-                Client: clientId,
-            };
-        try {
-            count = await ClientPaymentMethod.countDocuments(query);
-        } catch (err) {
-            return reject({
-                code: 500,
-                error: err,
-            });
-        }
-        if (count < 2) {
-            return reject({
-                code: 500,
-                error: {
-                    message: utilities.ErrorMessages.DELETE_CARD_NOT_ALLOWED,
-                },
-            });
-        }
-        try {
-            query = {
-                Client: clientId,
-                _id: cardId,
-            };
-            const card = await ClientPaymentMethod.findOne(query);
-            if (!card) {
-                return reject({
-                    code: 404,
-                    error: {
-                        message: 'Card' + utilities.ErrorMessages.NOT_FOUND,
-                    },
-                });
-            } else if (card && card.IsPreferred) {
-                return reject({
-                    code: 404,
-                    error: {
-                        message: 'Card' + utilities.ErrorMessages.DELETE_CARD_NOT_ALLOWED,
-                    },
-                });
-            } else {
-                try {
-                    await ClientPaymentMethod.findOneAndRemove(query);
-                } catch (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-                await deleteCardFromStripe(card.StripeCusToken, card.Card.StripeCardToken);
-                resolve({
-                    code: 200,
-                    data: undefined,
-                });
-            }
-        } catch (err) {
-            return reject({
-                code: 500,
-                error: err,
-            });
-        }
-    });
-};
-
-const getTransactions = (clientId, planId, req) => {
+const getTransactions = (clientId, planId) => {
     return new Promise(async (resolve, reject) => {
         try {
-            if (req.user.Claims[0].Name !== 'Client' || req.user.Claims[0].Value !== clientId) {
-                return reject({
-                    code: 403,
-                    error: {
-                        message: utilities.ErrorMessages.UNAUTHORISED,
-                    },
-                });
-            }
-
             if (!clientId) {
                 return reject({
                     code: 400,
@@ -363,30 +102,21 @@ const getTransactions = (clientId, planId, req) => {
                     },
                 });
             }
-
-            let query;
-            if (planId !== 'undefined') {
-                query = {
+            const query = {
+                ...clientId && {
                     Client: clientId,
+                },
+                ...planId && {
                     ClientAdPlan: planId,
-                };
-            } else {
-                query = {
-                    Client: clientId,
-                };
-            }
-            try {
-                const transactions = await Transaction.find(query).sort('-DateTime').lean().exec();
-                resolve({
-                    code: 200,
-                    data: transactions,
-                });
-            } catch (err) {
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            }
+                }
+            };
+
+            const transactions = await Transaction.find(query).sort('-DateTime').lean().exec();
+
+            resolve({
+                code: 200,
+                data: transactions,
+            });
         } catch (err) {
             return reject({
                 code: 500,
@@ -396,182 +126,135 @@ const getTransactions = (clientId, planId, req) => {
     });
 };
 
-const generateReceipt = (transaction_id) => {
+const generateTransactionReceipt = (transaction_id) => {
     return new Promise(async (resolve, reject) => {
-        if (!transaction_id) {
-            return reject({
-                code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        } else {
-            const query = {
-                ReferenceId: transaction_id,
-            };
-            const project = {
-                Client: 1,
-                ChannelPlan: 1,
-                TotalAmount: 1,
-                DateTime: 1,
-                Status: 1,
-                ReferenceId: 1,
-                ClientAdPlan: 1,
-                ServiceAddOn: 1,
-                ClientServiceAddOn: 1,
-                TaxBreakdown: 1,
-                ReceiptUrl: 1,
-            };
-            const populateOptions = [{
-                path: 'Client',
-                model: Client,
-                select: {
-                    Name: 1,
-                    Email: 1,
-                    Phone: 1,
-                },
-            },
-            {
-                path: 'ChannelPlan.Channel',
-                model: Channel,
-                select: {
-                    Name: 1,
-                    _id: 0,
-                },
-            },
-            {
-                path: 'ChannelPlan.AdSchedule',
-                model: AdSchedule,
-                select: {
-                    Name: 1,
-                    _id: 0,
-                },
-            },
-            ];
-
-            Transaction.findOne(query, project)
-                .populate(populateOptions)
-                .exec((err, transaction) => {
-                    if (err) {
-                        return reject({
-                            code: 500,
-                            error: err,
-                        });
-                    } else {
-                        const receipt = {
-                            InvoiceNo: transaction_id,
-                            Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
-                            Type: transaction.ServiceAddOn ? 'Add On' : 'Ad Slot',
-                            Name: transaction.ServiceAddOn ? transaction.ServiceAddOn.Name : transaction.ChannelPlan.Channel.Name,
-                            TotalAmount: transaction.TotalAmount.toFixed(2),
-                            SubTotal: transaction.ServiceAddOn ? transaction.ServiceAddOn.SubTotal.toFixed(2) : transaction.ChannelPlan.SubTotal.toFixed(2),
-                            TaxAmount: transaction.ServiceAddOn ? transaction.ServiceAddOn.TaxAmount.toFixed(2) : transaction.ChannelPlan.TaxAmount.toFixed(2),
-                            TaxBreakdown: transaction.TaxBreakdown[0],
-                            Offer: transaction.ChannelPlan && transaction.ChannelPlan.Offers.length > 0 ? transaction.ChannelPlan.Offers[0].Name : null,
-                            Offer_Value: transaction.ChannelPlan && transaction.ChannelPlan.Offers.length > 0 ? transaction.ChannelPlan.Offers[0].Amount : null,
-                        };
-
-                        receipt.User = {};
-                        receipt.User.Name = transaction.Client.Name;
-                        receipt.User.Email = transaction.Client.Email;
-                        receipt.User.Phone = transaction.Client.Phone;
-
-                        const message = email.helper.downloadReceipt(receipt);
-                        const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
-                        const options = {
-                            format: 'A4',
-                            orientation: 'portrait',
-                        };
-
-                        pdf.create(message, options).toFile(filePath, (err) => {
-                            if (err) {
-                                return reject({
-                                    code: 500,
-                                    error: err,
-                                });
-                            }
-                            const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY') + '_' + transaction_id + '.pdf';
-                            const uploadPromise = uploadFile(filePath, bucket_file_path);
-                            const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
-
-                            Promise.all([uploadPromise])
-                                .then(() => {
-                                    transaction.ReceiptUrl = receipt_bucket_url;
-                                    transaction.save((err, tr) => {
-                                        if (err) {
-                                            return reject({
-                                                code: 500,
-                                                error: err,
-                                            });
-                                        }
-                                        fs.unlinkSync(filePath);
-                                        resolve({
-                                            code: 200,
-                                            data: tr.ReceiptUrl,
-                                        });
-                                    });
-                                })
-                                .catch((err) => {
-                                    return reject({
-                                        code: 500,
-                                        error: err,
-                                    });
-                                });
-                        });
-                    }
+        try {
+            if (!transaction_id) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
                 });
-        }
-    });
-};
+            }
 
-const _getClient = (client, projection) => {
-    return new Promise(async (resolve, reject) => {
-        Client.findOne({
-            _id: client
-        }, projection || {}, (err, client) => {
-            if (err) {
+            const query = {
+                _id: transaction_id,
+            };
+
+            const transaction = await Transaction.findOne(query).deepPopulate('Client ClientAdPlan.Channel ClientAdPlan.AddOns').exec();
+            const receipt = {
+                ReceiptNumber: transaction.ReceiptNo,
+                PaymentReference: transaction.ReferenceId,
+                Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
+                PlanName: transaction.ClientAdPlan.Channel.Name + '_' + transaction.ClientAdPlan.ChannelProduct.ProductLength.Name,
+                PlanAmount: transaction.ClientAdPlan.WeeklyAmount.toFixed(2),
+                SubTotal: transaction.Amount.toFixed(2),
+                TaxAmount: transaction.TaxAmount.toFixed(2),
+                TotalAmount: transaction.TotalAmount.toFixed(2),
+                TaxBreakdown: transaction.TaxBreakdown,
+            };
+
+            if (transaction.ClientAdPlan.Addons && transaction.ClientAdPlan.Addons.length > 0) {
+                receipt.AddOn = transaction.ClientAdPlan.Addons[0].Name;
+                receipt.AddOnAmount = transaction.ClientAdPlan.AddonsAmount;
+            }
+
+            receipt.User = {};
+            receipt.User.Name = transaction.Client.Name;
+            receipt.User.Email = transaction.Client.Email;
+            receipt.User.Phone = transaction.Client.Phone;
+
+            let message = '';
+
+            try {
+                message = email.helper.downloadReceipt(receipt);
+            } catch (err) {
+                logger.logError(`Failed to generate html from ejs for transaction ${transaction._id}`, err);
                 return reject({
                     code: 500,
-                    error: err,
+                    error: err
                 });
-            } else {
-                resolve(client);
             }
-        });
-    });
-};
 
-const fetchClientsByPage = (page, size, sortby) => {
-    return new Promise(async (resolve, reject) => {
-        page = page - 1;
-
-        Client.find({})
-            .skip(page * size)
-            .limit(size)
-            .sort(sortby)
-            .exec((err, client) => {
+            const filePath = path.join(__dirname, '../receipts/' + transaction_id + '.pdf');
+            const options = {
+                format: 'A4',
+                orientation: 'portrait',
+            };
+            pdf.create(message, options).toFile(filePath, async (err) => {
                 if (err) {
                     return reject({
                         code: 500,
                         error: err,
                     });
-                } else {
+                }
+                const bucket_file_path = 'uploads/clients/' + transaction.Client._id + '/transactions/' + moment().format('DD_MM_YYYY_HH:mm:ss') + '_' + transaction_id + '.pdf';
+                const receipt_bucket_url = config.google_bucket.bucket_url + bucket_file_path;
+                transaction.ReceiptUrl = receipt_bucket_url;
+
+                try {
+                    await uploadFile(filePath, bucket_file_path);
+                } catch (err) {
+                    logger.logError(`Failed to upload transaction to bucket ${transaction._id}`, err);
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+
+                try {
+                    const tr = await transaction.save();
+                    fs.unlinkSync(filePath);
                     resolve({
                         code: 200,
-                        data: client,
+                        data: tr.ReceiptUrl,
+                    });
+                } catch (err) {
+                    logger.logWarning(`Failed to update transaction with receipet url for ${transaction._id}`, err);
+                    return reject({
+                        code: 500,
+                        error: err,
                     });
                 }
             });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
+    });
+};
+
+const fetchClientsByPage = (page, size, sortby) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            page = parseInt(page) - 1;
+            const client = await Client.find({})
+                .skip(page * size)
+                .limit(size)
+                .sort(sortby)
+                .exec();
+
+            resolve({
+                code: 200,
+                data: client,
+            });
+
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
     });
 };
 
 module.exports = {
-    addCard,
-    deleteCard,
-    getPreferredCard,
+    saveCard,
     getSavedCards,
-    setPreferredCard,
     getTransactions,
-    generateReceipt,
+    generateTransactionReceipt,
     fetchClientsByPage,
 };

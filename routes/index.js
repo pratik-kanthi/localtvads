@@ -1,27 +1,17 @@
-module.exports = (app, models, io) => {
-    require('./HealthCheckRoutes')(app);
-    require('./AdScheduleRoutes')(app);
-    require('./SliderRoutes')(app);
-    require('./TestimonialRoutes')(app);
+module.exports = (app, models) => {
     require('./AddOnRoutes')(app);
     require('./AuthRoutes')(app);
-    require('./ChannelRoutes')(app);
-    require('./ClientAdRoutes')(app, io);
-    require('./ClientRoutes')(app);
-    require('./ContactRoutes')(app);
-    require('./ImageRoutes')(app);
-    require('./OfferRoutes')(app);
-    require('./ResourceRoutes')(app);
-    require('./StaffRoutes')(app);
-    require('./CouponRoutes')(app);
-    require('./EnquiryRoutes')(app);
-    require('./SubscriberRoutes')(app);
-    require('./DashboardRoutes')(app);
-    require('./ChannelPlanRoutes')(app);
-    require('./ChannelAdScheduleRoutes')(app);
     require('./ChannelProductRoutes')(app);
-    require('./TaxRoutes')(app);
-    require('./SubscriptionRoutes')(app);
+    require('./ClientAdPlanRoutes')(app);
+    require('./ChannelRoutes')(app);
+    require('./ClientRoutes')(app);
+    require('./EnquiryRoutes')(app);
+    require('./HealthCheckRoutes')(app);
+    require('./ImageRoutes')(app);
+    require('./SliderRoutes')(app);
+    require('./StaffRoutes')(app);
+    require('./SubscriberRoutes')(app);
+    require('./TestimonialRoutes')(app);
     require('../web-routes')(app);
     require('./ApiRoutes')(app, models);
 };

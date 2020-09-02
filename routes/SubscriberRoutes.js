@@ -1,21 +1,25 @@
-const { getSubscribers, unsubscribeUser } = require.main.require('./services/SubscriberService');
+const {
+    getSubscribers,
+    unsubscribeUser
+} = require.main.require('./services/SubscriberService');
 
 module.exports = (app) => {
-    app.get('/api/subscribers/all', async (req, res) => {
+
+    app.get('/api/subscribers/all', async (req, res, next) => {
         try {
             const result = await getSubscribers();
             return res.status(result.code).send(result.data);
         } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
+            next(ex);
         }
     });
 
-    app.post('/api/unsubscribe', async (req, res) => {
+    app.post('/api/unsubscribe', async (req, res, next) => {
         try {
             const result = await unsubscribeUser(req.body.Email);
             return res.status(result.code).send(result.data);
         } catch (ex) {
-            return res.status(ex.code || 500).send(ex.error);
+            next(ex);
         }
     });
 };

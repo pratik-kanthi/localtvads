@@ -2,22 +2,15 @@ const Sentry = require('@sentry/node');
 const os = require('os');
 
 Sentry.init({
-    serverName: process.env.SERVER_NAME,
-    dsn: process.env.SENTRY_DSN,
-    environment: process.env.LOGGER_MODE
+    dsn: process.env.SENTRY_DSN
 });
 
 module.exports = (app) => {
     return {
         setupSentry: () => {
-
-            //Setup generic sentry Error Handler for unhandled exception
-            // The error handler must be before any other error middleware
             app.use(Sentry.Handlers.errorHandler());
-
-            //Set Sentry User Context on All Requests
             app.all('*', (req, res, next) => {
-                Sentry.configureScope( (scope) => {
+                Sentry.configureScope((scope) => {
                     scope.setUser({
                         IP: req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || (req.connection.socket ? req.connection.socket.remoteAddress : null)
                     });
@@ -31,19 +24,17 @@ module.exports = (app) => {
             });
 
             app.use((err, req, res, next) => {
-                // The error id is attached to `res.sentry` to be returned
-                // and optionally displayed to the user for support.
                 res.statusCode = 500;
                 res.end(res.sentry + '\n');
                 next();
             });
 
             //add hostname to all the logs
-            Sentry.configureScope( (scope) => {
+            Sentry.configureScope((scope) => {
                 scope.setExtra('hostname', os.hostname() + ':' + process.env.PORT);
             });
         },
-        logError:(exc) => {
+        logError: (exc) => {
             if (exc instanceof Error) {
                 Sentry.captureException(exc);
             } else {

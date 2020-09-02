@@ -1,94 +1,107 @@
 const Testimonial = require.main.require('./models/Testimonial').model;
 const FileService = require.main.require('./services/FileService');
-/**
- * Creates a new Slider
- * @param {Object} slider - object of Slider model
- * @param {String} req  - ip address of the user fetched from req
- */
 
 const getTestimonials = () => {
     return new Promise(async (resolve, reject) => {
-        const query = {
-            IsActive: true
-        };
-        Testimonial.find(query, (err, testimonials) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            }
+        try {
+            const query = {
+                IsActive: true,
+            };
+            const testimonials = await Testimonial.find(query).exec();
             resolve({
                 code: 200,
-                data: testimonials
+                data: testimonials,
             });
-        });
-    });
-};
-const saveTestimonial = (testimonial, req) => {
-    return new Promise(async (resolve, reject) => {
-        if (!testimonial) {
+        } catch (err) {
             return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
+                code: 500,
+                error: err,
             });
         }
-        const newTestimonial = new Testimonial(testimonial);
-        newTestimonial.AuditInfo = {
-            CreatedByUser: req.user._id,
-            CreationDate: new Date()
-        };
-        newTestimonial.save(err => {
-            if (err) {
+    });
+};
+
+const saveTestimonial = (testimonial, req) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!testimonial) {
                 return reject({
-                    code: 500,
-                    error: err
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
                 });
             }
-            resolve({
-                code: 200,
-                data: newTestimonial
+            const newTestimonial = new Testimonial(testimonial);
+            newTestimonial.AuditInfo = {
+                CreatedByUser: req.user._id,
+                CreationDate: new Date(),
+            };
+
+            try {
+                const result = await newTestimonial.save();
+                resolve({
+                    code: 200,
+                    data: result,
+                });
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err,
+                });
+            }
+
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
             });
-        });
+        }
     });
 };
 
 const deleteTestimonial = (tid) => {
     return new Promise(async (resolve, reject) => {
-        const query = {
-            _id: tid
-        };
-        if (!tid) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-        Testimonial.findOneAndDelete(query).exec((err, data) => {
-            if(err) {
+        try {
+            if (!tid) {
                 return reject({
-                    code: 500,
-                    error: err
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST,
+                    },
                 });
             }
-            if(data){
-                FileService.deleteBucketFile(data.ImageUrl);
+            const query = {
+                _id: tid,
+            };
+
+            try {
+                const result = await Testimonial.findOneAndDelete(query).exec();
+                if (result) {
+                    FileService.deleteBucketFile(result.ImageUrl);
+                }
                 resolve({
                     code: 200,
-                    data: 'Deleted'
+                    data: 'Deleted',
+                });
+            } catch (err) {
+                return reject({
+                    code: 500,
+                    error: err,
                 });
             }
-        });
+
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
     });
 };
-
 
 module.exports = {
     getTestimonials,
     saveTestimonial,
-    deleteTestimonial
+    deleteTestimonial,
 };

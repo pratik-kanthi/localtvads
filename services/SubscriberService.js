@@ -1,10 +1,14 @@
 const Subscriber = require.main.require('./models/Subscriber').model;
-const { removeSubscription } = require.main.require('./services/MailChimpService');
+const {
+    removeSubscription
+} = require.main.require('./services/MailChimpService');
 
 const getSubscribers = () => {
     return new Promise(async (resolve, reject) => {
         Subscriber.find({})
-            .sort({ DateSubscribed: -1 })
+            .sort({
+                DateSubscribed: -1
+            })
             .exec((err, subscribers) => {
                 if (err) {
                     return reject({
@@ -12,7 +16,6 @@ const getSubscribers = () => {
                         error: err,
                     });
                 }
-
                 resolve({
                     code: 200,
                     data: subscribers,
@@ -23,7 +26,9 @@ const getSubscribers = () => {
 
 const unsubscribeUser = (email) => {
     return new Promise(async (resolve, reject) => {
-        Subscriber.findOne({ Email: email }, (err, subscriber) => {
+        Subscriber.findOne({
+            Email: email
+        }, (err, subscriber) => {
             if (err) {
                 return reject({
                     code: 500,
