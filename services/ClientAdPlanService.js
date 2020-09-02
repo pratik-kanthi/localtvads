@@ -15,6 +15,7 @@ const {
 } = require.main.require('./services/ClientService');
 
 const {
+    createCharge,
     createPrice,
     createStripeCustomer,
     attachPaymentMethod,
@@ -39,19 +40,24 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
                 });
             }
 
-            let isNewCustomer, customer, paymentSource = null;
-
-            if (newCard) {
-                paymentSource = await saveCard(plan.Client, newCard);
-            } else if (savedCard) {
-                paymentSource = await ClientPaymentMethod.findOne({
-                    _id: savedCard,
-                });
-            }
+            let isNewCustomer, customer, stripe_response, paymentSource = null;
 
             const client = await Client.findOne({
                 _id: plan.Client
             }).exec();
+
+
+            if (!client) {
+                logger.logError(`Failed to save client ad plan. Client ${plan.Client} not found`);
+                return reject({
+                    code: 500,
+                    error: {
+                        message: utilities.ErrorMessages.CLIENT_NOT_FOUND
+                    }
+                });
+            }
+
+            paymentSource = await _getPaymentSource(plan.Client, newCard, savedCard);
 
             if (!client.StripeCustomerId) {
                 customer = (await createStripeCustomer(client.Name, client.Email, paymentSource.StripeCardToken)).id;
@@ -60,45 +66,51 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
                 customer = client.StripeCustomerId;
             }
 
-            if (newCard) {
-                await attachPaymentMethod(customer, paymentSource.StripeCardToken);
-            }
-
-            const product = await createProduct(plan.Name, true);
             const clientAdPlan = await _generateClientAdPlan(plan);
 
-            const subscriptionPrice = await createPrice(clientAdPlan.WeeklyAmount, 'gbp', product.id, {
-                recurring: {
-                    interval: 'week',
+            if (clientAdPlan.IsSubscription) {
+                //generate subscriptions
+                const product = await createProduct(plan.Name, true);
+                const subscriptionPrice = await createPrice(clientAdPlan.WeeklyAmount, 'gbp', product.id, {
+                    recurring: {
+                        interval: 'week',
+                    }
+                });
+
+
+                let addonsPrice;
+                if (plan.Addons.length > 0) {
+                    addonsPrice = await createPrice(clientAdPlan.AddonsAmount, 'gbp', product.id);
                 }
-            });
 
+                const taxes = (await getAllTaxes()).data;
+                const stripeTaxIds = taxes.map(tax => {
+                    return tax.StripeTaxId;
+                });
 
-            let addonsPrice;
-            if (plan.Addons.length > 0) {
-                addonsPrice = await createPrice(clientAdPlan.AddonsAmount, 'gbp', product.id);
-            }
-            const taxes = (await getAllTaxes()).data;
-            const stripeTaxIds = taxes.map(tax => {
-                return tax.StripeTaxId;
-            });
-
-            const subscription_items = [{
-                price: subscriptionPrice.id,
-            }];
-
-
-            const subscription_options = {};
-            if (addonsPrice) {
-                subscription_options.add_invoice_items = [{
-                    price: addonsPrice.id
+                const subscription_items = [{
+                    price: subscriptionPrice.id,
                 }];
+
+
+                const subscription_options = {};
+                if (addonsPrice) {
+                    subscription_options.add_invoice_items = [{
+                        price: addonsPrice.id
+                    }];
+                }
+
+                stripe_response = await createSubscription(customer, paymentSource.StripeCardToken, subscription_items, stripeTaxIds, subscription_options);
+                clientAdPlan.StripeReferenceId = stripe_response.id;
+
+            } else {
+                //generate one time charge
+                stripe_response = await createCharge(clientAdPlan.totalAmount, 'gbp', paymentSource.StripeCardToken, customer, clientAdPlan.Name);
+                clientAdPlan.StripeReferenceId = stripe_response.id;
             }
 
-            const subscription = await createSubscription(customer, paymentSource.StripeCardToken, subscription_items, stripeTaxIds, subscription_options);
 
             clientAdPlan.Status = 'PAID';
-            clientAdPlan.StripeReferenceId = subscription.id;
             clientAdPlan.PaymentMethod = paymentSource._id;
 
             try {
@@ -125,6 +137,11 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
                 }
             }
 
+
+            if (newCard) {
+                await attachPaymentMethod(customer, paymentSource.StripeCardToken);
+            }
+
             try {
                 const transaction = new Transaction({
                     ClientAdPlan: clientAdPlan._id,
@@ -134,8 +151,8 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
                     TaxBreakdown: clientAdPlan.Taxes,
                     TotalAmount: clientAdPlan.totalAmount.toFixed(2),
                     Status: 'SUCCEEDED',
-                    StripeResponse: subscription,
-                    ReferenceId: subscription.id,
+                    StripeResponse: stripe_response,
+                    ReferenceId: stripe_response.id,
                 });
 
                 await transaction.save();
@@ -281,7 +298,7 @@ const attachVideo = (clientId, planId, resourceId) => {
                 _id: planId,
                 Client: clientId,
             };
-            const plan = ClientAdPlan.findOne(query).exec();
+            const plan = await ClientAdPlan.findOne(query).exec();
             try {
                 plan.AdVideo = mongoose.Types.ObjectId(resourceId);
                 const result = await plan.save();
@@ -433,6 +450,27 @@ const updatePlanPayment = (client, planId, paymentMethod) => {
 
 };
 
+const _getPaymentSource = (client, newcard, savedcard) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let paymentSource;
+            if (newcard) {
+                paymentSource = await saveCard(client, newcard);
+            } else if (savedcard) {
+                paymentSource = await ClientPaymentMethod.findOne({
+                    _id: savedcard,
+                });
+            }
+            resolve(paymentSource);
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
 const _generateClientAdPlan = (cPlan) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -487,6 +525,12 @@ const _generateClientAdPlan = (cPlan) => {
                 } else {
                     taxAmount += taxes[i].Value * 0.01 * (clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount);
                 }
+            }
+
+            if (channelProduct.ProductLength.Duration == 0) {
+                clientAdPlan.IsSubscription = false;
+            } else {
+                clientAdPlan.IsSubscription = true;
             }
 
             clientAdPlan.Taxes = taxes;

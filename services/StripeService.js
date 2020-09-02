@@ -99,7 +99,7 @@ const createSubscription = (customer, payment_method, items, tax_rates, options)
 };
 
 
-const createCharge = (amount, currency, source, description) => {
+const createCharge = (amount, currency, source, customer, name) => {
     return new Promise(async (resolve, reject) => {
         if (!amount || !currency || !source) {
             return reject({
@@ -113,11 +113,14 @@ const createCharge = (amount, currency, source, description) => {
         try {
             amount = parseFloat(amount).toFixed(2) * 100;
 
-            const result = await stripe.prices.create({
-                unit_amount: amount,
+            const result = await stripe.paymentIntents.create({
+                amount: amount,
                 currency: currency,
-                source: source,
-                description: description
+                payment_method: source,
+                capture_method: 'automatic',
+                confirm: true,
+                customer: customer,
+                description: `Announcement for ${name}`
             });
             resolve(result);
 
