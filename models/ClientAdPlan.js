@@ -88,6 +88,10 @@ const schema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'ClientPaymentMethod',
     },
+    IsSubscription: {
+        type: Boolean,
+        require: true
+    },
     BillingAddress: addressSchema,
     AuditInfo: auditSchema,
 });
