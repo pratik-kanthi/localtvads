@@ -21,28 +21,38 @@ const model = {
  */
 const cropImage = (query, file) => {
     return new Promise(async (resolve, reject) => {
-        jimp.read(file.buffer, (err, image) => {
-            if (err) {
-                return reject(err);
-            }
-            try {
-                image.crop(parseInt(query.cropx), parseInt(query.cropy), parseInt(query.cropw), parseInt(query.croph), (err, cImage) => {
-                    try {
-                        cImage.getBuffer(file.mimetype, async (err, buffer) => {
-                            if (err) {
-                                return reject(err);
-                            }
-                            file.buffer = buffer;
-                            resolve(file);
-                        });
-                    } catch (err) {
-                        return reject(err);
-                    }
-                });
-            } catch (err) {
-                return reject(err);
-            }
-        });
+        try {
+            jimp.read(file.buffer, (err, image) => {
+                if (err) {
+                    logger.logError('Failed to read image from buffer', err);
+                    return reject(err);
+                }
+                try {
+                    image.crop(parseInt(query.cropx), parseInt(query.cropy), parseInt(query.cropw), parseInt(query.croph), (err, cImage) => {
+                        try {
+                            cImage.getBuffer(file.mimetype, async (err, buffer) => {
+                                if (err) {
+                                    logger.logError('Failed to read image from buffer', err);
+                                    return reject(err);
+                                }
+                                file.buffer = buffer;
+                                resolve(file);
+                            });
+                        } catch (err) {
+                            logger.logError('Failed to read image from buffer', err);
+                            return reject(err);
+                        }
+                    });
+                } catch (err) {
+                    logger.logError('Failed to crop image', err);
+                    return reject(err);
+                }
+            });
+        } catch (err) {
+            logger.logError('Failed to crop image', err);
+            return reject(err);
+        }
+
     });
 };
 
@@ -59,7 +69,7 @@ const resizeImage = (source, width, height, quality) => {
         try {
             pic = await jimp.read(source);
         } catch (ex) {
-            logger.logError(ex);
+            logger.logError('Failed to read image by jimp'.ex);
             return reject({
                 code: 500,
                 error: ex,
@@ -69,7 +79,7 @@ const resizeImage = (source, width, height, quality) => {
             await pic.resize(width, height).quality(quality).write(source);
             resolve();
         } catch (ex) {
-            logger.logError(ex);
+            logger.logError('Failed to resize image', ex);
             return reject({
                 code: 500,
                 error: ex,
@@ -93,6 +103,7 @@ const removeBucketImage = (location) => {
                 },
             });
         } catch (err) {
+            logger.logError('Failed to remove bucket image', err);
             return reject({
                 code: 500,
                 error: err,
@@ -109,51 +120,57 @@ const removeBucketImage = (location) => {
  */
 const removeImage = (attribute, owner, ownerid) => {
     return new Promise((resolve, reject) => {
-        const Owner = model[owner];
-
-        if (!Owner) {
-            return reject({
-                code: 500,
-                error: {
-                    err: 'Invalid Owner Type',
-                },
-            });
-        }
-
-        Owner.findOne({
-            _id: ownerid
-        }, (err, data) => {
-            if (err) {
+        try {
+            const Owner = model[owner];
+            if (!Owner) {
                 return reject({
                     code: 500,
-                    error: err,
-                });
-            }
-            if (data) {
-                deleteBucketFile(data[attribute]);
-                data[attribute] = null;
-                data.save((err) => {
-                    if (err) {
-                        return reject({
-                            code: 500,
-                            error: err,
-                        });
-                    } else {
-                        return resolve({
-                            code: 200,
-                            data: data,
-                        });
-                    }
-                });
-            } else {
-                return reject({
-                    code: 404,
                     error: {
-                        err: 'Owner not found',
+                        err: 'Invalid Owner Type',
                     },
                 });
             }
-        });
+            Owner.findOne({
+                _id: ownerid
+            }, (err, data) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+                if (data) {
+                    deleteBucketFile(data[attribute]);
+                    data[attribute] = null;
+                    data.save((err) => {
+                        if (err) {
+                            return reject({
+                                code: 500,
+                                error: err,
+                            });
+                        } else {
+                            return resolve({
+                                code: 200,
+                                data: data,
+                            });
+                        }
+                    });
+                } else {
+                    return reject({
+                        code: 404,
+                        error: {
+                            err: 'Owner not found',
+                        },
+                    });
+                }
+            });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+
     });
 };
 
@@ -164,70 +181,78 @@ const removeImage = (attribute, owner, ownerid) => {
  */
 const uploadImage = (file, query) => {
     return new Promise((resolve, reject) => {
-        const time = Date.now();
-        const extension = file.originalname.substr(file.originalname.lastIndexOf('.'));
-        const Owner = model[query.owner];
+        try {
+            const time = Date.now();
+            const extension = file.originalname.substr(file.originalname.lastIndexOf('.'));
+            const Owner = model[query.owner];
 
-        if (!Owner) {
-            return reject({
-                code: 500,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST,
-                },
-            });
-        }
-        const dst = 'uploads/' + Owner.modelName + '/' + query.ownerid + '/Profile/' + time + extension;
-
-        let deleteFilelocation = null;
-
-        Owner.findOne({
-            _id: query.ownerid,
-        },
-        async (err, data) => {
-            if (err) {
+            if (!Owner) {
                 return reject({
                     code: 500,
-                    error: err,
-                });
-            } else if (!data) {
-                return reject({
-                    code: 404,
                     error: {
-                        message: Owner + utilities.ErrorMessages.NOT_FOUND,
+                        message: utilities.ErrorMessages.BAD_REQUEST,
                     },
                 });
-            } else {
-                if (data[query.attribute] && data[query.attribute].trim() !== '') {
-                    deleteFilelocation = data[query.attribute];
-                }
-                data[query.attribute] = dst;
+            }
+            const dst = 'uploads/' + Owner.modelName + '/' + query.ownerid + '/Profile/' + time + extension;
 
-                if (query.cropx) {
-                    try {
-                        file = await cropImage(query, file);
-                    } catch (ex) {
-                        return reject({
-                            code: 500,
-                            error: ex,
-                        });
-                    }
-                }
+            let deleteFilelocation = null;
 
-                try {
-                    await _uploadFileToBucket(file, dst, deleteFilelocation, query.owner, data);
-                    resolve({
-                        code: 200,
-                        data: data,
-                    });
-                } catch (err) {
+            Owner.findOne({
+                _id: query.ownerid,
+            },
+            async (err, data) => {
+                if (err) {
                     return reject({
                         code: 500,
                         error: err,
                     });
+                } else if (!data) {
+                    return reject({
+                        code: 404,
+                        error: {
+                            message: Owner + utilities.ErrorMessages.NOT_FOUND,
+                        },
+                    });
+                } else {
+                    if (data[query.attribute] && data[query.attribute].trim() !== '') {
+                        deleteFilelocation = data[query.attribute];
+                    }
+                    data[query.attribute] = dst;
+
+                    if (query.cropx) {
+                        try {
+                            file = await cropImage(query, file);
+                        } catch (ex) {
+                            return reject({
+                                code: 500,
+                                error: ex,
+                            });
+                        }
+                    }
+
+                    try {
+                        await _uploadFileToBucket(file, dst, deleteFilelocation, query.owner, data);
+                        resolve({
+                            code: 200,
+                            data: data,
+                        });
+                    } catch (err) {
+                        return reject({
+                            code: 500,
+                            error: err,
+                        });
+                    }
                 }
             }
+            );
+        } catch (err) {
+            logger.logError('Failed to upload image', err);
+            return reject({
+                code: 500,
+                error: err
+            });
         }
-        );
     });
 };
 
@@ -237,12 +262,14 @@ const _uploadFileToBucket = (file, dst, deleteFileLocation, data) => {
             await uploadFileBuffer(file, dst, deleteFileLocation);
             data.save((err) => {
                 if (err) {
+                    logger.logError('Failed to save to collection', err);
                     return reject(err);
                 } else {
                     resolve(data);
                 }
             });
         } catch (err) {
+            logger.logError(`Failed to upload image to ${dst}`, err);
             return reject(err);
         }
     });

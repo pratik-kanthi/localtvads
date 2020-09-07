@@ -4,16 +4,16 @@ const stripe = require('stripe')(config.stripe.secret);
 
 const createStripeCustomer = (name, email, stripecardtoken) => {
     return new Promise(async (resolve, reject) => {
-        if (!name || !email || !stripecardtoken) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-
         try {
+            if (!name || !email || !stripecardtoken) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+
             const result = await stripe.customers.create({
                 payment_method: stripecardtoken,
                 name: name,
@@ -35,17 +35,17 @@ const createStripeCustomer = (name, email, stripecardtoken) => {
 
 const createProduct = (name, isActive) => {
     return new Promise(async (resolve, reject) => {
-
-        if (!name) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-
         try {
+
+            if (!name) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+
             const result = await stripe.products.create({
                 name: name || 'LOCAL_TV_ADS_PLAN',
                 active: isActive,
@@ -69,16 +69,16 @@ const createProduct = (name, isActive) => {
 
 const createSubscription = (customer, payment_method, items, tax_rates, options) => {
     return new Promise(async (resolve, reject) => {
-        if (!customer || !payment_method || !items) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-
         try {
+            if (!customer || !payment_method || !items) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+
             const result = await stripe.subscriptions.create({
                 customer: customer,
                 default_payment_method: payment_method,
@@ -101,16 +101,16 @@ const createSubscription = (customer, payment_method, items, tax_rates, options)
 
 const createCharge = (amount, currency, source, customer, name) => {
     return new Promise(async (resolve, reject) => {
-        if (!amount || !currency || !source) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-
         try {
+            if (!amount || !currency || !source) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+
             amount = parseFloat(amount).toFixed(2) * 100;
 
             const result = await stripe.paymentIntents.create({
@@ -136,19 +136,16 @@ const createCharge = (amount, currency, source, customer, name) => {
 
 const createPrice = (amount, currency, product, options) => {
     return new Promise(async (resolve, reject) => {
-        if (!amount || !product || !currency) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-
         try {
-
+            if (!amount || !product || !currency) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
             amount = parseFloat(amount).toFixed(2) * 100;
-
             const result = await stripe.prices.create({
                 unit_amount: amount,
                 currency: currency,
@@ -170,16 +167,16 @@ const createPrice = (amount, currency, product, options) => {
 
 const attachPaymentMethod = (stripecustomerid, stripecardtoken) => {
     return new Promise(async (resolve, reject) => {
-        if (!stripecustomerid || !stripecardtoken) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-
         try {
+            if (!stripecustomerid || !stripecardtoken) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+
             const result = await stripe.paymentMethods.attach(
                 stripecardtoken, {
                     customer: stripecustomerid

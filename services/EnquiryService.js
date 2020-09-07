@@ -44,6 +44,7 @@ const fetchEnquiry = (enquiry_id) => {
                 data: result
             });
         } catch (err) {
+            logger.logError('Failed to fetch enquiry', err);
             return reject({
                 code: 500,
                 error: err
@@ -54,49 +55,64 @@ const fetchEnquiry = (enquiry_id) => {
 
 const deleteEnquiry = (eid) => {
     return new Promise(async (resolve, reject) => {
-        if (!eid) {
-            return reject({
-                code: 400,
-                error: {
-                    message: utilities.ErrorMessages.BAD_REQUEST
-                }
-            });
-        }
-        Enquiry.deleteOne({
-            _id: eid
-        }, (err, enquiry) => {
-            if (err) {
+        try {
+            if (!eid) {
                 return reject({
-                    code: 500,
-                    error: err
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
                 });
             }
+            Enquiry.deleteOne({
+                _id: eid
+            }, (err, enquiry) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
 
-            resolve({
-                code: 200,
-                data: enquiry
+                resolve({
+                    code: 200,
+                    data: enquiry
+                });
             });
-        });
+        } catch (err) {
+            logger.logError('Failed to delete enquiry', err);
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
     });
 };
 
 const fetchEnquiryByPage = (page, size, sortby) => {
     return new Promise(async (resolve, reject) => {
-        page = page - 1;
-
-        Enquiry.find({}).skip(page * size).limit(size).sort(sortby).exec((err, enquiry) => {
-            if (err) {
-                return reject({
-                    code: 500,
-                    error: err
-                });
-            } else {
-                resolve({
-                    code: 200,
-                    data: enquiry
-                });
-            }
-        });
+        try {
+            page = page - 1;
+            Enquiry.find({}).skip(page * size).limit(size).sort(sortby).exec((err, enquiry) => {
+                if (err) {
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                } else {
+                    resolve({
+                        code: 200,
+                        data: enquiry
+                    });
+                }
+            });
+        } catch (err) {
+            logger.logError('Failed to fetch enquiries', err);
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
     });
 };
 

@@ -15,53 +15,65 @@ const opts = {
 
 
 passport.use('website-bearer', new JwtStrategy(opts, (req, token, done) => {
-    const query = {
-        _id: token.UserId
-    };
-    const project = {
-        _id: 1,
-        Name: 1,
-        Email: 1
-    };
+    try {
+        const query = {
+            _id: token.UserId
+        };
+        const project = {
+            _id: 1,
+            Name: 1,
+            Email: 1
+        };
 
-    if (!req.params.clientid) {
-        return done(null, false, {
-            error: {
-                message: 'Client Id is missing'
-            }
-        });
-    }
-    if (token.iat * 1000 < Date.now()) {
-        return done(null, false, {
-            status: 401,
-            error: {
-                message: utilities.ErrorMessages.TOKEN_EXPIRED
-            }
-        });
-    }
-    User.findOne(query, project, (err, user) => {
-        try {
-            if (err) {
-                return done(err, false);
-            } else if (user) {
-                const claims = token.Claims.split('|')[0].split(':');
-                if (claims[0] !== 'Client' || claims[1] !== req.params.clientid) {
+        if (!req.params.clientid) {
+            return done(null, false, {
+                error: {
+                    message: 'Client Id is missing'
+                }
+            });
+        }
+        if (token.iat * 1000 < Date.now()) {
+            return done(null, false, {
+                status: 401,
+                error: {
+                    message: utilities.ErrorMessages.TOKEN_EXPIRED
+                }
+            });
+        }
+        User.findOne(query, project, (err, user) => {
+            try {
+                if (err) {
+                    return done(err, false);
+                } else if (user) {
+                    const claims = token.Claims.split('|')[0].split(':');
+                    if (claims[0] !== 'Client' || claims[1] !== req.params.clientid) {
+                        logger.logDebug('Invalid claims');
+                        return done(null, false, {
+                            error: {
+                                message: 'Invalid Claims'
+                            }
+                        });
+                    }
+                    done(null, user, null);
+                } else {
+                    logger.logDebug('Unknown user');
                     return done(null, false, {
                         error: {
-                            message: 'Invalid Claims'
+                            message: 'Unknown User'
                         }
                     });
                 }
-                done(null, user, null);
-            } else {
-                return done(null, false, {
-                    error: {
-                        message: 'Unknown User'
-                    }
-                });
+            } catch (err) {
+                return done(err, false);
             }
-        } catch (err) {
-            return done(err, false);
-        }
-    });
+        });
+    } catch (err) {
+        logger.logError('Auth Middleware Error for bearer:website-bearer', err);
+        return done(null, false, {
+            error: {
+                message: 'Server Error'
+            }
+        });
+    }
+
 }));

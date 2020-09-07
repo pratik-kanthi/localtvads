@@ -5,76 +5,92 @@ const {
 
 const getSubscribers = () => {
     return new Promise(async (resolve, reject) => {
-        Subscriber.find({})
-            .sort({
+        try {
+            const subscribers = await Subscriber.find({}).sort({
                 DateSubscribed: -1
-            })
-            .exec((err, subscribers) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-                resolve({
-                    code: 200,
-                    data: subscribers,
-                });
+            }).exec();
+            resolve({
+                code: 200,
+                data: subscribers,
             });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
     });
 };
 
 const unsubscribeUser = (email) => {
     return new Promise(async (resolve, reject) => {
-        Subscriber.findOne({
-            Email: email
-        }, (err, subscriber) => {
-            if (err) {
+        try {
+            if (!email) {
                 return reject({
                     code: 500,
-                    error: err,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
                 });
             }
 
-            subscriber.IsActive = false;
-            subscriber.save(async (err, sub) => {
-                if (err) {
+            const subscriber = await Subscriber.findOne({
+                Email: email
+            }).exec();
+
+            if (subscriber) {
+                subscriber.IsActive = false;
+                try {
+                    const result = await subscriber.save();
+                    removeSubscription(email);
+                    resolve({
+                        code: 200,
+                        data: result,
+                    });
+                } catch (err) {
+                    logger.logError(`Failed to update subscriber ${email}`, err);
                     return reject({
                         code: 500,
                         error: err,
                     });
                 }
-
-                await removeSubscription(email);
-                resolve({
-                    code: 200,
-                    data: sub,
+            } else {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: 'Subscriber not found'
+                    }
                 });
+            }
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
             });
-        });
+        }
+
     });
 };
 
 const fetchSubscribersByPage = (page, size, sortby) => {
     return new Promise(async (resolve, reject) => {
-        page = page - 1;
-        Subscriber.find({})
-            .skip(page * size)
-            .limit(size)
-            .sort(sortby)
-            .exec((err, subscribers) => {
-                if (err) {
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                } else {
-                    resolve({
-                        code: 200,
-                        data: subscribers,
-                    });
-                }
+        try {
+            page = parseInt(page) - 1;
+            const result = await Subscriber.find({})
+                .skip(page * size)
+                .limit(size)
+                .sort(sortby)
+                .exec();
+            resolve({
+                code: 200,
+                data: result
             });
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
     });
 };
 

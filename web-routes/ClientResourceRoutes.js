@@ -5,9 +5,9 @@ const {
     addImageResource,
     getAllResources,
     removeAddOnResource,
-    addDocumentResource
+    addDocumentResource,
+    getClientStorage
 } = require.main.require('./services/ResourceService');
-
 
 
 module.exports = (app) => {
@@ -103,5 +103,17 @@ module.exports = (app) => {
             next(ex);
         }
     });
+
+    app.get('/api/:clientid/storage', passport.authenticate('website-bearer', {
+        session: false
+    }), async (req, res, next) => {
+        try {
+            const result = await getClientStorage(req.params.clientid);
+            return res.status(result.code || 200).json(result.data);
+        } catch (ex) {
+            next(ex);
+        }
+    });
+
 
 };

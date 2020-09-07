@@ -52,6 +52,7 @@ const saveTestimonial = (testimonial, req) => {
             }
 
         } catch (err) {
+            logger.logError('Failed to save testimonial', err);
             return reject({
                 code: 500,
                 error: err
@@ -85,6 +86,7 @@ const deleteTestimonial = (tid) => {
                     data: 'Deleted',
                 });
             } catch (err) {
+                logger.logError('Failed to delete testimonial from database', err);
                 return reject({
                     code: 500,
                     error: err,
@@ -92,6 +94,7 @@ const deleteTestimonial = (tid) => {
             }
 
         } catch (err) {
+            logger.logError('Failed to delete testimonial', err);
             return reject({
                 code: 500,
                 error: err,

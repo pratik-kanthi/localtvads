@@ -110,9 +110,7 @@ const getTransactions = (clientId, planId) => {
                     ClientAdPlan: planId,
                 }
             };
-
             const transactions = await Transaction.find(query).sort('-DateTime').lean().exec();
-
             resolve({
                 code: 200,
                 data: transactions,

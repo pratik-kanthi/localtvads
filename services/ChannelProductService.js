@@ -38,7 +38,6 @@ const createChannelProduct = (product) => {
 
 const deleteChannelProduct = (product_id) => {
     return new Promise(async (resolve, reject) => {
-
         try {
             if (!product_id) {
                 return reject({

@@ -148,16 +148,21 @@ module.exports = () => {
 
 
     const authenticateSocket = (socket, next) => {
-        if (socket.handshake.query && socket.handshake.query.token) {
-            jwt.verify(socket.handshake.query.token, config.token.secret, (err, decoded) => {
-                if (err) {
-                    return next(new Error('Authentication error'));
-                }
-                socket.decoded = decoded;
-                next();
-            });
-        } else {
-            logger.logDebug('Authentication Error while connecting to sockets', socket.handshake.query.token);
+        try {
+            if (socket.handshake.query && socket.handshake.query.token) {
+                jwt.verify(socket.handshake.query.token, config.token.secret, (err, decoded) => {
+                    if (err) {
+                        return next(new Error('Authentication error'));
+                    }
+                    socket.decoded = decoded;
+                    next();
+                });
+            } else {
+                logger.logDebug('Authentication Error while connecting to sockets', socket.handshake.query.token);
+                next(new Error('Authentication error'));
+            }
+        } catch (err) {
+            logger.logError('Failed to authenticate socket', err);
             next(new Error('Authentication error'));
         }
     };

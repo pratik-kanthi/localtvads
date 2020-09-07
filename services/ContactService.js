@@ -59,7 +59,6 @@ const subscribeUser = (email, ip) => {
 
 const submitEnquiry = (name, email, subject, message) => {
     return new Promise(async (resolve, reject) => {
-
         try {
             if (!name || !email || !subject || !message) {
                 return reject({
@@ -77,7 +76,11 @@ const submitEnquiry = (name, email, subject, message) => {
                 Message: message,
             });
 
-            await enquiry.save();
+            try {
+                await enquiry.save();
+            } catch (err) {
+                logger.logError('Failed to save enquiry to database', err);
+            }
 
             try {
                 Email.helper.enquiryAdminEmail(enquiry);
@@ -86,13 +89,14 @@ const submitEnquiry = (name, email, subject, message) => {
                     data: enquiry,
                 });
             } catch (err) {
-                logger.logWarning('Failed to send enquiry notification to admin', err);
+                logger.logError('Failed to send enquiry notification to admin', err);
                 resolve({
                     code: 200,
                     data: enquiry,
                 });
             }
         } catch (err) {
+            logger.logError('Failed to send submit enquiry', err);
             return reject({
                 code: 500,
                 error: err,

@@ -4,9 +4,10 @@ const conf = {
     projectId: config.google_bucket.projectId,
     keyFilename: config.google_bucket.permissions_file_location
 };
-const {Storage} = require('@google-cloud/storage');
+const {
+    Storage
+} = require('@google-cloud/storage');
 const storage = new Storage(conf);
-
 const bucket = storage.bucket(config.google_bucket.bucket);
 
 const getAllFiles = () => {
@@ -23,7 +24,7 @@ const getAllFiles = () => {
 };
 
 const getAllFilesByPrefix = (prefix, delimiter) => {
-    return new Promise( (resolve, reject) => {
+    return new Promise((resolve, reject) => {
         const options = {
             prefix: prefix,
         };
