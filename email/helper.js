@@ -272,6 +272,35 @@ const enquiryAdminEmail = (enquiry) => {
 
 };
 
+
+
+const rejectEmail = (to, text) => {
+    try {
+        const date = new Date();
+        const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/message-rejection/message-rejection.ejs'), 'utf-8'), {
+            message: text,
+            year: date.getFullYear(),
+        });
+
+        const data = {
+            from: config.mailgun.fromemail,
+            to: to,
+            subject: 'Your ad was rejected',
+            html: message,
+        };
+
+        mailgun.api.server.send(data, (err) => {
+            if (err) {
+                throw err;
+            }
+        });
+    } catch (err) {
+        logger.logError('Failed to send rejected email to client', err);
+        throw err;
+    }
+
+};
+
 module.exports = {
     socialRegisterEmail,
     standardRegisterEmail,
@@ -282,4 +311,5 @@ module.exports = {
     paymentInvoiceEmail,
     addOnpaymentInvoiceEmail,
     downloadReceipt,
+    rejectEmail
 };

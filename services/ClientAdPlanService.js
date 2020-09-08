@@ -1,6 +1,7 @@
 const config = require.main.require('./config');
 const stripe = require('stripe')(config.stripe.secret);
 const mongoose = require('mongoose');
+const email = require.main.require('./email');
 
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const Client = require.main.require('./models/Client').model;
@@ -20,7 +21,8 @@ const {
     createStripeCustomer,
     attachPaymentMethod,
     createProduct,
-    createSubscription
+    createSubscription,
+    updateSubscription
 } = require.main.require('./services/StripeService');
 
 const {
@@ -102,6 +104,12 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
 
                 stripe_response = await createSubscription(customer, paymentSource.StripeCardToken, subscription_items, stripeTaxIds, subscription_options);
                 clientAdPlan.StripeReferenceId = stripe_response.id;
+
+                await updateSubscription(stripe_response.id, { //pause initially
+                    pause_collection: {
+                        behavior: 'void',
+                    },
+                });
 
             } else {
                 //generate one time charge
@@ -560,7 +568,12 @@ const approveAd = (planId, startDate) => {
             if (plan && plan.AdVideo) {
                 plan.Status = 'LIVE';
                 plan.StartDate = startDate;
+
                 try {
+                    await updateSubscription(plan.StripeReferenceId, { //resume
+                        pause_collection: '',
+                        billing_cycle_anchor: 'now'
+                    });
                     const result = await plan.save();
                     resolve({
                         code: 200,
@@ -594,18 +607,26 @@ const approveAd = (planId, startDate) => {
     });
 };
 
-const rejectAd = (planId) => {
+const rejectAd = (planId, rejectMessage) => {
     return new Promise(async (resolve, reject) => {
         try {
-
             const plan = await ClientAdPlan.findOne({
                 _id: planId
-            }).exec();
+            }).populate('Client').exec();
 
             if (plan && plan.AdVideo) {
                 plan.Status = 'REJECTED';
                 try {
                     const result = await plan.save();
+                    try {
+                        email.helper.rejectEmail(plan.Client.Email, rejectMessage);
+                    } catch (err) {
+                        logger.logError(`Failed to send rejection email for plan ${planId}`, err);
+                        return reject({
+                            code: 500,
+                            error: err
+                        });
+                    }
                     resolve({
                         code: 200,
                         data: result
@@ -617,7 +638,6 @@ const rejectAd = (planId) => {
                         error: err
                     });
                 }
-
             } else {
                 logger.logError(`Final Ad Video not present to reject ad ${planId}`);
                 return reject({
@@ -627,7 +647,6 @@ const rejectAd = (planId) => {
                     }
                 });
             }
-
         } catch (err) {
             logger.logError(`Failed to approve ad ${planId}`, err);
             return reject({

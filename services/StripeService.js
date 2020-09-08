@@ -99,6 +99,30 @@ const createSubscription = (customer, payment_method, items, tax_rates, options)
 };
 
 
+const updateSubscription = (subscription_id, updateOptions) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!subscription_id) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+            const result = await stripe.subscriptions.update(subscription_id, updateOptions);
+            resolve(result);
+        } catch (err) {
+            logger.logError('Failed to update stripe subscription', err);
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
+
 const createCharge = (amount, currency, source, customer, name) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -203,5 +227,6 @@ module.exports = {
     createProduct,
     createPrice,
     createSubscription,
+    updateSubscription,
     createCharge
 };

@@ -33,7 +33,7 @@ module.exports = (app) => {
         session: false,
     }), async (req, res, next) => {
         try {
-            const result = await rejectAd(req.query.planid);
+            const result = await rejectAd(req.query.planid, req.body.message);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             next(ex);
