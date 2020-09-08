@@ -594,6 +594,50 @@ const approveAd = (planId, startDate) => {
     });
 };
 
+const rejectAd = (planId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+
+            const plan = await ClientAdPlan.findOne({
+                _id: planId
+            }).exec();
+
+            if (plan && plan.AdVideo) {
+                plan.Status = 'REJECTED';
+                try {
+                    const result = await plan.save();
+                    resolve({
+                        code: 200,
+                        data: result
+                    });
+                } catch (err) {
+                    logger.logError(`Failed to save status for plan ${planId}`, err);
+                    return reject({
+                        code: 500,
+                        error: err
+                    });
+                }
+
+            } else {
+                logger.logError(`Final Ad Video not present to reject ad ${planId}`);
+                return reject({
+                    code: 500,
+                    error: {
+                        message: 'Ad Video is not attached. Please verify if the final video is attached under "Assets"'
+                    }
+                });
+            }
+
+        } catch (err) {
+            logger.logError(`Failed to approve ad ${planId}`, err);
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
 module.exports = {
     getClientAdPlans,
     getClientAdPlan,
@@ -603,5 +647,6 @@ module.exports = {
     getAllClientAdPlans,
     updatePlanPayment,
     saveClientAdPlan,
-    approveAd
+    approveAd,
+    rejectAd
 };
