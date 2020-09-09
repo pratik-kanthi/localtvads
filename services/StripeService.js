@@ -33,6 +33,30 @@ const createStripeCustomer = (name, email, stripecardtoken) => {
 };
 
 
+const updateCustomer = (customertoken, updateOptions) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!customertoken) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+            const result = await stripe.customers.update(customertoken, updateOptions);
+            resolve(result);
+        } catch (err) {
+            logger.logError('Failed to update stripe customer', err);
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
+
 const createProduct = (name, isActive) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -228,5 +252,6 @@ module.exports = {
     createPrice,
     createSubscription,
     updateSubscription,
-    createCharge
+    createCharge,
+    updateCustomer
 };

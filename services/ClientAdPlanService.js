@@ -10,7 +10,6 @@ const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod')
 const ChannelProduct = require.main.require('./models/ChannelProduct').model;
 const ServiceAddOn = require.main.require('./models/ServiceAddOn').model;
 
-
 const {
     saveCard
 } = require.main.require('./services/ClientService');
@@ -239,8 +238,8 @@ const getClientAdPlans = (clientid) => {
                 Client: clientid
             };
             const result = await ClientAdPlan.find(query)
+                .sort('-BookedDate')
                 .populate('Channel')
-                .sort('BookedDate')
                 .lean()
                 .exec();
 
@@ -555,7 +554,6 @@ const _generateClientAdPlan = (cPlan) => {
         }
     });
 };
-
 
 const approveAd = (planId, startDate) => {
     return new Promise(async (resolve, reject) => {
