@@ -22,7 +22,7 @@ const {
     attachPaymentMethod,
     createProduct,
     createSubscription,
-    updateSubscription
+    updateSubscription,
 } = require.main.require('./services/StripeService');
 
 const {
@@ -66,6 +66,24 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
                 isNewCustomer = true;
             } else {
                 customer = client.StripeCustomerId;
+            }
+
+            if (isNewCustomer) {
+                try {
+                    client.StripeCustomerId = customer;
+                    await client.save();
+                } catch (err) {
+                    logger.logError(`Failed to save client ad plan for user ${plan.Client} on channel ${plan.Channel}`, err);
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+            }
+
+
+            if (newCard) {
+                await attachPaymentMethod(customer, paymentSource.StripeCardToken);
             }
 
             const clientAdPlan = await _generateClientAdPlan(plan);
@@ -132,23 +150,7 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
             }
 
 
-            if (isNewCustomer) {
-                try {
-                    client.StripeCustomerId = customer;
-                    await client.save();
-                } catch (err) {
-                    logger.logError(`Failed to save client ad plan for user ${plan.Client} on channel ${plan.Channel}`, err);
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-            }
 
-
-            if (newCard) {
-                await attachPaymentMethod(customer, paymentSource.StripeCardToken);
-            }
 
             try {
                 const transaction = new Transaction({
