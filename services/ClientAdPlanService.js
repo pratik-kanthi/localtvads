@@ -2,6 +2,7 @@ const config = require.main.require('./config');
 const stripe = require('stripe')(config.stripe.secret);
 const mongoose = require('mongoose');
 const email = require.main.require('./email');
+const moment = require('moment');
 
 const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 const Client = require.main.require('./models/Client').model;
@@ -161,8 +162,9 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
                     StripeResponse: stripe_response,
                     ReferenceId: stripe_response.id,
                 });
-
                 await transaction.save();
+
+                _sendPaymentEmail(transaction._id);
                 resolve({
                     code: 200,
                     data: transaction
@@ -555,6 +557,47 @@ const _generateClientAdPlan = (cPlan) => {
     });
 };
 
+const _sendPaymentEmail = (transaction_id) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const transaction = await Transaction.findOne({
+                _id: transaction_id
+            }).deepPopulate('Client ClientAdPlan.Channel ClientAdPlan.AddOns').exec();
+            const receipt = {
+                ReceiptNumber: transaction.ReceiptNo,
+                PaymentReference: transaction.ReferenceId,
+                Date: moment(transaction.DateTime).format('DD/MM/YYYY'),
+                PlanName: transaction.ClientAdPlan.Channel.Name + '_' + transaction.ClientAdPlan.ChannelProduct.ProductLength.Name,
+                PlanAmount: transaction.ClientAdPlan.WeeklyAmount.toFixed(2),
+                SubTotal: transaction.Amount.toFixed(2),
+                TaxAmount: transaction.TaxAmount.toFixed(2),
+                TotalAmount: transaction.TotalAmount.toFixed(2),
+                TaxBreakdown: transaction.TaxBreakdown,
+            };
+
+            if (transaction.ClientAdPlan.Addons && transaction.ClientAdPlan.Addons.length > 0) {
+                receipt.AddOn = transaction.ClientAdPlan.Addons[0].Name;
+                receipt.AddOnAmount = transaction.ClientAdPlan.AddonsAmount;
+            }
+
+            receipt.User = {};
+            receipt.User.Name = transaction.Client.Name;
+            receipt.User.Email = transaction.Client.Email;
+            receipt.User.Phone = transaction.Client.Phone;
+
+            email.helper.paymentInvoiceEmail(receipt.User.Email, receipt);
+            resolve();
+
+        } catch (err) {
+            logger.logError('Failed to send payment receipt email', err);
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
 const approveAd = (planId, startDate) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -568,15 +611,24 @@ const approveAd = (planId, startDate) => {
                 plan.StartDate = startDate;
 
                 try {
-                    await updateSubscription(plan.StripeReferenceId, { //resume
-                        pause_collection: '',
-                        billing_cycle_anchor: 'now'
-                    });
-                    const result = await plan.save();
-                    resolve({
-                        code: 200,
-                        data: result
-                    });
+
+                    if (plan.ChannelProduct.ProductLength.Duration == 0) {
+                        const result = await plan.save();
+                        resolve({
+                            code: 200,
+                            data: result
+                        });
+                    } else {
+                        await updateSubscription(plan.StripeReferenceId, { //resume
+                            pause_collection: '',
+                            billing_cycle_anchor: 'now'
+                        });
+                        const result = await plan.save();
+                        resolve({
+                            code: 200,
+                            data: result
+                        });
+                    }
                 } catch (err) {
                     logger.logError(`Failed to save status for plan ${planId}`, err);
                     return reject({

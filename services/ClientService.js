@@ -139,7 +139,6 @@ const generateTransactionReceipt = (transaction_id) => {
             const query = {
                 _id: transaction_id,
             };
-
             const transaction = await Transaction.findOne(query).deepPopulate('Client ClientAdPlan.Channel ClientAdPlan.AddOns').exec();
             const receipt = {
                 ReceiptNumber: transaction.ReceiptNo,

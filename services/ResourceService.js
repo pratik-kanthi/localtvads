@@ -152,6 +152,7 @@ const addImageResource = (image, file) => {
                     const time = Date.now();
                     const extension = file.originalname.substr(file.originalname.lastIndexOf('.'));
                     const dst = 'uploads/Client/' + client._id.toString() + '/Resources/Images/' + time + extension;
+
                     try {
                         await uploadFileBuffer(file, dst);
                     } catch (ex) {

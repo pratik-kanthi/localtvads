@@ -5,6 +5,9 @@ const {
     rejectAd
 } = require.main.require('./services/ClientAdPlanService');
 
+const {
+    generateTransactionReceipt
+} = require.main.require('./services/ClientService');
 module.exports = (app) => {
 
     app.get('/api/getallclientadplans', passport.authenticate('jwt', {
@@ -39,5 +42,17 @@ module.exports = (app) => {
             next(ex);
         }
     });
+
+    app.post('/api/receipt/:transactionid', passport.authenticate('jwt', {
+        session: false,
+    }), async (req, res, next) => {
+        try {
+            const result = await generateTransactionReceipt(req.params.transactionid);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            next(ex);
+        }
+    });
+
 
 };

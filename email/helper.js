@@ -171,15 +171,15 @@ const paymentInvoiceEmail = (to, emailinfo) => {
 
     try {
         const date = new Date();
-        const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/paymentinvoice-email.ejs'), 'utf-8'), {
-            emailinfo: emailinfo,
+        const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/transaction-receipt/transaction-receipt.ejs'), 'utf-8'), {
+            receipt: emailinfo,
             year: date.getFullYear(),
         });
 
         const data = {
             from: config.mailgun.fromemail,
             to: to,
-            subject: 'Payment Invoice For Your Ad Booking',
+            subject: `${emailinfo.ReceiptNumber} Payment Receipt For Your Booking`,
             html: message,
         };
 
@@ -196,33 +196,7 @@ const paymentInvoiceEmail = (to, emailinfo) => {
 
 };
 
-const addOnpaymentInvoiceEmail = (to, emailinfo) => {
 
-    try {
-        const date = new Date();
-        const message = ejs.render(fs.readFileSync(path.join(__dirname, '..', '/email/templates/addon-paymentinvoice-email.ejs'), 'utf-8'), {
-            emailinfo: emailinfo,
-            year: date.getFullYear(),
-        });
-
-        const data = {
-            from: config.mailgun.fromemail,
-            to: to,
-            subject: 'Payment Invoice For Your Add On Purchase',
-            html: message,
-        };
-
-        mailgun.api.server.send(data, (err) => {
-            if (err) {
-                throw err;
-            }
-        });
-    } catch (err) {
-        logger.logError(`Failed to send payment invoice  email to ${to}`, err);
-        throw err;
-    }
-
-};
 
 const downloadReceipt = (receipt) => {
 
@@ -309,7 +283,6 @@ module.exports = {
     emailChangeVerification,
     enquiryAdminEmail,
     paymentInvoiceEmail,
-    addOnpaymentInvoiceEmail,
     downloadReceipt,
     rejectEmail
 };
