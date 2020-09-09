@@ -1,5 +1,6 @@
 const {
-    subscriptionPaymentSucess
+    subscriptionPaymentSucess,
+    subscriptionPaymentFailure
 } = require.main.require('./services/WebHookService');
 
 module.exports = (app) => {
@@ -12,27 +13,29 @@ module.exports = (app) => {
             response.status(400).send(`Webhook Error: ${err.message}`);
         }
 
-        switch (event.type) {
-        case 'invoice.payment_succeeded':
+
+        if (event.type == 'invoice.payment_succeeded') {
             invoiceObj = event.data.object;
             try {
                 await subscriptionPaymentSucess(invoiceObj);
+                logger.logInfo('Webhook called for payment success', invoiceObj);
                 return response.status(200).end();
             } catch (err) {
+                logger.logError('Webhook failed', err);
                 return response.status(400).end();
             }
-        case 'invoice.payment_failed':
-            invoiceObj = event.data.object;
-            //handle payment failures
-            break;
-        default:
-            // Unexpected event type
-            return response.status(400).end();
         }
 
-        // Return a response to acknowledge receipt of the event
-        response.json({
-            received: true
-        });
+        if (event.type == 'invoice.payment_failure') {
+            invoiceObj = event.data.object;
+            try {
+                await subscriptionPaymentFailure(invoiceObj);
+                logger.logInfo('Webhook called for payment failure', invoiceObj);
+                return response.status(200).end();
+            } catch (err) {
+                logger.logError('Webhook failed', err);
+                return response.status(400).end();
+            }
+        }
     });
 };
