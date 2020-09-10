@@ -7,7 +7,6 @@ const path = require('path');
 const cors = require('cors');
 const methodOverride = require('method-override');
 const utilities = require('./utilities');
-const logger = require('./logger');
 
 require('dotenv').config();
 
@@ -48,7 +47,7 @@ mongoose.connect(
             logger.logError('Error in connection MongoDb', err);
         } else {
             app.listen(port, () => {
-                console.log('Application started at PORT ' + port);
+                logger.logInfo('Application started at PORT ' + port);
             });
             const models = require('./models')(mongoose);
             const io = require('./sockets')();
