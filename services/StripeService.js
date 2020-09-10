@@ -123,6 +123,29 @@ const createSubscription = (customer, payment_method, items, tax_rates, options)
 };
 
 
+const retrieveSubscription = (subscription_id) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!subscription_id) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+            const result = await stripe.subscriptions.retrieve(subscription_id);
+            resolve(result);
+        } catch (err) {
+            logger.logError('Failed to update stripe subscription', err);
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
 const updateSubscription = (subscription_id, updateOptions) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -245,12 +268,36 @@ const attachPaymentMethod = (stripecustomerid, stripecardtoken) => {
 };
 
 
+const detachPaymentMethod = (stripecardtoken) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!stripecardtoken) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+            const result = await stripe.paymentMethods.detach(stripecardtoken);
+            logger.logInfo(`Detached payment method ${stripecardtoken}`);
+            resolve(result);
+        } catch (err) {
+            logger.logError('Failed to detach payment method', err);
+            resolve();
+        }
+    });
+};
+
+
 module.exports = {
     createStripeCustomer,
     attachPaymentMethod,
+    detachPaymentMethod,
     createProduct,
     createPrice,
     createSubscription,
+    retrieveSubscription,
     updateSubscription,
     createCharge,
     updateCustomer

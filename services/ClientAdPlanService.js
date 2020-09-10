@@ -23,6 +23,7 @@ const {
     createProduct,
     createSubscription,
     updateSubscription,
+    retrieveSubscription,
 } = require.main.require('./services/StripeService');
 
 const {
@@ -279,6 +280,14 @@ const getClientAdPlan = (clientId, planId) => {
                 .populate('Channel AdVideo AddOnAssets PaymentMethod')
                 .lean()
                 .exec();
+
+            try {
+                const stripeObject = await retrieveSubscription(result.StripeReferenceId);
+                result.PreviousBillingDate = new Date(stripeObject.current_period_start * 1000);
+                result.NextBillingDate = new Date(stripeObject.current_period_end * 1000);
+            } catch (err) {
+                logger.logError(`Failed to retrieve stripe subscription details ${planId}`, err);
+            }
 
             resolve({
                 code: 200,

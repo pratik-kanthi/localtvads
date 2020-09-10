@@ -1,6 +1,7 @@
 const Client = require.main.require('./models/Client').model;
 const ClientPaymentMethod = require.main.require('./models/ClientPaymentMethod').model;
 const Transaction = require.main.require('./models/Transaction').model;
+const ClientAdPlan = require.main.require('./models/ClientAdPlan').model;
 
 const moment = require('moment');
 const email = require('../email');
@@ -8,10 +9,14 @@ const pdf = require('html-pdf');
 const path = require('path');
 const config = require.main.require('./config');
 const fs = require('fs');
+
 const {
     uploadFile
 } = require.main.require('./services/FileService');
 
+const {
+    detachPaymentMethod
+} = require.main.require('./services/StripeService');
 
 const saveCard = (clientId, newCard) => {
     return new Promise(async (resolve, reject) => {
@@ -47,6 +52,53 @@ const saveCard = (clientId, newCard) => {
             return reject({
                 code: 500,
                 error: err,
+            });
+        }
+    });
+};
+
+
+const deleteCard = (client, cardId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const activePlans = await ClientAdPlan.findOne({
+                PaymentMethod: cardId,
+                Client: client
+            }).exec();
+
+            if (activePlans) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: 'Card is being used by atleast one of your plans, update their payment methods to delete this card'
+                    }
+                });
+            }
+
+            const paymentMethod = await ClientPaymentMethod.findOne({
+                _id: cardId
+            });
+            await detachPaymentMethod(paymentMethod.StripeCardToken);
+            try {
+                await ClientPaymentMethod.deleteOne({
+                    _id: cardId
+                });
+                resolve({
+                    code: 200
+                });
+
+            } catch (err) {
+                logger.logError(`Failed to delete card ${cardId}`, err);
+                return reject({
+                    code: 500,
+                    error: err
+                });
+            }
+
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
             });
         }
     });
@@ -250,6 +302,7 @@ const fetchClientsByPage = (page, size, sortby) => {
 
 module.exports = {
     saveCard,
+    deleteCard,
     getSavedCards,
     getTransactions,
     generateTransactionReceipt,
