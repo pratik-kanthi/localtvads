@@ -28,7 +28,7 @@ module.exports = () => {
     });
 
     app.listen(socketPort, () => {
-        logger.logDebug('Socket started on port ' + socketPort);
+        logger.logInfo('Socket started on port ' + socketPort);
     });
 
     io.use((socket, next) => {

@@ -30,7 +30,7 @@ module.exports = (app) => {
 
         logInfo: (text, data) => {
             // _sentry.logInfo(text);
-            _logfile.logDebug(text, data);
+            _logfile.logInfo(text, data);
             //console.warn('Info  : ' + new Date().toISOString() + ' --- ' + text + '||' + data);
         }
     };
