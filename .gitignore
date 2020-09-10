@@ -35,6 +35,7 @@ styles_*
 
 # Ignore .env configuration files
 .env
+.env.*
 
 .idea/
 .vscode
