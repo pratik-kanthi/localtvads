@@ -23,7 +23,7 @@ const {
     createProduct,
     createSubscription,
     updateSubscription,
-    retrieveSubscription,
+    retrieveSubscription
 } = require.main.require('./services/StripeService');
 
 const {
@@ -43,144 +43,129 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
                 });
             }
 
-            let isNewCustomer, customer, stripe_response, paymentSource = null;
-
-            const client = await Client.findOne({
-                _id: plan.Client
-            }).exec();
-
-
-            if (!client) {
-                logger.logError(`Failed to save client ad plan. Client ${plan.Client} not found`);
-                return reject({
-                    code: 500,
-                    error: {
-                        message: utilities.ErrorMessages.CLIENT_NOT_FOUND
-                    }
-                });
-            }
-
-            paymentSource = await _getPaymentSource(plan.Client, newCard, savedCard);
-
-            if (!client.StripeCustomerId) {
-                customer = (await createStripeCustomer(client.Name, client.Email, paymentSource.StripeCardToken)).id;
-                isNewCustomer = true;
-            } else {
-                customer = client.StripeCustomerId;
-            }
-
-            if (isNewCustomer) {
-                try {
-                    client.StripeCustomerId = customer;
-                    await client.save();
-                } catch (err) {
-                    logger.logError(`Failed to save client ad plan for user ${plan.Client} on channel ${plan.Channel}`, err);
-                    return reject({
-                        code: 500,
-                        error: err,
-                    });
-                }
-            }
-
+            let stripe_response;
+            const clientAdPlan = await _generateClientAdPlan(plan);
+            const client = await _getClient(plan.Client);
+            const paymentSource = await _getPaymentSource(plan.Client, newCard, savedCard);
+            const customer = await _getCustomer(client, paymentSource);
 
             if (newCard) {
                 await attachPaymentMethod(customer, paymentSource.StripeCardToken);
             }
 
-            const clientAdPlan = await _generateClientAdPlan(plan);
 
-            if (clientAdPlan.IsSubscription) {
-                //generate subscriptions
+            if (!clientAdPlan.IsSubscription) { //if plan is a one-off charge
+                stripe_response = await createCharge(clientAdPlan.totalAmount, 'gbp', paymentSource.StripeCardToken, customer, clientAdPlan.Name);
+                if (stripe_response.status == 'succeeded') { //save plan and transaction
+
+                    clientAdPlan.StripeReferenceId = stripe_response.id;
+                    clientAdPlan.Status = 'PAID';
+                    clientAdPlan.PaymentMethod = paymentSource._id;
+
+                    await _savePlan(clientAdPlan);
+                    const responseObj = await _saveTransaction(clientAdPlan, stripe_response, 'SUCCEEDED');
+
+                    resolve({
+                        code: 200,
+                        data: {
+                            payment_status: stripe_response.status,
+                            ...responseObj
+                        }
+                    });
+
+                } else if (stripe_response.status == 'requires_action') {
+                    clientAdPlan.StripeReferenceId = stripe_response.id;
+                    clientAdPlan.Status = 'PAYMENT_PROCESSING';
+                    clientAdPlan.PaymentMethod = paymentSource._id;
+
+                    await _savePlan(clientAdPlan);
+                    const responseObj = stripe_response;
+
+                    resolve({
+                        code: 200,
+                        data: {
+                            payment_status: stripe_response.status,
+                            client_secret: stripe_response.client_secret,
+                            clientadplan: clientAdPlan._id,
+                            ...responseObj
+                        }
+                    });
+
+                } else if (stripe_response.status == 'requires_payment_method') {
+                    return reject({
+                        code: 500,
+                        error: stripe_response
+                    });
+                }
+
+            } else {
                 const product = await createProduct(plan.Name, true);
                 const subscriptionPrice = await createPrice(clientAdPlan.WeeklyAmount, 'gbp', product.id, {
                     recurring: {
                         interval: 'week',
                     }
                 });
-
-
                 let addonsPrice;
                 if (plan.Addons.length > 0) {
                     addonsPrice = await createPrice(clientAdPlan.AddonsAmount, 'gbp', product.id);
                 }
-
                 const taxes = (await getAllTaxes()).data;
                 const stripeTaxIds = taxes.map(tax => {
                     return tax.StripeTaxId;
                 });
-
                 const subscription_items = [{
                     price: subscriptionPrice.id,
                 }];
-
-
                 const subscription_options = {};
                 if (addonsPrice) {
                     subscription_options.add_invoice_items = [{
                         price: addonsPrice.id
                     }];
                 }
-
                 stripe_response = await createSubscription(customer, paymentSource.StripeCardToken, subscription_items, stripeTaxIds, subscription_options);
-                clientAdPlan.StripeReferenceId = stripe_response.id;
+                const paymentStatus = stripe_response.latest_invoice.payment_intent.status;
+                const clientSecret = stripe_response.latest_invoice.payment_intent.client_secret;
 
-                await updateSubscription(stripe_response.id, { //pause initially
-                    pause_collection: {
-                        behavior: 'void',
-                    },
-                });
+                if (paymentStatus == 'succeeded') {
+                    clientAdPlan.StripeReferenceId = stripe_response.id;
+                    clientAdPlan.Status = 'PAID';
+                    clientAdPlan.PaymentMethod = paymentSource._id;
 
-            } else {
-                //generate one time charge
-                stripe_response = await createCharge(clientAdPlan.totalAmount, 'gbp', paymentSource.StripeCardToken, customer, clientAdPlan.Name);
-                clientAdPlan.StripeReferenceId = stripe_response.id;
+                    _savePlan(clientAdPlan);
+                    const responseObj = await _saveTransaction(clientAdPlan, stripe_response, 'SUCCEEDED');
+
+                    resolve({
+                        code: 200,
+                        data: {
+                            payment_status: paymentStatus,
+                            ...responseObj
+                        }
+                    });
+                } else if (paymentStatus == 'requires_action') {
+                    clientAdPlan.StripeReferenceId = stripe_response.id;
+                    clientAdPlan.Status = 'PAYMENT_PROCESSING';
+                    clientAdPlan.PaymentMethod = paymentSource._id;
+
+                    await _savePlan(clientAdPlan);
+                    const responseObj = stripe_response;
+
+                    resolve({
+                        code: 200,
+                        data: {
+                            payment_status: paymentStatus,
+                            client_secret: clientSecret,
+                            clientadplan: clientAdPlan._id,
+                            ...responseObj
+                        }
+                    });
+
+                } else if (paymentStatus == 'requires_payment_method') {
+                    return reject({
+                        code: 500,
+                        error: stripe_response
+                    });
+                }
             }
-
-
-            clientAdPlan.Status = 'PAID';
-            clientAdPlan.PaymentMethod = paymentSource._id;
-
-            try {
-                await clientAdPlan.save();
-            } catch (err) {
-                logger.logError(`Failed to save client ad plan for user ${plan.Client} on channel ${plan.Channel}`, err);
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            }
-
-
-
-
-            try {
-                const transaction = new Transaction({
-                    ClientAdPlan: clientAdPlan._id,
-                    Client: clientAdPlan.Client,
-                    Amount: (clientAdPlan.totalAmount - clientAdPlan.taxAmount).toFixed(2),
-                    TaxAmount: clientAdPlan.taxAmount.toFixed(2),
-                    TaxBreakdown: clientAdPlan.Taxes,
-                    TotalAmount: clientAdPlan.totalAmount.toFixed(2),
-                    Status: 'SUCCEEDED',
-                    StripeResponse: stripe_response,
-                    ReferenceId: stripe_response.id,
-                });
-                await transaction.save();
-
-                _sendPaymentEmail(transaction._id);
-                resolve({
-                    code: 200,
-                    data: transaction
-                });
-
-            } catch (err) {
-                logger.logError(`Failed to save client ad plan for user ${plan.Client} on channel ${plan.Channel}`, err);
-                return reject({
-                    code: 500,
-                    error: err,
-                });
-            }
-
 
         } catch (err) {
             logger.logError(`Failed to create client plan for user ${plan.Client} on channel ${plan.Channel}`, err);
@@ -191,6 +176,7 @@ const saveClientAdPlan = (plan, newCard, savedCard) => {
         }
     });
 };
+
 
 const getAllClientAdPlans = (page, size, sortby, status, channel, client) => {
     return new Promise(async (resolve, reject) => {
@@ -421,6 +407,76 @@ const updateClientAdPlan = (planId, plan) => {
     });
 };
 
+const authenticateCardPayment = (paymentIntent, clientadplan, status) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!paymentIntent || !clientadplan) {
+                return reject({
+                    code: 500,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+            const clientAdPlan = await ClientAdPlan.findOne({
+                _id: clientadplan
+            }).exec();
+
+            if (clientAdPlan) {
+                let transaction_status;
+                if (status == 'authentication_success') {
+
+                    clientAdPlan.Status = 'PAID';
+                    clientAdPlan.StripeResponse = paymentIntent;
+                    await _savePlan(clientAdPlan);
+                    transaction_status = 'SUCCEEDED';
+
+                } else if (status == 'authentication_failure') {
+                    await ClientAdPlan.deleteOne({
+                        _id: clientadplan
+                    }).exec();
+                    transaction_status = 'FAILED';
+                }
+
+
+                let taxAmount = 0;
+                const taxes = (await getAllTaxes()).data;
+
+                for (let i = 0, len = taxes.length; i < len; i++) {
+                    if (taxes[i].Type === 'FIXED') {
+                        taxAmount += taxes[i].Value;
+                    } else {
+                        taxAmount += taxes[i].Value * 0.01 * (clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount);
+                    }
+                }
+
+                clientAdPlan.taxAmount = taxAmount;
+                clientAdPlan.totalAmount = taxAmount + clientAdPlan.WeeklyAmount + clientAdPlan.AddonsAmount;
+                const resultObj = await _saveTransaction(clientAdPlan, paymentIntent, transaction_status);
+
+                resolve({
+                    code: 200,
+                    data: resultObj
+                });
+
+            } else {
+                return reject({
+                    code: 404,
+                    error: {
+                        message: 'Plan not found'
+                    }
+                });
+            }
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
+
 const updatePlanPayment = (client, planId, paymentMethod) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -470,6 +526,33 @@ const updatePlanPayment = (client, planId, paymentMethod) => {
 
 };
 
+
+const _getClient = (clientId) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const client = await Client.findOne({
+                _id: clientId
+            }).exec();
+
+            if (!client) {
+                return reject({
+                    code: 500,
+                    error: {
+                        message: utilities.ErrorMessages.CLIENT_NOT_FOUND
+                    }
+                });
+            }
+
+            resolve(client);
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
 const _getPaymentSource = (client, newcard, savedcard) => {
     return new Promise(async (resolve, reject) => {
         try {
@@ -491,10 +574,39 @@ const _getPaymentSource = (client, newcard, savedcard) => {
     });
 };
 
+
+const _getCustomer = (client, paymentSource) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            let customer;
+            if (!client.StripeCustomerId) {
+                customer = (await createStripeCustomer(client.Name, client.Email, paymentSource.StripeCardToken)).id;
+                try {
+                    client.StripeCustomerId = customer;
+                    await client.save();
+                } catch (err) {
+
+                    return reject({
+                        code: 500,
+                        error: err,
+                    });
+                }
+            } else {
+                customer = client.StripeCustomerId;
+            }
+            resolve(customer);
+        } catch (err) {
+            return reject({
+                code: 500,
+                error: err
+            });
+        }
+    });
+};
+
 const _generateClientAdPlan = (cPlan) => {
     return new Promise(async (resolve, reject) => {
         try {
-
             const clientAdPlan = new ClientAdPlan({
                 Name: cPlan.Name,
                 VAT: cPlan.VAT,
@@ -567,6 +679,48 @@ const _generateClientAdPlan = (cPlan) => {
         }
     });
 };
+
+const _savePlan = (plan) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            await plan.save();
+            resolve(plan);
+        } catch (err) {
+            logger.logError(`Failed to save client ad plan for user ${plan.Client} on channel ${plan.Channel}`, err);
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
+    });
+};
+
+const _saveTransaction = (clientAdPlan, stripe_response, status) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            const transaction = new Transaction({
+                ClientAdPlan: clientAdPlan._id,
+                Client: clientAdPlan.Client,
+                Amount: (clientAdPlan.totalAmount - clientAdPlan.taxAmount).toFixed(2),
+                TaxAmount: clientAdPlan.taxAmount.toFixed(2),
+                TaxBreakdown: clientAdPlan.Taxes,
+                TotalAmount: clientAdPlan.totalAmount.toFixed(2),
+                Status: status,
+                StripeResponse: stripe_response,
+                ReferenceId: stripe_response.id,
+            });
+            await transaction.save();
+            resolve(transaction);
+        } catch (err) {
+            logger.logError(`Failed to save transaction for client ad plan ${clientAdPlan._ids}`, err);
+            return reject({
+                code: 500,
+                error: err,
+            });
+        }
+    });
+};
+
 
 const _sendPaymentEmail = (transaction_id) => {
     return new Promise(async (resolve, reject) => {
@@ -728,5 +882,7 @@ module.exports = {
     updatePlanPayment,
     saveClientAdPlan,
     approveAd,
-    rejectAd
+    rejectAd,
+    authenticateCardPayment,
+    _sendPaymentEmail
 };

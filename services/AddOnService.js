@@ -8,14 +8,11 @@ const getActiveAddOns = () => {
                 IsActive: true,
             };
             const addOns = await ServiceAddOn.find(query).exec();
-
             query = {
                 Active: true,
             };
             const taxes = await Tax.find(query).exec();
             const responseObj = [];
-
-
             if (taxes && addOns) {
                 addOns.forEach((addOn) => {
                     addOn = addOn.toObject();

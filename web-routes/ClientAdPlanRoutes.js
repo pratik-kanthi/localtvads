@@ -6,7 +6,8 @@ const {
     attachVideo,
     attachImages,
     updateClientAdPlan,
-    updatePlanPayment
+    updatePlanPayment,
+    authenticateCardPayment
 } = require.main.require('./services/ClientAdPlanService');
 
 module.exports = (app) => {
@@ -15,6 +16,17 @@ module.exports = (app) => {
     }), async (req, res, next) => {
         try {
             const result = await saveClientAdPlan(req.body.clientAdPlan, req.body.newCard, req.body.savedCard);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            next(ex);
+        }
+    });
+
+    app.post('/api/:clientid/authenticatecard', passport.authenticate('website-bearer', {
+        session: false
+    }), async (req, res, next) => {
+        try {
+            const result = await authenticateCardPayment(req.body.paymentIntent, req.body.clientadplan, req.body.authStatus);
             return res.status(result.code).send(result.data);
         } catch (ex) {
             next(ex);

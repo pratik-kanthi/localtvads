@@ -13,7 +13,6 @@ const createStripeCustomer = (name, email, stripecardtoken) => {
                     }
                 });
             }
-
             const result = await stripe.customers.create({
                 payment_method: stripecardtoken,
                 name: name,
@@ -69,7 +68,6 @@ const createProduct = (name, isActive) => {
                     }
                 });
             }
-
             const result = await stripe.products.create({
                 name: name || 'LOCAL_TV_ADS_PLAN',
                 active: isActive,
@@ -85,7 +83,6 @@ const createProduct = (name, isActive) => {
                 error: err
             });
         }
-
     });
 };
 
@@ -102,16 +99,16 @@ const createSubscription = (customer, payment_method, items, tax_rates, options)
                     }
                 });
             }
-
             const result = await stripe.subscriptions.create({
                 customer: customer,
                 default_payment_method: payment_method,
                 items: items,
                 default_tax_rates: tax_rates,
-                ...options
+                expand: ['latest_invoice.payment_intent'],
+                ...options,
+
             });
             resolve(result);
-
         } catch (err) {
             logger.logError('Failed to create stripe subscription', err);
             return reject({
@@ -181,9 +178,7 @@ const createCharge = (amount, currency, source, customer, name) => {
                     }
                 });
             }
-
             amount = parseFloat(amount).toFixed(2) * 100;
-
             const result = await stripe.paymentIntents.create({
                 amount: amount,
                 currency: currency,
@@ -194,7 +189,6 @@ const createCharge = (amount, currency, source, customer, name) => {
                 description: `Announcement for ${name}`
             });
             resolve(result);
-
         } catch (err) {
             logger.logError('Failed to create stripe charge', err);
             return reject({
@@ -222,7 +216,6 @@ const createPrice = (amount, currency, product, options) => {
                 currency: currency,
                 product: product,
                 ...options
-
             });
             resolve(result);
         } catch (err) {
@@ -290,6 +283,27 @@ const detachPaymentMethod = (stripecardtoken) => {
 };
 
 
+const confirmPaymentIntent = (payment_intent) => {
+    return new Promise(async (resolve, reject) => {
+        try {
+            if (!payment_intent) {
+                return reject({
+                    code: 400,
+                    error: {
+                        message: utilities.ErrorMessages.BAD_REQUEST
+                    }
+                });
+            }
+            const result = await stripe.paymentIntents.confirm(payment_intent);
+            resolve(result);
+        } catch (err) {
+            logger.logError('Failed to detach payment method', err);
+            resolve();
+        }
+    });
+};
+
+
 module.exports = {
     createStripeCustomer,
     attachPaymentMethod,
@@ -300,5 +314,6 @@ module.exports = {
     retrieveSubscription,
     updateSubscription,
     createCharge,
-    updateCustomer
+    updateCustomer,
+    confirmPaymentIntent
 };

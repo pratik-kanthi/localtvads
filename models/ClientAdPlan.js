@@ -72,7 +72,7 @@ const schema = new mongoose.Schema({
     },
     Status: {
         type: String,
-        enum: ['PAID', 'LIVE', 'REJECTED', 'EXPIRED', 'INACTIVE'],
+        enum: ['PAYMENT_PROCESSING', 'PAYMENT_INCOMPLETE', 'PAID', 'LIVE', 'REJECTED', 'EXPIRED', 'INACTIVE'],
     },
     BookedDate: {
         type: Date,

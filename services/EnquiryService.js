@@ -73,7 +73,6 @@ const deleteEnquiry = (eid) => {
                         error: err
                     });
                 }
-
                 resolve({
                     code: 200,
                     data: enquiry
