@@ -621,7 +621,7 @@ const _generateClientAdPlan = (cPlan) => {
             const channelProduct = await ChannelProduct.findOne({
                 _id: cPlan.ChannelProduct,
             })
-                .deepPopulate('ProductLength ChannelSlots.Slot')
+                .populate('ProductLength ChannelSlots.Slot')
                 .lean()
                 .exec();
 
@@ -727,7 +727,7 @@ const _sendPaymentEmail = (transaction_id) => {
         try {
             const transaction = await Transaction.findOne({
                 _id: transaction_id
-            }).deepPopulate('Client ClientAdPlan.Channel ClientAdPlan.AddOns').exec();
+            }).populate('Client ClientAdPlan.Channel ClientAdPlan.AddOns').exec();
             const receipt = {
                 ReceiptNumber: transaction.ReceiptNo,
                 PaymentReference: transaction.ReferenceId,
