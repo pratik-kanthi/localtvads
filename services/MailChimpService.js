@@ -22,7 +22,7 @@ const addToSubscribers = (email_address) => {
                 }, ],
             };
             mailchimp
-                .post(`/lists/${process.env.MAILCHIMP_LIST_ID}`, request_body)
+                .post(`/lists/${process.env.MAILCHIMP_API_KEY}`, request_body)
                 .then((result) => {
                     resolve({
                         code: 200,

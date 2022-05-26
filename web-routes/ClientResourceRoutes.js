@@ -1,13 +1,13 @@
 const passport = require('passport');
 const multer = require('multer');
-const config = require.main.require('./config');
+const config = require('../config');
 const {
     addImageResource,
     getAllResources,
     removeAddOnResource,
     addDocumentResource,
     getClientStorage
-} = require.main.require('./services/ResourceService');
+} = require('../services/ResourceService');
 
 
 module.exports = (app) => {

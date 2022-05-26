@@ -1,6 +1,6 @@
 const {
     getProductsOfChannel
-} = require.main.require('./services/ChannelService');
+} = require('../services/ChannelService');
 
 module.exports = (app) => {
 

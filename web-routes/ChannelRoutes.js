@@ -2,7 +2,7 @@ const {
     getChannels,
     getChannel,
     getLowestPriceOnChannel,
-} = require.main.require('./services/ChannelService');
+} = require('../services/ChannelService');
 
 module.exports = (app) => {
 

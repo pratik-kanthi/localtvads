@@ -2,7 +2,7 @@ const passport = require('passport');
 const {
     getTransactions,
     generateTransactionReceipt
-} = require.main.require('./services/ClientService');
+} = require('../services/ClientService');
 
 
 module.exports = (app) => {

@@ -1,6 +1,6 @@
 const {
     getActiveAddOns
-} = require.main.require('./services/AddOnService');
+} = require('../services/AddOnService');
 
 
 module.exports = (app) => {

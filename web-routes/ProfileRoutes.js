@@ -1,12 +1,12 @@
 const passport = require('passport');
 const {
     getSavedCards
-} = require.main.require('./services/ClientService');
+} = require('../services/ClientService');
 
 const {
     updateProfile,
     updatePassword
-} = require.main.require('./services/UserService');
+} = require('../services/UserService');
 
 
 module.exports = (app) => {

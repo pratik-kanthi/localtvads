@@ -1,5 +1,5 @@
 module.exports = (app) => {
-    require('./AuthRoutes')(app);
+    //require('./AuthRoutes')(app);
     require('./ChannelRoutes')(app);
     require('./ChannelProductRoutes')(app);
     require('./AddOnRoutes')(app);
@@ -7,6 +7,8 @@ module.exports = (app) => {
     require('./ClientResourceRoutes')(app);
     require('./ClientAdPlanRoutes')(app);
     require('./ProfileRoutes')(app);
-    require('./ContactRoutes')(app);
-    require('./TransactionRoutes')(app);
+    require('../routes/SliderRoutes')(app);
+    require('../routes/TestimonialRoutes')(app);
+    // require('./ContactRoutes')(app);
+    // require('./TransactionRoutes')(app);
 };

@@ -1,10 +1,20 @@
 const passport = require('passport');
 const {
     saveTestimonial,
-    deleteTestimonial
+    deleteTestimonial,
+    getTestimonials
 } = require.main.require('./services/TestimonialService');
 
 module.exports = (app) => {
+
+    app.get('/api/testimonials/all', async (req, res, next) => {
+        try {
+            const result = await getTestimonials(req.body, req);
+            return res.status(result.code).send(result.data);
+        } catch (ex) {
+            next(ex);
+        }
+    });
 
     app.post('/api/testimonials', passport.authenticate('jwt', {
         session: false

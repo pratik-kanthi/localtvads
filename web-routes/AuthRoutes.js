@@ -3,7 +3,7 @@ const {
     standardLogin,
     socialRegister,
     standardRegister,
-} = require.main.require('./services/AuthService');
+} = require('../services/AuthService');
 
 
 module.exports = (app) => {

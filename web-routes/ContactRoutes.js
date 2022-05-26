@@ -1,11 +1,11 @@
 const {
     subscribeUser,
     submitEnquiry
-} = require.main.require('./services/ContactService');
+} = require('../services/ContactService');
 
 const {
     getTestimonials
-} = require.main.require('./services/TestimonialService');
+} = require('../services/TestimonialService');
 
 module.exports = (app) => {
 

@@ -8,7 +8,7 @@ const {
     updateClientAdPlan,
     updatePlanPayment,
     authenticateCardPayment
-} = require.main.require('./services/ClientAdPlanService');
+} = require('../services/ClientAdPlanService');
 
 module.exports = (app) => {
     app.post('/api/:clientid/createplan', passport.authenticate('website-bearer', {

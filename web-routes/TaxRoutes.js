@@ -1,6 +1,6 @@
 const {
     getAllTaxes
-} = require.main.require('./services/TaxService');
+} = require('../services/TaxService');
 
 module.exports = (app) => {
 

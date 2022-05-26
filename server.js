@@ -46,15 +46,19 @@ mongoose.connect(
         if (err) {
             logger.logError('Error in connection MongoDb', err);
         } else {
-            app.listen(port, () => {
-                logger.logInfo('Application started at PORT ' + port);
-            });
-            const models = require('./models')(mongoose);
-            const io = require('./sockets')();
-            require('./routes')(app, models, io);
+
+            // const models = require('./models')(mongoose);
+            // const io = require('./sockets')();
+
+            // require('./routes')(app, models, io);
+            require('./web-routes')(app);
             require('./web-hooks')(app);
             require('./prototypes');
 
+            app.listen(port, () => {
+                logger.logInfo('Application started at PORT ' + port);
+                console.log('Application started at PORT ' + port);
+            });
 
         }
     }
