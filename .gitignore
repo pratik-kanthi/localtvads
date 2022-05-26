@@ -53,8 +53,6 @@ iisnode/
 build/config.gypi
 web.config
 
-# config.js
-config.js
 
 # Documentation
 doc/
