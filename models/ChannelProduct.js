@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const deepPopulate = require('mongoose-deep-populate')(mongoose);
 
 const name = 'ChannelProduct';
 
@@ -41,6 +42,7 @@ const schema = new mongoose.Schema({
     }
 });
 const model = mongoose.model(name, schema);
+schema.plugin(deepPopulate);
 
 module.exports = {
     name: name,

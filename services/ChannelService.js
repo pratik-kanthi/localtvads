@@ -99,7 +99,7 @@ const getProductsOfChannel = (channelId) => {
             const query = {
                 Channel: channelId
             };
-            const result = await ChannelProduct.find(query).populate('ProductLength ChannelSlots.Slot').exec();
+            const result = await ChannelProduct.find(query).deepPopulate('ProductLength ChannelSlots.Slot').exec();
             resolve({
                 code: 200,
                 data: result,

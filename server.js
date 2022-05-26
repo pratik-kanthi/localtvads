@@ -47,10 +47,11 @@ mongoose.connect(
             logger.logError('Error in connection MongoDb', err);
         } else {
 
-            // const models = require('./models')(mongoose);
-            // const io = require('./sockets')();
+            require('./models')(mongoose);
+            //require('./models')(mongoose);
+            //const io = require('./sockets')();
+            //require('./routes')(app, models, io);
 
-            // require('./routes')(app, models, io);
             require('./web-routes')(app);
             require('./web-hooks')(app);
             require('./prototypes');
